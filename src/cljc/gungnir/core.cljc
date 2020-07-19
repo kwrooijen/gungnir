@@ -151,10 +151,17 @@
    {:name :date-decoder
     :decoders +date-decoders+}))
 
-(defn advanced-decode [model params]
+(defn advanced-decode-with-defaults [model params]
   (m/decode model params
             (mt/transformer
              mt/default-value-transformer
+             mt/string-transformer
+             uuid-transformer
+             date-transformer)))
+
+(defn advanced-decode [model params]
+  (m/decode model params
+            (mt/transformer
              mt/string-transformer
              uuid-transformer
              date-transformer)))
@@ -169,8 +176,8 @@
   ([origin params validators]
    (let [model-k (-> params clojure.core/keys first namespace keyword)
          model (model-k->model model-k)
-         origin (advanced-decode model (select-keys origin (gungnir.core/keys model)))
-         diff (advanced-decode model (first (differ/diff origin params)))
+         origin (advanced-decode-with-defaults model (select-keys origin (gungnir.core/keys model)))
+         diff (first (differ/diff origin (advanced-decode model params)))
          validated (validate (merge origin diff) model validators)]
      {:changeset/model model
       :changeset/validators validators
