@@ -264,7 +264,7 @@
           :from (list t2)
           :where [:= (gungnir/primary-key t2) foreign-key]})))
 
-(defn add-belongs-to [{:keys [table primary-key]} record [k v]]
+(defn add-belongs-to [{:keys [table]} record [k v]]
   (assoc record (keyword (name table) (name k)) (belongs-to-atom k (get record v))))
 
 (defn apply-relations
@@ -309,9 +309,9 @@
 
 (defn query! [form]
   (reduce (fn [acc row]
-            (conj acc
-                  (-> (process-query-row form row)
-                      (next.jdbc.result-set/datafiable-row *database* query-opts))))
+            (->> (next.jdbc.result-set/datafiable-row row *database* query-opts)
+                 (process-query-row form)
+                 (conj acc)))
           []
           (jdbc/plan *database* (honey->sql form) query-opts)))
 
