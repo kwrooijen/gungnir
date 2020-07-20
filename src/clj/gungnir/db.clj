@@ -11,7 +11,8 @@
    ;; NOTE [next.jdbc.date-time] Must be included to prevent date errors
    ;; https://cljdoc.org/d/seancorfield/next.jdbc/1.0.13/api/next.jdbc.date-time
    [next.jdbc.date-time]
-   [next.jdbc.result-set :as result-set])
+   [next.jdbc.result-set :as result-set]
+   [hikari-cp.core :as hikari-cp])
   (:import (java.sql SQLException ResultSet)
            (org.postgresql.jdbc PgArray)))
 
@@ -19,6 +20,16 @@
 
 (defn set-datasource! [datasource]
   (alter-var-root #'gungnir.db/*database* (fn [_] datasource)))
+
+(defn make-datasource!
+  ([?options]
+   (cond
+     (map? ?options)
+     (set-datasource! (hikari-cp/make-datasource ?options))
+     (string? ?options)
+     (set-datasource! (hikari-cp/make-datasource {:jdbc-url ?options}))))
+  ([url options]
+   (set-datasource! (hikari-cp/make-datasource (merge options {:jdbc-url url})))))
 
 (declare query-1!)
 (declare query!)
