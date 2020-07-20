@@ -21,6 +21,9 @@
 (defmulti on-save (fn [k v] k))
 (defmethod on-save :default [_ v] v)
 
+(defmethod on-save :string/lower-case [_ v]
+  (string/lower-case v))
+
 (defmulti on-read (fn [k v] k))
 (defmethod on-read :default [_ v] v)
 

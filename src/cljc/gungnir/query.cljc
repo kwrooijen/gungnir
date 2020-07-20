@@ -22,6 +22,10 @@
 #?(:clj (def query-1! gungnir.db/query-1!)
    :cljs (def query-1! identity))
 
+;; TODO Save should look if the changeset has a primary-key. If it does, then it
+;; should run the `update!` function. Otherwise it runs the `insert!` function.
+;; (defn save! [changeset])
+
 (defn- process-arguments [form args]
   (if (map? form)
     [form (partition 2 args)]
