@@ -13,9 +13,9 @@ A Clojure library designed to ... well, that part is up to you.
 
 FIXME
 
-## License
 
-Copyright © 2018 FIXME
+## Author / License
 
-Distributed under the Eclipse Public License either version 1.0 or (at
-your option) any later version.
+Released under the [MIT License] by [Kevin William van Rooijen].
+
+[Kevin William van Rooijen]: https://twitter.com/kwrooijen
