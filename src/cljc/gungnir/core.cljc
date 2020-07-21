@@ -24,10 +24,10 @@
 (defmethod before-save :string/lower-case [_ v]
   (string/lower-case v))
 
-(defmulti on-read (fn [k v] k))
-(defmethod on-read :default [_ v] v)
+(defmulti before-read (fn [k v] k))
+(defmethod before-read :default [_ v] v)
 
-(defmethod on-read :edn/read-string [_ v]
+(defmethod before-read :edn/read-string [_ v]
   (if (vector? v)
     (mapv edn/read-string v)
     (edn/read-string v)))

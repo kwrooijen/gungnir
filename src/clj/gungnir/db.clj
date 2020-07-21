@@ -87,12 +87,12 @@
 
 (defn column-reader [builder ^ResultSet rs i]
   (let [column (nth (:cols builder) (dec i))
-        on-read (:on-read (gungnir/column->properties column))]
+        before-read (:before-read (gungnir/column->properties column))]
     (when-let [value (.getObject rs i)]
-      (if (seq on-read)
-        (reduce (fn [v f] (gungnir/on-read f v))
+      (if (seq before-read)
+        (reduce (fn [v f] (gungnir/before-read f v))
                 (if (#{PgArray} (type value)) (vec (.getArray value)) value)
-                on-read)
+                before-read)
         (result-set/read-column-by-index value (:rsmeta builder) i)))))
 
 (defn- honey->sql [m]
