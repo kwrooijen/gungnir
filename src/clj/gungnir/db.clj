@@ -74,6 +74,12 @@
   (result-set/read-column-by-index ^PgArray [^PgArray v _2 _3]
     (vec (.getArray v))))
 
+(defn try-uuid [?uuid]
+  (if (string? ?uuid)
+    (try (java.util.UUID/fromString ?uuid)
+         (catch Exception _ ?uuid))
+    ?uuid))
+
 (defn map-kv [f m]
   (into {} (map f m)))
 
@@ -213,7 +219,7 @@
           primary-key (gungnir/record->primary-key record)
           primary-key-value (get record primary-key)]
       (-> (q/delete-from table)
-          (q/where [:= primary-key primary-key-value])
+          (q/where [:= primary-key (try-uuid primary-key-value)])
           (honey->sql)
           (as-> sql (jdbc/execute-one! *database* sql {:builder-fn as-kebab-maps}))
           (= 1)))))

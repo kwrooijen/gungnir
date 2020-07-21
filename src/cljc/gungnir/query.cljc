@@ -80,14 +80,6 @@
        true (q/merge-where (args->where model args))
        true (query-1!)))))
 
-(defn try-uuid [?uuid]
-  #?(:clj
-     (if (string? ?uuid)
-       (try (java.util.UUID/fromString ?uuid)
-            (catch Exception _ ?uuid))
-       ?uuid)
-     :cljs ?uuid))
-
 (defn find!
   "Find a single record by its `primary-key` from `table`.
   Optionally extend the query using a HoneySQL `form`. "
@@ -96,7 +88,8 @@
    (cond-> form
      (not (:select form)) (q/select :*)
      true (q/from table)
-     true (q/merge-where [:= (gungnir/primary-key table) (try-uuid primary-key)])
+     true (q/merge-where [:= (gungnir/primary-key table) #?(:clj (gungnir.db/try-uuid primary-key)
+                                                            :cljs primary-key)])
      true (query-1!))))
 
 ;; HoneySQL Overrides
