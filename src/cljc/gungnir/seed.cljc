@@ -1,4 +1,5 @@
 (ns gungnir.seed
+  "TODO implement easy, useful data seeding."
   (:require
    [malli.generator :as mg]
    [gungnir.core :as gungnir]))
