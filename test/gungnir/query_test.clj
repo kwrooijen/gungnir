@@ -81,7 +81,18 @@
                  first
                  :post/title))))))
 
-(deftest test-insert!)
+(deftest test-insert!
+  (testing "inserting a new user"
+    (let [user (-> user-1 changeset q/insert!)]
+      (is (nil? (:changeset/errors user)))
+      (is (uuid? (:user/id user)))
+      (is (some? (q/find! :user (:user/id user))))))
+
+  (testing "inserting an invalid user"
+    (let [user (-> user-1 (assoc :user/password "123") changeset q/insert!)]
+      (is (some? (:changeset/errors user)))
+      (is (nil? (:user/id user)))
+      (is (nil? (q/find! :user (:user/id user)))))))
 
 (deftest test-update!)
 
