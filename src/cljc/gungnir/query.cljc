@@ -2,6 +2,7 @@
   (:refer-clojure :exclude [update find])
   (:require
    #?(:clj gungnir.db)
+   [malli.core :as m]
    [gungnir.core :as gungnir]
    [honeysql.format :as fmt]
    [honeysql.helpers :as q]
@@ -31,8 +32,15 @@
     [form (partition 2 args)]
     [{} (partition 2 (conj args form))]))
 
-(defn- args->where [args]
-  (into [:and] (mapv (fn [[k v]] [:= k (str v)]) args)))
+(defn- args->where [model args]
+  (into [:and] (mapv (fn [[k v]]
+                       (if (keyword? v)
+                         [:= k (str v)]
+                         [:= k v]))
+                     (->> args
+                          flatten
+                          (apply hash-map)
+                          (gungnir/advanced-decode model)))))
 
 (defn all!
   "Find multiple records from `table`, where `args` are a key value pair of
@@ -46,13 +54,15 @@
                 (> (count args) 1))
            (and (keyword? form)
                 (= 1 (count args))))
-     (let [[form args] (process-arguments form args)]
+     (let [[form args] (process-arguments form args)
+         model (gungnir/record->model args)]
        (cond-> form
          (not (:select form)) (q/select :*)
          true (q/from (gungnir/record->table args))
-         true (q/merge-where (args->where args))
+         true (q/merge-where (args->where model args))
          true (query!)))
 
+     ;; If only table is given, and no conditionals
      (cond-> (if (map? form) form {})
        (not (:select form)) (q/select :*)
        true (q/from (first args))
@@ -62,12 +72,21 @@
   "Find a single record from `table`, where `args` are a key value pair of
   columns and values. Optionally extend the query using a HoneySQL `form`."
   ([form & args]
-   (let [[form args] (process-arguments form args)]
+   (let [[form args] (process-arguments form args)
+         model (gungnir/record->model args)]
      (cond-> form
        (not (:select form)) (q/select :*)
-       true (q/from (gungnir/record->table args))
-       true (q/merge-where (args->where args))
+       true (q/from (:table (m/properties model)))
+       true (q/merge-where (args->where model args))
        true (query-1!)))))
+
+(defn try-uuid [?uuid]
+  #?(:clj
+     (if (string? ?uuid)
+       (try (java.util.UUID/fromString ?uuid)
+            (catch Exception _ ?uuid))
+       ?uuid)
+     :cljs ?uuid))
 
 (defn find!
   "Find a single record by its `primary-key` from `table`.
@@ -77,7 +96,7 @@
    (cond-> form
      (not (:select form)) (q/select :*)
      true (q/from table)
-     true (q/merge-where [:= (gungnir/primary-key table) primary-key])
+     true (q/merge-where [:= (gungnir/primary-key table) (try-uuid primary-key)])
      true (query-1!))))
 
 ;; HoneySQL Overrides
