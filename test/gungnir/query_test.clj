@@ -29,40 +29,57 @@
    :post/content post-2-content})
 
 (deftest test-find!
-  (testing "Find user by primary key"
-    (println "START TEST 1")
-    (let [{:user/keys [id]} (-> user-1 changeset q/insert!)]
-      (is (= user-1-email (-> (q/find! :user id) :user/email)))))
+  (let [{:user/keys [id]} (-> user-1 changeset q/insert!)]
+    (testing "Find user by primary key"
+      (is (= user-1-email (-> (q/find! :user id) :user/email))))
 
-  ;; TODO fix failing tests
-  ;; (testing "Find user by primary key, automatic uuid translation"
-  ;;   (let [{:user/keys [id]} (-> user-1 changeset q/insert!)]
-  ;;     (is (= user-1-email (-> (q/find! :user (str id)) :user/email)))))
+    (testing "Find user by primary key, automatic uuid translation"
+      (is (= user-1-email (-> (q/find! :user (str id)) :user/email)))))
 
   (testing "Find unknown user by primary key returns nil"
     (is (nil? (-> (q/find! :user #uuid "1e626bf3-8fdf-4a66-b708-7aa35dafede9"))))
-    ;; (is (nil? (-> (q/find! :user "1e626bf3-8fdf-4a66-b708-7aa35dafede9"))))
-    ))
+    (is (nil? (-> (q/find! :user "1e626bf3-8fdf-4a66-b708-7aa35dafede9"))))))
 
 (deftest test-find-by!
-  (let [{:user/keys [id] :as user} (-> user-1 changeset q/insert!)]
+  (let [{:user/keys [id] :as user} (-> user-1 changeset q/insert!)
+        _post (-> post-1 (assoc :post/user-id id) changeset q/insert!)]
     (testing "Find user by email"
-      (println "START TEST 2")
       (is (= user-1-email (-> (q/find-by! :user/email user-1-email) :user/email))))
 
     (testing "Find user by unknown email returns nil"
       (is (nil? (q/find-by! :user/email "random@email.com"))))
 
     (testing "Find post by title and user-id"
-      ;; TODO fix failing tests
-      ;; (let [_post (-> post-1 (assoc :post/user-id id) changeset q/insert!)]
-      ;;   (is (= post-1-title
-      ;;          (-> (q/find-by! :post/title post-1-title
-      ;;                          :post/user-id id)
-      ;;              :post/title))))
-      )))
+      (is (= post-1-title
+             (-> (q/find-by! :post/title post-1-title
+                             :post/user-id id)
+                 :post/title))))
+    (testing "Find post by user-id with auto uuid"
+      (is (= post-1-title
+             (-> (q/find-by! :post/user-id (str id))
+                 :post/title))))))
 
-(deftest test-all!)
+(deftest test-all!
+  (let [{:user/keys [id] :as user} (-> user-1 changeset q/insert!)
+        _post-1 (-> post-1 (assoc :post/user-id id) changeset q/insert!)
+        _post-2 (-> post-2 (assoc :post/user-id id) changeset q/insert!)]
+    (testing "Find posts by user id"
+      (is (= #{post-1-title post-2-title}
+             (-> (q/all! :post/user-id id) (->> (mapv :post/title)) set))))
+
+    (testing "Find posts by user id with limit 1"
+      (is (= 1
+             (-> (q/limit 1)
+                 (q/all! :post/user-id id)
+                 (count)))))
+
+    (testing "Find posts by user id and title"
+      (is (= post-1-title
+             (-> (q/limit 1)
+                 (q/all! :post/user-id id
+                         :post/title post-1-title)
+                 first
+                 :post/title))))))
 
 (deftest test-insert!)
 
