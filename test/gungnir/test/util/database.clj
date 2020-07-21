@@ -21,6 +21,7 @@
   []
   (next.jdbc/execute!
    *database*
-   [(str "DELETE from \"user\";"
-         "DELETE from \"post\";"
-         "DELETE from \"comment\";")]))
+   [(str
+     "DELETE from \"comment\";"
+     "DELETE from \"post\";"
+     "DELETE from \"user\";")]))
