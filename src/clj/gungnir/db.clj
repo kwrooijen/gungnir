@@ -19,6 +19,8 @@
 (defonce ^:dynamic *database* nil)
 
 (defn set-datasource! [datasource]
+  (when *database*
+    (hikari-cp/close-datasource *database*))
   (alter-var-root #'gungnir.db/*database* (fn [_] datasource)))
 
 (defn make-datasource!

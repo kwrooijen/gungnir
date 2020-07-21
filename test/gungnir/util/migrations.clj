@@ -70,7 +70,7 @@
    " , updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL "
    " );"))
 
-(defn migrate!
+(defn init!
   "Run migrations to create all tables. The migrations are idempotent,
   so they can be run multiple times."
   []
