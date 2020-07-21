@@ -1,7 +1,7 @@
 (ns gungnir.changeset-test
   (:require
    [clojure.test :refer :all]
-   [gungnir.core :as gungnir]
+   [gungnir.core :as gungnir :refer [changeset]]
    [gungnir.test.util :as util]))
 
 (use-fixtures :once util/once-fixture)
@@ -15,10 +15,10 @@
    :user/updated-at (java.util.Date. 1495636054438)})
 
 (defn- cast+errors [params model]
-  (-> params (gungnir/cast model) gungnir/changeset :changeset/errors))
+  (-> params (gungnir/cast model) changeset :changeset/errors))
 
 (defn- changeset+errors [params]
-  (-> params gungnir/changeset :changeset/errors))
+  (-> params changeset :changeset/errors))
 
 (deftest valid-user-tests
   (testing "valid changesets"
@@ -58,17 +58,17 @@
 (deftest test-diffing-changeset
   (testing "updating email"
     (is (-> existing-user
-            (gungnir/changeset {:user/email "foo@bar.baz"})
+            (changeset {:user/email "foo@bar.baz"})
             :changeset/errors
             nil?))
     (is (= "foo@bar.baz"
          (-> existing-user
-             (gungnir/changeset {:user/email "foo@bar.baz"})
+             (changeset {:user/email "foo@bar.baz"})
              :changeset/result
              :user/email)))
     (is (= "123456"
          (-> existing-user
-             (gungnir/changeset {:user/email "foo@bar.baz"})
+             (changeset {:user/email "foo@bar.baz"})
              :changeset/result
              :user/password)))))
 
@@ -77,7 +77,7 @@
   (testing "auto should not be in result"
     ;; (is (= (java.util.Date. 1495636054438)
     ;;      (-> existing-user
-    ;;          (gungnir/changeset {:user/created-at (java.util.Date. 123)})
+    ;;          (changeset {:user/created-at (java.util.Date. 123)})
     ;;          :changeset/result
     ;;          :user/created-at)))
     ))
@@ -86,14 +86,14 @@
   ;; TODO, fix failing test
   (testing "virtual should not be in result"
     ;; (is (-> existing-user
-    ;;            (gungnir/changeset {:user/password-confirmation "987654"})
+    ;;            (changeset {:user/password-confirmation "987654"})
     ;;            :changeset/result
     ;;            :user/password-confirmation
     ;;            nil?))
     ;; (is (-> {:user/email "test@user.com"
     ;;          :user/password "987654"
     ;;          :user/password-confirmation "987654"}
-    ;;         (gungnir/changeset)
+    ;;         (changeset)
     ;;         :changeset/result
     ;;         :user/password-confirmation
     ;;         nil?))
@@ -105,12 +105,12 @@
                 :user/password "123456"
                 :user/password-confirmation "123456"}]
       (is (-> user
-              (gungnir/changeset [:register/password-match?])
+              (changeset [:register/password-match?])
               :changeset/errors
               nil?))
 
       (is (-> (assoc user :user/password-confirmation "123456+7")
-              (gungnir/changeset [:register/password-match?])
+              (changeset [:register/password-match?])
               :changeset/errors
               :user/password-confirmation
               some?))))
@@ -120,6 +120,6 @@
                 :user/password "1234"
                 :user/password-confirmation "1234"}]
       (is (-> user
-              (gungnir/changeset [:register/password-match?])
+              (changeset [:register/password-match?])
               :changeset/errors
               some?)))))
