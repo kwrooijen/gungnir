@@ -1,4 +1,4 @@
-(ns gungnir.util.model
+(ns gungnir.test.util.model
   (:require
    [gungnir.core :as gungnir]))
 

@@ -1,4 +1,4 @@
-(ns gungnir.util.database
+(ns gungnir.test.util.database
   (:require
    [gungnir.db :refer [make-datasource!]]))
 

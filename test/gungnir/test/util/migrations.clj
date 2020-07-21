@@ -1,4 +1,4 @@
-(ns gungnir.util.migrations
+(ns gungnir.test.util.migrations
   (:require
    [gungnir.db :refer [*database*]]
    [next.jdbc]))

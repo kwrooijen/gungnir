@@ -1,7 +1,7 @@
 (ns gungnir.changeset-test
   (:require [clojure.test :refer :all]
             [gungnir.core :as gungnir]
-            [gungnir.util]))
+            [gungnir.test.util]))
 
 (def existing-user
   {:user/id "e52c518c-6d3e-4e75-87f1-ff08bdc933be"
