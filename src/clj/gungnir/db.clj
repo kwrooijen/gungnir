@@ -222,6 +222,7 @@
           (q/where [:= primary-key (try-uuid primary-key-value)])
           (honey->sql)
           (as-> sql (jdbc/execute-one! *database* sql {:builder-fn as-kebab-maps}))
+          :next.jdbc/update-count
           (= 1)))))
 
 (def ^:private query-opts

@@ -130,12 +130,12 @@
 (deftest test-delete!
   (testing "deleting existing user"
     (let [user (-> user-1 changeset q/insert!)]
-      (q/delete! user)
+      (is (= true (q/delete! user)))
       (is (nil? (q/find! :user (:user/id user))))))
 
   (testing "deleting non existing user"
     (let [uuid "1e626bf3-8fdf-4a66-b708-7aa35dafede9"]
-      (q/delete! {:user/id uuid})
+      (is (= false (q/delete! {:user/id uuid})))
       (is (nil? (q/find! :user uuid))))))
 
 (deftest test-relation-has-one)
