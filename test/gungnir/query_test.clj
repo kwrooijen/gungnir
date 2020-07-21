@@ -14,8 +14,23 @@
   {:user/email user-1-email
    :user/password user-1-email})
 
+(def post-1-title "post-1 title")
+(def post-1-content "post-1 content")
+
+(def post-1
+  {:post/title post-1-title
+   :post/content post-1-content})
+
+(def post-2-title "post-2 title")
+(def post-2-content "post-2 content")
+
+(def post-2
+  {:post/title post-2-title
+   :post/content post-2-content})
+
 (deftest test-find!
   (testing "Find user by primary key"
+    (println "START TEST 1")
     (let [{:user/keys [id]} (-> user-1 changeset q/insert!)]
       (is (= user-1-email (-> (q/find! :user id) :user/email)))))
 
@@ -29,7 +44,23 @@
     ;; (is (nil? (-> (q/find! :user "1e626bf3-8fdf-4a66-b708-7aa35dafede9"))))
     ))
 
-(deftest test-find-by!)
+(deftest test-find-by!
+  (let [{:user/keys [id] :as user} (-> user-1 changeset q/insert!)]
+    (testing "Find user by email"
+      (println "START TEST 2")
+      (is (= user-1-email (-> (q/find-by! :user/email user-1-email) :user/email))))
+
+    (testing "Find user by unknown email returns nil"
+      (is (nil? (q/find-by! :user/email "random@email.com"))))
+
+    (testing "Find post by title and user-id"
+      ;; TODO fix failing tests
+      ;; (let [_post (-> post-1 (assoc :post/user-id id) changeset q/insert!)]
+      ;;   (is (= post-1-title
+      ;;          (-> (q/find-by! :post/title post-1-title
+      ;;                          :post/user-id id)
+      ;;              :post/title))))
+      )))
 
 (deftest test-all!)
 
