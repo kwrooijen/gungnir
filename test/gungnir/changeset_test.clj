@@ -77,3 +77,13 @@
       (is (-> params (cast+errors :user) :user/email some?)))
     (let [params {"email" "test@user.com" "password" "..."}]
       (is (-> params (cast+errors :user) :user/password some?)))))
+
+(deftest test-diffing-changeset)
+
+(deftest test-auto-property)
+
+(deftest test-transient-property)
+
+(deftest test-virtual-property)
+
+(deftest test-validators)
