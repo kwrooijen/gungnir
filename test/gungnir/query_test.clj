@@ -10,9 +10,11 @@
 
 (def user-1-email "user@test.com")
 
+(def user-1-password "123456")
+
 (def user-1
   {:user/email user-1-email
-   :user/password user-1-email})
+   :user/password user-1-password})
 
 (def post-1-title "post-1 title")
 (def post-1-content "post-1 content")
@@ -94,7 +96,20 @@
       (is (nil? (:user/id user)))
       (is (nil? (q/find! :user (:user/id user)))))))
 
-(deftest test-update!)
+(deftest test-update!
+  (let [user (-> user-1 changeset q/insert!)]
+    (testing "updating an existing user"
+      (let [new-email "user-updated@test.com"
+            new-user (q/update! (changeset user {:user/email new-email}))]
+        (is (nil? (:changeset/errors new-user)))
+        (is (uuid? (:user/id new-user)))
+        (is (some? (q/find! :user (:user/id user))))))
+
+    (testing "updating an invalid user"
+      (let [new-user (q/update! (changeset user {:user/password "123"}))]
+        (is (some? (:changeset/errors new-user)))
+        (is (nil? (:user/id new-user)))
+        (is (= user-1-password (:user/password (q/find! :user (:user/id user)))))))))
 
 (deftest test-delete!)
 
