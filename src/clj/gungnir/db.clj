@@ -95,30 +95,10 @@
                 on-read)
         (result-set/read-column-by-index value (:rsmeta builder) i)))))
 
-(defn sanitize-table [s]
-  (-> s name pr-str (string/replace #"-" "_") sql/raw))
-
-(defn update-quote-table [m field]
-  (update m field
-          #(if (coll? %)
-            (map sanitize-table %)
-            (sanitize-table %))))
-
-(defn quote-tables [m]
-  (cond-> m
-    (:from m) (update-quote-table :from)
-    (:insert-into m) (update-quote-table :insert-into)
-    (:update m) (update-quote-table :update)))
-
-(defn- honey->sql
-  ([m]
-   (honey->sql m
-               {:namespace-as-table? true
-                :allow-dashed-names? true
-                :quoting :ansi}))
-  ([m opts]
-   (-> (quote-tables m)
-       (sql/format opts))))
+(defn- honey->sql [m]
+  (sql/format m
+              :namespace-as-table? true
+              :quoting :ansi))
 
 (def ^:private execute-opts
   {:return-keys true
@@ -157,7 +137,7 @@
            (.getMessage e))
   {:unknown [(.getSQLState e)]})
 
-(defn execute-one! [form changeset _opts]
+(defn execute-one! [form changeset]
   (try
     (jdbc/execute-one! *database* (honey->sql form) execute-opts)
     (catch Exception e
@@ -208,7 +188,7 @@
     changeset
     (-> (q/insert-into (gungnir/table model))
         (q/values [(model->insert-values model result)])
-        (execute-one! changeset {:allow-dashed-names? true :quoting :ansi}))))
+        (execute-one! changeset))))
 
 (defn update! [{:changeset/keys [model errors diff origin] :as changeset}]
   (cond
@@ -219,7 +199,7 @@
       (-> (q/update (gungnir/table model))
           (q/sset (model->insert-values model diff))
           (q/where [:= primary-key (get origin primary-key)])
-          (execute-one! changeset {:allow-dashed-names? true :quoting :ansi})))))
+          (execute-one! changeset)))))
 
 (defn delete! [record]
   (when-let [record (maybe-deref record)]
