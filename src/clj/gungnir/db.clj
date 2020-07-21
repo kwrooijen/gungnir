@@ -97,10 +97,12 @@
                 before-read)
         (result-set/read-column-by-index value (:rsmeta builder) i)))))
 
-(defn- honey->sql [m]
-  (sql/format m
-              :namespace-as-table? true
-              :quoting :ansi))
+(defn- honey->sql
+  ([m] (honey->sql m {}))
+  ([m opts]
+   (sql/format m
+               :namespace-as-table? (:namespace-as-table? opts true)
+               :quoting :ansi)))
 
 (def ^:private execute-opts
   {:return-keys true
@@ -139,12 +141,14 @@
            (.getMessage e))
   {:unknown [(.getSQLState e)]})
 
-(defn execute-one! [form changeset]
-  (try
-    (jdbc/execute-one! *database* (honey->sql form) execute-opts)
-    (catch Exception e
-      (println (honey->sql form))
-      (update changeset :changeset/errors merge (exception->map e)))))
+(defn execute-one!
+  ([form changeset] (execute-one! form changeset {}))
+  ([form changeset opts]
+   (try
+     (jdbc/execute-one! *database* (honey->sql form opts) execute-opts)
+     (catch Exception e
+       (println (honey->sql form))
+       (update changeset :changeset/errors merge (exception->map e))))))
 
 (defn before-save-keys [model k]
   (-> model
@@ -201,7 +205,7 @@
       (-> (q/update (gungnir/table model))
           (q/sset (model->insert-values model diff))
           (q/where [:= primary-key (get origin primary-key)])
-          (execute-one! changeset)))))
+          (execute-one! changeset {:namespace-as-table? false})))))
 
 (defn delete! [record]
   (when-let [record (maybe-deref record)]
