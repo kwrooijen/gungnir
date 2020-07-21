@@ -1,20 +1,19 @@
 (ns gungnir.query-test
-  (:require [clojure.test :refer :all]
-            [gungnir.test.util :as util]
-            [gungnir.core :as gungnir]))
+  (:require
+   [clojure.spec.test.alpha :as stest]
+   [clojure.test :refer :all]
+   [gungnir.test.util :as util]))
 
-;; (defn once-fixture [tests]
-;;   (binding [util/system (util/init-system)]
-;;     (try (tests)
-;;          (catch Exception _ nil)
-;;          (finally (util/halt-system)))))
+(defn once-fixture [tests]
+  (tests))
 
-;; (defn each-fixture [tests]
-;;   (stest/instrument)
-;;   (util/seed-database)
-;;   (tests))
+(defn each-fixture [tests]
+  (stest/instrument)
+  (util/init!)
+  (util/clear-database!)
+  (tests))
 
-;; (use-fixtures :once once-fixture)
-;; (use-fixtures :each each-fixture)
+(use-fixtures :once once-fixture)
+(use-fixtures :each each-fixture)
 
 (deftest some-test)
