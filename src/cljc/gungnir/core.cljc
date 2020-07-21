@@ -57,10 +57,9 @@
 
 (def optional-keys #{:virtual :primary-key :auto})
 
-(defn- validator->malli-fn [{:validator/keys [key path message fn]}]
+(defn- validator->malli-fn [{:validator/keys [key message fn]}]
   [:fn {:error/message message
-        :error/path path
-        :min 3}
+        :error/path [key]}
    fn])
 
 (defn table [model]
