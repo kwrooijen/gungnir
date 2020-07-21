@@ -37,6 +37,15 @@
    [:comment/created-at {:auto true} inst?]
    [:comment/updated-at {:auto true} inst?]])
 
+(defn- password-match? [m]
+  (= (:user/password m)
+     (:user/password-confirmation m)))
+
+(defmethod gungnir/validator [:user :register/password-match?] [_ _]
+  {:validator/key :user/password-confirmation
+   :validator/fn password-match?
+   :validator/message "Passwords don't match"})
+
 (def existing-user
   {:user/id "e52c518c-6d3e-4e75-87f1-ff08bdc933be"
    :user/email "user@test.com"
@@ -112,8 +121,6 @@
     ;;          :user/created-at)))
     ))
 
-(deftest test-transient-property)
-
 (deftest test-virtual-property
   ;; TODO, fix failing test
   (testing "virtual should not be in result"
@@ -131,4 +138,27 @@
     ;;         nil?))
     ))
 
-(deftest test-validators)
+(deftest test-validators
+  (testing "password confirmation validator"
+    (let [user {:user/email "user@test.com"
+                :user/password "123456"
+                :user/password-confirmation "123456"}]
+      (is (-> user
+              (gungnir/changeset [:register/password-match?])
+              :changeset/errors
+              nil?))
+
+      (is (-> (assoc user :user/password-confirmation "123456+7")
+              (gungnir/changeset [:register/password-match?])
+              :changeset/errors
+              :user/password-confirmation
+              some?))))
+
+  (testing "password confirmation validator with invalid fields"
+    (let [user {:user/email "user@test.com"
+                :user/password "1234"
+                :user/password-confirmation "1234"}]
+      (is (-> user
+              (gungnir/changeset [:register/password-match?])
+              :changeset/errors
+              some?)))))
