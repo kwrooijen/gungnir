@@ -1,19 +1,11 @@
 (ns gungnir.changeset-test
   (:require
-   [clojure.spec.test.alpha :as stest]
    [clojure.test :refer :all]
    [gungnir.core :as gungnir]
-   [gungnir.test.util]))
+   [gungnir.test.util :as util]))
 
-(defn once-fixture [tests]
-  (tests))
-
-(defn each-fixture [tests]
-  (stest/instrument)
-  (tests))
-
-(use-fixtures :once once-fixture)
-(use-fixtures :each each-fixture)
+(use-fixtures :once util/once-fixture)
+(use-fixtures :each util/each-fixture)
 
 (def existing-user
   {:user/id "e52c518c-6d3e-4e75-87f1-ff08bdc933be"
