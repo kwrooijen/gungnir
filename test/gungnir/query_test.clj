@@ -16,6 +16,14 @@
   {:user/email user-1-email
    :user/password user-1-password})
 
+(def user-2-email "user-2@test.com")
+
+(def user-2-password "123456")
+
+(def user-2
+  {:user/email user-2-email
+   :user/password user-2-password})
+
 (def post-1-title "post-1 title")
 (def post-1-content "post-1 content")
 
@@ -97,10 +105,18 @@
       (is (nil? (q/find! :user (:user/id user)))))))
 
 (deftest test-update!
-  (let [user (-> user-1 changeset q/insert!)]
+  (let [user (-> user-1 changeset q/insert!)
+        user-2 (-> user-2 changeset q/insert! (update :user/id str))]
     (testing "updating an existing user"
       (let [new-email "user-updated@test.com"
             new-user (q/update! (changeset user {:user/email new-email}))]
+        (is (nil? (:changeset/errors new-user)))
+        (is (uuid? (:user/id new-user)))
+        (is (some? (q/find! :user (:user/id user))))))
+
+    (testing "updating an existing user with str uuid"
+      (let [new-email "user-updated-2@test.com"
+            new-user (q/update! (changeset user-2 {:user/email new-email}))]
         (is (nil? (:changeset/errors new-user)))
         (is (uuid? (:user/id new-user)))
         (is (some? (q/find! :user (:user/id user))))))
@@ -111,7 +127,16 @@
         (is (nil? (:user/id new-user)))
         (is (= user-1-password (:user/password (q/find! :user (:user/id user)))))))))
 
-(deftest test-delete!)
+(deftest test-delete!
+  (testing "deleting existing user"
+    (let [user (-> user-1 changeset q/insert!)]
+      (q/delete! user)
+      (is (nil? (q/find! :user (:user/id user))))))
+
+  (testing "deleting non existing user"
+    (let [uuid "1e626bf3-8fdf-4a66-b708-7aa35dafede9"]
+      (q/delete! {:user/id uuid})
+      (is (nil? (q/find! :user uuid))))))
 
 (deftest test-relation-has-one)
 
