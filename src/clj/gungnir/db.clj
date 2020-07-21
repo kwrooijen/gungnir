@@ -144,20 +144,20 @@
       (println (honey->sql form))
       (update changeset :changeset/errors merge (exception->map e)))))
 
-(defn on-save-keys [model k]
+(defn before-save-keys [model k]
   (-> model
       (gungnir/get-child k)
       (gungnir/child-properties)
-      (get :on-save [])))
+      (get :before-save [])))
 
-(defn apply-on-save [model k v]
-  (reduce (fn [acc on-save-k]
-            (gungnir/on-save on-save-k acc))
+(defn apply-before-save [model k v]
+  (reduce (fn [acc before-save-k]
+            (gungnir/before-save before-save-k acc))
           v
-          (on-save-keys model k)))
+          (before-save-keys model k)))
 
-(defn values-on-save [model values]
-  (map-kv (fn [[k v]] [k (apply-on-save model k v)])
+(defn values-before-save [model values]
+  (map-kv (fn [[k v]] [k (apply-before-save model k v)])
           values))
 
 (defn parse-insert-value [model k value]
@@ -175,7 +175,7 @@
   (->> model
        (gungnir/apply-keys)
        (select-keys result)
-       (values-on-save model)
+       (values-before-save model)
        (map-kv (fn [[k v]] [k (parse-insert-value model k v)]))))
 
 (defn maybe-deref [record]

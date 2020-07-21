@@ -18,10 +18,10 @@
 (defmethod validator :default [k]
   (throw (ex-info "Unknown validator" {:validator k})))
 
-(defmulti on-save (fn [k v] k))
-(defmethod on-save :default [_ v] v)
+(defmulti before-save (fn [k v] k))
+(defmethod before-save :default [_ v] v)
 
-(defmethod on-save :string/lower-case [_ v]
+(defmethod before-save :string/lower-case [_ v]
   (string/lower-case v))
 
 (defmulti on-read (fn [k v] k))
