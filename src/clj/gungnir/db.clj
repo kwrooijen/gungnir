@@ -3,6 +3,7 @@
   (:require
    ;; NOTE [next.jdbc.date-time] Must be included to prevent date errors
    ;; https://cljdoc.org/d/seancorfield/next.jdbc/1.0.13/api/next.jdbc.date-time
+   [gungnir.record]
    [gungnir.util.malli :as util.malli]
    [next.jdbc.date-time]
    [clojure.pprint]
@@ -293,9 +294,9 @@
 
 (defn delete! [record]
   (when-let [record (maybe-deref record)]
-    (let [table (gungnir/record->table record)
-          primary-key (gungnir/record->primary-key record)
-          primary-key-value (get record primary-key)]
+    (let [table (gungnir.record/table record)
+          primary-key (gungnir.record/primary-key record)
+          primary-key-value (gungnir.record/primary-key-value record)]
       (-> (q/delete-from table)
           (q/where [:= primary-key (try-uuid primary-key-value)])
           (honey->sql)

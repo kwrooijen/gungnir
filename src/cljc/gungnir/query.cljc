@@ -4,6 +4,7 @@
    #?(:clj gungnir.db)
    [malli.core :as m]
    [gungnir.core :as gungnir]
+   [gungnir.record]
    [honeysql.format :as fmt]
    [honeysql.helpers :as q]
    [clojure.string :as string]))
@@ -19,9 +20,7 @@
 
 (defn save! [{:changeset/keys [model result] :as changeset}]
   #?(:clj
-     (if (-> result
-             (get (gungnir/primary-key model))
-             (some?))
+     (if (some? (gungnir.record/primary-key-value result))
        (gungnir.db/update! changeset)
        (gungnir.db/insert! changeset))
      :cljs changeset))

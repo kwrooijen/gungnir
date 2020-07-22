@@ -11,6 +11,15 @@
 
 (def ^:private optional-keys #{:virtual :primary-key :auto})
 
+(defn- model? [?model]
+  (or (vector? ?model)
+      (m/schema? ?model)))
+
+(defn- ?model->model [?model]
+  (if (model? ?model)
+    ?model
+    (gungnir.model/find ?model)))
+
 (defn- add-optional [properties]
   (if (seq (select-keys properties optional-keys))
     (assoc properties :optional true)
@@ -23,6 +32,12 @@
   (if-not (:table (m/properties v))
     [k (mu/update-properties v assoc :table k)]
     [k v]))
+
+(defn- add-primary-key [[k v]]
+  (let [primary-key (->> (m/children v)
+                         (filter (comp :primary-key util.malli/child-properties))
+                         (ffirst))]
+    [k (mu/update-properties v assoc :primary-key primary-key)]))
 
 (s/fdef register!
   :args (s/cat :model-map (s/map-of
@@ -45,6 +60,7 @@
   (->> model-map
        (mapv update-table)
        (mapv update-children-add-optional)
+       (mapv add-primary-key)
        (into {})
        (swap! models merge))
   nil)
@@ -56,3 +72,14 @@
   "Find a model by `key`. Returns `nil` if not found."
   [key]
   (get @models key))
+
+(s/fdef primary-key
+  :args (s/cat :?model (s/or :model-key keyword?
+                             :model :gungnir/model))
+  :ret qualified-keyword?)
+(defn primary-key
+  "Get the primary-key of `?model`. `?model` can either be a keyword or
+  a model."
+  [?model]
+  (let [model (?model->model ?model)]
+    (:primary-key (m/properties model))))

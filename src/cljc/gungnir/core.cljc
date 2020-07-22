@@ -71,7 +71,6 @@
             (validator->malli-fn (gungnir.core/validator table validator)))
           validators)))
 
-
 (defn get-child [model k]
   (reduce
    (fn [_ child]
@@ -196,21 +195,6 @@
                 (reduced (first child))))
             nil
             (m/children model))))
-
-(defn record->table [record]
-  (-> record
-   (ffirst)
-   (namespace)
-   (keyword)))
-
-(defn record->model [record]
-  (-> record
-      (record->table)
-      (gungnir.model/find)))
-
-(defn record->primary-key [record]
-  (-> (record->model record)
-      (primary-key)))
 
 (defn belongs-to-key [k1 k2]
   (-> k2 gungnir.model/find m/properties :belongs-to (get k1)))
