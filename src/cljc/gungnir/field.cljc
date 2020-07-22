@@ -13,7 +13,9 @@
 (s/fdef model
   :args (s/cat :field :gungnir.model/field-or-key)
   :ret (s/nilable :gungnir/model))
-(defn model [?field]
+(defn model
+  "Get the model which belongs to `?field`. Return `nil` if not found."
+  [?field]
   (-> (?field->key ?field)
       (namespace)
       (keyword)
@@ -22,7 +24,9 @@
 (s/fdef properties
   :args (s/cat :field :gungnir.model/field-or-key)
   :ret map?)
-(defn properties [?field]
+(defn properties
+  "Get the properties of `?field`. Return an empty map if not found."
+  [?field]
   (let [field-key (?field->key ?field)]
     (-> (model field-key)
         (gungnir.model/child field-key)
@@ -30,7 +34,10 @@
 
 (s/fdef before-read
   :args (s/cat :field :gungnir.model/field-or-key)
-  :ret (s/nilable (s/coll-of keyword?)))
-(defn before-read [?field]
+  :ret (s/coll-of keyword?))
+(defn before-read
+  "Get the `:before-read` keywords from `?field`. Return an empty vector
+  if not found."
+  [?field]
   (-> (properties ?field)
-      :before-read))
+      (get :before-read [])))
