@@ -38,6 +38,11 @@
   {:post/title post-2-title
    :post/content post-2-content})
 
+(def comment-1-content "comment-1 content")
+
+(def comment-1
+  {:comment/content comment-1-content})
+
 (deftest test-find!
   (let [{:user/keys [id]} (-> user-1 changeset q/insert!)]
     (testing "Find user by primary key"
@@ -143,7 +148,20 @@
       (is (= false (q/delete! {:user/id uuid})))
       (is (nil? (q/find! :user uuid))))))
 
-(deftest test-relation-has-one)
+(deftest test-relation-has-one
+  (let [user (-> user-1 changeset q/insert!)
+        post (-> post-1 (assoc :post/user-id (:user/id user)) changeset q/insert!)
+        comment (-> comment-1
+                    (assoc :comment/user-id (:user/id user)
+                           :comment/post-id (:post/id post))
+                    changeset
+                    q/insert!)]
+
+    (testing "comment has one post"
+      (is (= post
+             (-> comment
+                 :comment/post
+                 deref))))))
 
 (deftest test-relation-has-many)
 
