@@ -1,6 +1,7 @@
 (ns gungnir.query
   (:refer-clojure :exclude [update find])
   (:require
+   [clojure.spec.alpha :as s]
    [clojure.string :as string]
    [gungnir.db]
    [gungnir.decode]
@@ -10,24 +11,16 @@
    [honeysql.format :as fmt]
    [honeysql.helpers :as q]))
 
-(def delete! gungnir.db/delete!)
-
-(def query! gungnir.db/query!)
-
-(defn save! [{:changeset/keys [result] :as changeset}]
-     (if (some? (gungnir.record/primary-key-value result))
-       (gungnir.db/update! changeset)
-       (gungnir.db/insert! changeset)))
-
 (defn- args->map [args]
   (->> args
+       (partition 2)
        flatten
        (apply hash-map)))
 
 (defn- process-arguments [form args]
   (if (map? form)
-    [form (args->map (partition 2 args))]
-    [{} (args->map (partition 2 (conj args form)))]))
+    [form (args->map args)]
+    [{} (args->map (conj args form))]))
 
 (defn- args->where [model args]
   (into [:and] (mapv (fn [[k v]]
@@ -36,6 +29,31 @@
                          [:= k v]))
                      (gungnir.decode/advanced-decode model args))))
 
+(def delete! gungnir.db/delete!)
+
+(def query! gungnir.db/query!)
+
+(def query-1! gungnir.db/query-1!)
+
+(s/fdef save!
+  :args (s/cat :changeset :gungnir/changeset)
+  :ret (s/or :changeset :gungnir/changeset
+             :record map?))
+(defn save! [{:changeset/keys [result] :as changeset}]
+     (if (some? (gungnir.record/primary-key-value result))
+       (gungnir.db/update! changeset)
+       (gungnir.db/insert! changeset)))
+
+(s/fdef all!
+  :args
+  (s/alt :arity-1
+         (s/cat :table keyword?)
+
+         :arity-2
+         (s/cat :form (s/or :form map?
+                            :field keyword?)
+                :args (s/* any?)))
+  :ret (s/coll-of map?))
 (defn all!
   "Find multiple records from `table`, where `args` are a key value pair of
   columns and values. Optionally extend the query using a HoneySQL `form`."
@@ -62,6 +80,11 @@
        true (q/from (first args))
        true (query!)))))
 
+(s/fdef find-by!
+  :args (s/cat :form (s/or :form map?
+                           :field keyword?)
+               :args (s/* any?))
+  :ret (s/nilable map?))
 (defn find-by!
   "Find a single record from `table`, where `args` are a key value pair of
   columns and values. Optionally extend the query using a HoneySQL `form`."
@@ -74,16 +97,27 @@
        true (q/merge-where (args->where model args))
        true (gungnir.db/query-1!)))))
 
+(s/fdef find!
+  :args
+  (s/alt :arity-2
+         (s/cat :model-k keyword?
+                :primary-key-value any?)
+
+         :arity-3
+         (s/cat :form map?
+                :model-k keyword?
+                :primary-key-value any?))
+  :ret (s/nilable map?))
 (defn find!
-  "Find a single record by its `primary-key` from `table`.
+  "Find a single record by its `primary-key-value` from `table`.
   Optionally extend the query using a HoneySQL `form`. "
-  ([model-k primary-key] (find! {} model-k primary-key))
-  ([form model-k primary-key]
+  ([model-k primary-key-value] (find! {} model-k primary-key-value))
+  ([form model-k primary-key-value]
    (cond-> form
      (not (:select form)) (q/select :*)
      true (q/from (gungnir.model/table model-k))
      true (q/merge-where [:= (gungnir.model/primary-key model-k)
-                          (gungnir.db/try-uuid primary-key)])
+                          (gungnir.db/try-uuid primary-key-value)])
      true (gungnir.db/query-1!))))
 
 ;; HoneySQL Overrides
@@ -98,7 +132,7 @@ e.g. `[:= :user/age 20 20]`"}
 
 (declare recurred?)
 
-(defn expand-binary-ops [op & args]
+(defn- expand-binary-ops [op & args]
   (binding [recurred? true]
     (str "("
          (string/join " AND "
@@ -106,10 +140,10 @@ e.g. `[:= :user/age 20 20]`"}
                         (fmt/fn-handler op a b)))
          ")")))
 
-(defn apply-before-read-fns [b before-read-fns]
+(defn- apply-before-read-fns [b before-read-fns]
   (reduce #(gungnir.model/before-read %2 %1) b before-read-fns))
 
-(defn handle-before-read [a b more]
+(defn- handle-before-read [a b more]
   (let [before-read-fns (gungnir.field/before-read a)]
     (if (or recurred? (empty? before-read-fns))
       [b more]
