@@ -30,6 +30,7 @@
      (map? ?options)
      (set-datasource! (hikari-cp/make-datasource ?options))
      (string? ?options)
+     ;; TODO support DATABASE_URL
      (set-datasource! (hikari-cp/make-datasource {:jdbc-url ?options}))))
   ([url options]
    (set-datasource! (hikari-cp/make-datasource (merge options {:jdbc-url url})))))
