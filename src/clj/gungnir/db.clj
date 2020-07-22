@@ -272,10 +272,12 @@
 (defn insert! [{:changeset/keys [model errors result] :as changeset}]
   (if errors
     changeset
-    (-> (q/insert-into (gungnir/table model))
-        (q/values [(model->insert-values model result)])
-        (execute-one! changeset)
-        (->> (process-query-row {:select '(:*)})))))
+    (let [result (-> (q/insert-into (gungnir/table model))
+                     (q/values [(model->insert-values model result)])
+                     (execute-one! changeset))]
+      (if (:changeset/errors result)
+        result
+        (process-query-row {:select '(:*)} result)))))
 
 (defn update! [{:changeset/keys [model errors diff origin] :as changeset}]
   (cond

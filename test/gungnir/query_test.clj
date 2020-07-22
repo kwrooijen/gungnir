@@ -48,6 +48,12 @@
 (def comment-2
   {:comment/content comment-2-content})
 
+(def token-1
+  {:token/type :token/verify})
+
+(def token-2
+  {:token/type :token/reset})
+
 (deftest test-find!
   (let [{:user/keys [id]} (-> user-1 changeset q/insert!)]
     (testing "Find user by primary key"
@@ -155,7 +161,7 @@
 
 (deftest test-relation-has-one
   (let [user (-> user-1 changeset q/insert!)
-        token (-> {:token/user-id (:user/id user)} changeset q/insert!)]
+        token (-> token-1 (assoc :token/user-id (:user/id user)) changeset q/insert!)]
     (testing "user has one token"
       (is (= (:token/id token)
              (-> user
@@ -271,4 +277,3 @@
 
 (deftest test-after-read)
 
-(deftest test-auto-uuid)

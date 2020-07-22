@@ -80,6 +80,7 @@
    "CREATE TABLE IF NOT EXISTS token "
    " ( id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY "
    " , user_id uuid references \"user\"(id)"
+   " , type TEXT"
    " , created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL "
    " , updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL "
    " );"))
