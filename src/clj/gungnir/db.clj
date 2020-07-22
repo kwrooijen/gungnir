@@ -9,7 +9,6 @@
    [next.jdbc.date-time]
    [clojure.pprint]
    [clojure.string :as string]
-   [gungnir.core :as gungnir]
    [gungnir.model]
    [hikari-cp.core :as hikari-cp]
    [honeysql.core :as sql]
@@ -261,9 +260,7 @@
     value))
 
 (defn model->insert-values [model result]
-  (->> model
-       (gungnir/apply-keys)
-       (select-keys result)
+  (->> result
        (values-before-save model)
        (map-kv (fn [[k v]] [k (parse-insert-value model k v)]))))
 

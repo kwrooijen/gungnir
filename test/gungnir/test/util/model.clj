@@ -1,6 +1,5 @@
 (ns gungnir.test.util.model
   (:require
-   [gungnir.core :as gungnir]
    [gungnir.model]))
 
 (def model-user
