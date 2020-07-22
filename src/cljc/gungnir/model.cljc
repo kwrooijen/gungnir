@@ -118,8 +118,7 @@
   (get @models key))
 
 (s/fdef primary-key
-  :args (s/cat :?model (s/or :model-key keyword?
-                             :model :gungnir/model))
+  :args (s/cat :?model :gungnir/model-or-key)
   :ret qualified-keyword?)
 (defn primary-key
   "Get the primary-key of `?model`. `?model` can either be a keyword or
@@ -129,8 +128,7 @@
     (:primary-key (m/properties model))))
 
 (s/fdef table
-  :args (s/cat :?model (s/or :model-key keyword?
-                             :model :gungnir/model))
+  :args (s/cat :?model :gungnir/model-or-key)
   :ret keyword?)
 (defn table
   "Get the table of `?model`. `?model` can either be a keyword or
@@ -140,9 +138,7 @@
     (:table (m/properties model))))
 
 (s/fdef keys
-  :args (s/cat :?model
-               (s/or :model-key keyword?
-                     :model :gungnir/model))
+  :args (s/cat :?model :gungnir/model-or-key)
   :ret (s/coll-of qualified-keyword?))
 (defn keys
   "Get all keys from `model` as qualified-keywords."

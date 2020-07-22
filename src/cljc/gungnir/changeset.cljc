@@ -1,13 +1,15 @@
 (ns gungnir.changeset
   (:refer-clojure :exclude [cast])
   (:require
-   [malli.error :as me]
+   [clojure.spec.alpha :as s]
+   [clojure.string :as string]
    [differ.core :as differ]
-   [malli.core :as m]
-   [gungnir.util.malli :as util.malli]
-   [gungnir.model]
    [gungnir.decode]
-   [clojure.string :as string]))
+   [gungnir.model]
+   [gungnir.spec]
+   [gungnir.util.malli :as util.malli]
+   [malli.core :as m]
+   [malli.error :as me]))
 
 (defn- validator->malli-fn [{:validator/keys [key message fn]}]
   [:fn {:error/message message
@@ -47,7 +49,31 @@
   (-> (into {} (mapv f m))
       (select-keys (gungnir.model/keys model))))
 
+(s/fdef changeset
+  :ret :gungnir/changeset
+  :args (s/alt :arity-1 (s/cat :params map?)
+               :arity-2 (s/cat :?origin map?
+                               :?params (s/or :origin map?
+                                              :validators vector?))
+               :arity-3 (s/cat :origin map?
+                               :params map?
+                               :validators (s/coll-of keyword?))))
 (defn changeset
+  "Create a changeset to be inserted into the database.
+  Changesets can either be used to create or update a row.
+
+
+  `params` will update the record with the fields supplied. `params`
+  must be cast to a proper model record. If no other map is supplied,
+  the changeset will create a new row on `save!`.
+
+  `origin` is a map of the original record to be updated. If an
+  `origin` map is provided, and the `primary-key` is not nil, it will
+  update the row on `save!`
+
+  `validators` can also be supplied to perform extra checks on the
+  entire resulting record.
+  "
   ([params]
    (changeset {} params []))
   ([?origin ?params]
@@ -71,7 +97,14 @@
       :changeset/result (remove-virtual-keys (or (:value validated) validated) model)
       :changeset/errors (me/humanize validated)})))
 
-(defn cast [m ?model]
+(s/fdef cast
+  :ret (s/map-of qualified-keyword? any?)
+  :args (s/cat :m map? :?model :gungnir/model-or-key))
+(defn cast
+  "Cast the map `m` to a record of `?model`. Any unknown keys will be
+  discarded. Strings and keywords will be converted to
+  qualified-keywords."
+  [m ?model]
   (let [?model (if (keyword? ?model) (gungnir.model/find ?model) ?model)
         table (name (gungnir.model/table ?model))
         ->key (fn [k] (keyword table (-> (name k) (string/replace #"_" "-"))))]

@@ -30,3 +30,37 @@
          (s/cat :map #{:map}
                 :props map?
                 :rest (s/+ :gungnir.model/field)))))
+
+(s/def :gungnir/model-or-key
+  (s/or :model-key keyword?
+        :model :gungnir/model))
+
+
+
+;; TODO change to keyword
+(s/def :changeset/model :gungnir/model)
+
+(s/def :changeset/validators (s/coll-of keyword?))
+
+(s/def :changeset/diff map?)
+
+(s/def :changeset/origin map?)
+
+(s/def :changeset/sane-origin map?)
+
+(s/def :changeset/params map?)
+
+(s/def :changeset/result map?)
+
+(s/def :changeset/errors (s/nilable map?))
+
+(s/def :gungnir/changeset
+  (s/keys
+   :req [:changeset/model
+         :changeset/validators
+         :changeset/diff
+         :changeset/origin
+         :changeset/sane-origin
+         :changeset/params
+         :changeset/result
+         :changeset/errors]))
