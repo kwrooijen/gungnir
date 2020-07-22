@@ -81,7 +81,7 @@
    :has-one
    (atom {:select (list :*)
           :from (list t2)
-          :where [:= (gungnir/belongs-to-key t1 t2) primary-key]})))
+          :where [:= (gungnir.model/belongs-to-relation-table t1 t2) primary-key]})))
 
 (defn add-has-one [{:keys [table primary-key]} record [k v]]
   (assoc record v (has-one-atom table k primary-key)))
@@ -91,7 +91,7 @@
    :has-many
    (atom {:select (list :*)
           :from (list t2)
-          :where [:= (gungnir/belongs-to-key t1 t2) primary-key]})))
+          :where [:= (gungnir.model/belongs-to-relation-table t1 t2) primary-key]})))
 
 (defn add-has-many [{:keys [table primary-key]} record [k v]]
   (assoc record v (has-many-atom table k primary-key)))

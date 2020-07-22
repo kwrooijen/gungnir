@@ -158,3 +158,21 @@
        (reduce (fn [_ child] (when (#{k} (first child))
                                (reduced child)))
                nil)))
+
+(s/fdef properties
+  :args (s/cat :?model :gungnir/model-or-key)
+  :ret map?)
+(defn properties
+  "Get the properties of model `?model`."
+  [?model]
+  (m/properties (?model->model ?model)))
+
+(s/fdef belongs-to-relation-table
+  :args (s/cat :model-1-key keyword?
+               :model-2 :gungnir/model-or-key)
+  :ret (s/nilable qualified-keyword?))
+(defn belongs-to-relation-table
+  "Get the foreign-key of `model-2`, where the foreign-key points to
+  `model-1-key`. Return `nil` of not found."
+  [model-1-key model-2]
+  (-> model-2 properties :belongs-to (get model-1-key)))

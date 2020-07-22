@@ -16,6 +16,3 @@
      (when (apply-child? child)
        (first child)))
    (m/children model)))
-
-(defn belongs-to-key [k1 k2]
-  (-> k2 gungnir.model/find m/properties :belongs-to (get k1)))
