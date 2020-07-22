@@ -6,7 +6,6 @@
    [gungnir.db.builder]
    [gungnir.record]
    [gungnir.field]
-   [gungnir.util.malli :as util.malli]
    [next.jdbc.date-time]
    [clojure.pprint]
    [clojure.string :as string]
@@ -192,39 +191,30 @@
        (println (honey->sql form))
        (update changeset :changeset/errors merge (exception->map e))))))
 
-(defn before-save-keys [model k]
-  (-> model
-      (gungnir.model/child k)
-      (util.malli/child-properties)
-      (get :before-save [])))
-
-(defn apply-before-save [model k v]
+(defn- apply-before-save [field v]
   (reduce (fn [acc before-save-k]
             (gungnir.model/before-save before-save-k acc))
           v
-          (before-save-keys model k)))
+          (gungnir.field/before-save field)))
 
-(defn values-before-save [model values]
-  (map-kv (fn [[k v]] [k (apply-before-save model k v)])
-          values))
-
-(defn parse-insert-value [model k value]
+(defn- parse-insert-value [k value]
   (cond
     (keyword? value)
     (str value)
 
     (vector? value)
-    (honeysql.types/array (mapv (partial parse-insert-value model k) value))
+    (honeysql.types/array (mapv (partial parse-insert-value k) value))
 
     :else
     value))
 
-(defn model->insert-values [model result]
-  (->> result
-       (values-before-save model)
-       (map-kv (fn [[k v]] [k (parse-insert-value model k v)]))))
+(defn- record->insert-values [result]
+  (map-kv (fn [[k v]]
+            [k (->> (apply-before-save k v)
+                    (parse-insert-value k))])
+          result))
 
-(defn maybe-deref [record]
+(defn- maybe-deref [record]
   (if (#{RelationAtom} (type record))
     @record
     record))
@@ -239,7 +229,7 @@
   (if errors
     changeset
     (let [result (-> (q/insert-into (gungnir.model/table model))
-                     (q/values [(model->insert-values model result)])
+                     (q/values [(record->insert-values result)])
                      (execute-one! changeset))]
       (if (:changeset/errors result)
         result
@@ -252,7 +242,7 @@
     :else
     (let [primary-key (gungnir.model/primary-key model)]
       (-> (q/update (gungnir.model/table model))
-          (q/sset (model->insert-values model diff))
+          (q/sset (record->insert-values diff))
           (q/where [:= primary-key (get sane-origin primary-key)])
           (execute-one! changeset {:namespace-as-table? false})))))
 
@@ -309,7 +299,6 @@
          (s/cat :url string?
                 :options map?))
   :ret nil?)
-
 (defn make-datasource!
   "The following options are supported for `?options`
   * DATABASE_URL - The universal database url used by services such as Heroku / Render

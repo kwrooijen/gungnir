@@ -41,3 +41,13 @@
   [?field]
   (-> (properties ?field)
       (get :before-read [])))
+
+(s/fdef before-save
+  :args (s/cat :field :gungnir.model/field-or-key)
+  :ret (s/coll-of keyword?))
+(defn before-save
+  "Get the `:before-save` keywords from `?field`. Return an empty vector if not
+  found."
+  [?field]
+  (-> (properties ?field)
+      (get :before-save [])))
