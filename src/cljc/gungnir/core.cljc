@@ -176,6 +176,14 @@
 (defn- remove-auto-keys [m model]
   (apply dissoc m (auto-keys model)))
 
+(defn- virtual-keys [model]
+  (->> (m/children model)
+       (filter (comp :virtual child-properties))
+       (map first)))
+
+(defn- remove-virtual-keys [m model]
+  (apply dissoc m (virtual-keys model)))
+
 (defn changeset
   ([params]
    (changeset {} params []))
@@ -196,7 +204,7 @@
       :changeset/diff diff
       :changeset/origin origin
       :changeset/params params
-      :changeset/result (or (:value validated) validated)
+      :changeset/result (remove-virtual-keys (or (:value validated) validated) model)
       :changeset/errors (me/humanize validated)})))
 
 (defn primary-key [model]

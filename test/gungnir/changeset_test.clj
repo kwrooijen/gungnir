@@ -81,21 +81,19 @@
              :user/created-at)))))
 
 (deftest test-virtual-property
-  ;; TODO, fix failing test
   (testing "virtual should not be in result"
-    ;; (is (-> existing-user
-    ;;            (changeset {:user/password-confirmation "987654"})
-    ;;            :changeset/result
-    ;;            :user/password-confirmation
-    ;;            nil?))
-    ;; (is (-> {:user/email "test@user.com"
-    ;;          :user/password "987654"
-    ;;          :user/password-confirmation "987654"}
-    ;;         (changeset)
-    ;;         :changeset/result
-    ;;         :user/password-confirmation
-    ;;         nil?))
-    ))
+    (is (-> existing-user
+               (changeset {:user/password-confirmation "987654"})
+               :changeset/result
+               :user/password-confirmation
+               nil?))
+    (is (-> {:user/email "test@user.com"
+             :user/password "987654"
+             :user/password-confirmation "987654"}
+            (changeset)
+            :changeset/result
+            :user/password-confirmation
+            nil?))))
 
 (deftest test-validators
   (testing "password confirmation validator"
