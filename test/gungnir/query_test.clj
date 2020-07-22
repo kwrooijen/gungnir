@@ -189,7 +189,13 @@
   (testing "deleting non existing user"
     (let [uuid "1e626bf3-8fdf-4a66-b708-7aa35dafede9"]
       (is (= false (q/delete! {:user/id uuid})))
-      (is (nil? (q/find! :user uuid))))))
+      (is (nil? (q/find! :user uuid)))))
+
+  (testing "deleting reference atom"
+    (let [user (-> user-1 changeset q/save!)
+          token (-> token-1 (assoc :token/user-id (:user/id user)) changeset q/save!)]
+      (is (-> (q/find! :user (:user/id user)) :user/token (q/delete!)))
+      (is (nil? (q/find! :token (:token/id token)))))))
 
 (deftest test-relation-has-one
   (let [user (-> user-1 changeset q/save!)
