@@ -277,3 +277,9 @@
 
 (deftest test-after-read)
 
+(deftest test-after-read
+  (let [user (-> user-1 changeset q/insert!)
+        token (-> token-1 (assoc :token/user-id (:user/id user)) changeset q/insert!)]
+    (testing "reading keywords"
+      (let [{:token/keys [type]} (q/find-by! :token/id (:token/id token))]
+        (is (= (:token/type token) (:token/type token-1) type))))))

@@ -42,7 +42,7 @@
   [:map
    {:belongs-to {:user :token/user-id}}
    [:token/id {:primary-key true} uuid?]
-   [:token/type [:enum :token/reset :token/verify]]
+   [:token/type {:after-read [:edn/read-string]} [:enum :token/reset :token/verify]]
    [:token/user-id uuid?]
    [:token/created-at {:auto true} inst?]
    [:token/updated-at {:auto true} inst?]])
