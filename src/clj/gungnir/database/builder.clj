@@ -1,4 +1,4 @@
-(ns gungnir.db.builder
+(ns gungnir.database.builder
   (:require
    [gungnir.field]
    [clojure.string :as string]

@@ -3,7 +3,7 @@
   (:require
    [clojure.spec.alpha :as s]
    [clojure.string :as string]
-   [gungnir.db]
+   [gungnir.database]
    [gungnir.decode]
    [gungnir.field]
    [gungnir.model]
@@ -29,11 +29,11 @@
                          [:= k v]))
                      (gungnir.decode/advanced-decode model args))))
 
-(def delete! gungnir.db/delete!)
+(def delete! gungnir.database/delete!)
 
-(def query! gungnir.db/query!)
+(def query! gungnir.database/query!)
 
-(def query-1! gungnir.db/query-1!)
+(def query-1! gungnir.database/query-1!)
 
 (s/fdef save!
   :args (s/cat :changeset :gungnir/changeset)
@@ -41,8 +41,8 @@
              :record map?))
 (defn save! [{:changeset/keys [result] :as changeset}]
      (if (some? (gungnir.record/primary-key-value result))
-       (gungnir.db/update! changeset)
-       (gungnir.db/insert! changeset)))
+       (gungnir.database/update! changeset)
+       (gungnir.database/insert! changeset)))
 
 (s/fdef all!
   :args
@@ -95,7 +95,7 @@
        (not (:select form)) (q/select :*)
        true (q/from (gungnir.model/table model))
        true (q/merge-where (args->where model args))
-       true (gungnir.db/query-1!)))))
+       true (gungnir.database/query-1!)))))
 
 (s/fdef find!
   :args
@@ -117,8 +117,8 @@
      (not (:select form)) (q/select :*)
      true (q/from (gungnir.model/table model-k))
      true (q/merge-where [:= (gungnir.model/primary-key model-k)
-                          (gungnir.db/try-uuid primary-key-value)])
-     true (gungnir.db/query-1!))))
+                          (gungnir.database/try-uuid primary-key-value)])
+     true (gungnir.database/query-1!))))
 
 ;; HoneySQL Overrides
 

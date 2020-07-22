@@ -1,6 +1,6 @@
 (ns gungnir.test.util.database
   (:require
-   [gungnir.db :refer [*database* make-datasource!]]
+   [gungnir.database :refer [*database* make-datasource!]]
    [next.jdbc]))
 
 (def ^:private datasource-opts

@@ -1,6 +1,6 @@
 (ns gungnir.test.util.migrations
   (:require
-   [gungnir.db :refer [*database*]]
+   [gungnir.database :refer [*database*]]
    [next.jdbc]))
 
 (def uuid-extension-migration

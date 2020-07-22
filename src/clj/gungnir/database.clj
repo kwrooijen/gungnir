@@ -1,10 +1,10 @@
-(ns gungnir.db
+(ns gungnir.database
   (:require
    ;; NOTE [next.jdbc.date-time] Must be included to prevent date errors
    ;; https://cljdoc.org/d/seancorfield/next.jdbc/1.0.13/api/next.jdbc.date-time
    [clojure.spec.alpha :as s]
-   [gungnir.db.builder]
-   [gungnir.db.util]
+   [gungnir.database.builder]
+   [gungnir.database.util]
    [gungnir.record]
    [gungnir.field]
    [next.jdbc.date-time]
@@ -29,7 +29,7 @@
 (declare query!)
 (declare query-1!)
 
-;; TODO can this be moved to a new namespace? gungnir.db.relation ?
+;; TODO can this be moved to a new namespace? gungnir.database.relation ?
 (defrecord RelationAtom [type state]
   clojure.lang.IAtom
   (reset [this f]
@@ -186,7 +186,7 @@
    (try
      (jdbc/execute-one! *database* (honey->sql form opts)
                         {:return-keys true
-                         :builder-fn gungnir.db.builder/column-builder})
+                         :builder-fn gungnir.database.builder/column-builder})
      (catch Exception e
        (println (honey->sql form))
        (update changeset :changeset/errors merge (exception->map e))))))
@@ -221,7 +221,7 @@
     record))
 
 (def ^:private query-opts
-  {:builder-fn gungnir.db.builder/column-builder})
+  {:builder-fn gungnir.database.builder/column-builder})
 
 (s/fdef try-uuid!
   :args (s/cat :?uuid any?)
@@ -289,7 +289,7 @@
       (-> (q/delete-from table)
           (q/where [:= primary-key (try-uuid primary-key-value)])
           (honey->sql)
-          (as-> sql (jdbc/execute-one! *database* sql {:builder-fn gungnir.db.builder/kebab-map-builder}))
+          (as-> sql (jdbc/execute-one! *database* sql {:builder-fn gungnir.database.builder/kebab-map-builder}))
           :next.jdbc/update-count
           (= 1)))))
 
@@ -325,7 +325,7 @@
   [datasource]
   (when *database*
     (hikari-cp/close-datasource *database*))
-  (alter-var-root #'gungnir.db/*database* (fn [_] datasource))
+  (alter-var-root #'gungnir.database/*database* (fn [_] datasource))
   nil)
 
 (s/fdef make-datasource!
@@ -357,4 +357,4 @@
   ([url options]
    (set-datasource!
     (hikari-cp/make-datasource
-     (merge options {:jdbc-url (gungnir.db.util/->jdbc-database-url url)})))))
+     (merge options {:jdbc-url (gungnir.database.util/->jdbc-database-url url)})))))

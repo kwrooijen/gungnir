@@ -1,4 +1,4 @@
-(ns gungnir.db.util
+(ns gungnir.database.util
   (:require
    [clojure.spec.alpha :as s]
    [clojure.string :as string]))
@@ -7,8 +7,8 @@
 
 (defn- create-uri [url] (java.net.URI. url))
 
-(defn- parse-username-and-password [db-uri]
-  (string/split (.getUserInfo db-uri) #":"))
+(defn- parse-username-and-password [database-uri]
+  (string/split (.getUserInfo database-uri) #":"))
 
 (defn- jdbc-url? [s]
   (some? (re-matches #"^jdbc.*" s)))
@@ -22,14 +22,14 @@
       default-postgres-port
       port)))
 
-(defn- subname [db-uri]
-  (format "//%s:%s%s" (.getHost db-uri) (uri->port db-uri) (.getPath db-uri)))
+(defn- subname [database-uri]
+  (format "//%s:%s%s" (.getHost database-uri) (uri->port database-uri) (.getPath database-uri)))
 
 (defn- postgres->jdbc [database-url]
-  (let [db-uri (create-uri database-url)
-        [username password] (parse-username-and-password db-uri)]
+  (let [database-uri (create-uri database-url)
+        [username password] (parse-username-and-password database-uri)]
     (format "jdbc:postgresql:%s?user=%s&password=%s"
-            (subname db-uri)
+            (subname database-uri)
             username
             password)))
 
