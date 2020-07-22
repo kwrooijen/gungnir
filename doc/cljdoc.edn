@@ -1,0 +1,11 @@
+{:cljdoc.doc/tree
+ [["Home" {:file "README.md"}]
+  ["Guide" {}
+   ["Setup" {:file "doc/guide/setup.md"}]
+   ["Creating a databases" {:file "doc/guide/creating-a-database.md"}]
+   ["Creating a model" {:file "doc/guide/creating-a-model.md"}]]
+  ["Modules" {}
+   ["Database" {:file "doc/modules/database.md"}]
+   ["Changeset" {:file "doc/modules/changeset.md"}]
+   ["Query" {:file "doc/modules/query.md"}]
+   ["Migrations" {:file "doc/modules/migrations.md"}]]]}

@@ -10,7 +10,10 @@
    [metosin/malli "0.0.1-SNAPSHOT"]
    [differ "0.3.3"]
    [hikari-cp "2.13.0"]]
-  :profiles {:dev {:dependencies [[org.clojure/clojure "1.10.1"]
-                                  [orchestra "2020.07.12-1"]]}
+  :codox {:doc-files ["README.md", "doc/modules/changeset.md"]
+          :html {:namespace-list :nested}
+          :metadata {:doc/format :markdown}
+          :themes [:rdash]}
+  :profiles {:dev {:dependencies [[org.clojure/clojure "1.10.1"]]}
              :test {:dependencies [[orchestra "2020.07.12-1"]]}}
   :deploy-repositories [["releases" :clojars]])
