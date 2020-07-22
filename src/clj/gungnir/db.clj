@@ -3,6 +3,7 @@
   (:require
    ;; NOTE [next.jdbc.date-time] Must be included to prevent date errors
    ;; https://cljdoc.org/d/seancorfield/next.jdbc/1.0.13/api/next.jdbc.date-time
+   [gungnir.util.malli :as util.malli]
    [next.jdbc.date-time]
    [clojure.pprint]
    [clojure.string :as string]
@@ -233,7 +234,7 @@
 (defn before-save-keys [model k]
   (-> model
       (gungnir/get-child k)
-      (gungnir/child-properties)
+      (util.malli/child-properties)
       (get :before-save [])))
 
 (defn apply-before-save [model k v]

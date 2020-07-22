@@ -2,6 +2,7 @@
   (:refer-clojure :exclude [keys cast])
   (:require
    #?(:clj [clojure.instant])
+   [gungnir.spec]
    [gungnir.model]
    [clojure.edn :as edn]
    [clojure.string :as string]
@@ -9,7 +10,7 @@
    [malli.core :as m]
    [malli.error :as me]
    [malli.transform :as mt]
-   [malli.util :as mu]))
+   [gungnir.util.malli :as util.malli]))
 
 (defmulti model (fn [k] k))
 (defmethod model :default [k]
@@ -70,8 +71,6 @@
             (validator->malli-fn (gungnir.core/validator table validator)))
           validators)))
 
-(defn child-properties [[k m?]]
-  (if (map? m?) m? {}))
 
 (defn get-child [model k]
   (reduce
@@ -81,21 +80,11 @@
    nil
    (m/children model)))
 
-(defn update-children
-  ([f schema] (update-children f schema {}))
-  ([f schema options]
-   (mu/transform-entries schema (fn [children] (mapv f children)) options)))
-
-(defn update-child-properties [f [k m? & xs :as child]]
-  (if (map? m?)
-    (conj xs (f m?) k)
-    child))
-
 (defn keys [model]
   (mapv first (m/children model)))
 
 (defn apply-child? [child]
-  (empty? (select-keys (child-properties child) [:virtual :auto])))
+  (empty? (select-keys (util.malli/child-properties child) [:virtual :auto])))
 
 (defn apply-keys [model]
   (keep
@@ -159,7 +148,7 @@
 
 (defn- auto-keys [model]
   (->> (m/children model)
-       (filter (comp :auto child-properties))
+       (filter (comp :auto util.malli/child-properties))
        (map first)))
 
 (defn- remove-auto-keys [m model]
@@ -167,7 +156,7 @@
 
 (defn- virtual-keys [model]
   (->> (m/children model)
-       (filter (comp :virtual child-properties))
+       (filter (comp :virtual util.malli/child-properties))
        (map first)))
 
 (defn- remove-virtual-keys [m model]
@@ -203,7 +192,7 @@
                 ?model
                 (gungnir.model/find ?model))]
     (reduce (fn [_ child]
-              (when (-> child child-properties :primary-key)
+              (when (-> child util.malli/child-properties :primary-key)
                 (reduced (first child))))
             nil
             (m/children model))))
@@ -235,7 +224,7 @@
 (defn column->properties [column]
   (-> (column->model column)
       (get-child column)
-      (child-properties)))
+      (util.malli/child-properties)))
 
 (defn column->before-read [column]
   (-> (column->properties column)
