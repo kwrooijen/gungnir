@@ -1,8 +1,9 @@
 (ns gungnir.query-test
   (:require
+   [clojure.string :as string]
    [clojure.test :refer :all]
-   [gungnir.query :as q]
    [gungnir.core :refer [changeset]]
+   [gungnir.query :as q]
    [gungnir.test.util :as util]))
 
 (use-fixtures :once util/once-fixture)
@@ -273,9 +274,15 @@
 
 (deftest test-before-save)
 
-(deftest test-before-read)
-
-(deftest test-after-read)
+(deftest test-before-read
+  (let [_user (-> user-1 changeset q/insert!)]
+    (testing "finding user by case-insensitive email"
+      (let [result-1 (q/find-by! :user/email user-1-email)
+            result-2 (q/find-by! :user/email (string/upper-case user-1-email))
+            result-3 (q/find-by! :user/email (string/lower-case user-1-email))]
+        (is (some? result-1))
+        (is (some? result-2))
+        (is (some? result-3))))))
 
 (deftest test-after-read
   (let [user (-> user-1 changeset q/insert!)
