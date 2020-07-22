@@ -10,7 +10,7 @@
    [metosin/malli "0.0.1-SNAPSHOT"]
    [differ "0.3.3"]
    [hikari-cp "2.13.0"]]
-  :codox {:doc-files ["README.md", "doc/modules/changeset.md"]
+  :codox {:doc-files ["README.md", "doc/modules/model.md"]
           :html {:namespace-list :nested}
           :metadata {:doc/format :markdown}
           :themes [:rdash]}
