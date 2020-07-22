@@ -186,7 +186,9 @@
 
 (def ^:private execute-opts
   {:return-keys true
-   :builder-fn as-kebab-maps})
+   :builder-fn (result-set/builder-adapter
+                as-kebab-maps
+                column-reader)})
 
 (defn- remove-quotes [s]
   (string/replace s #"\"" ""))
