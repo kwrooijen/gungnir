@@ -95,7 +95,9 @@
 
   The following format is accepted. Keys are the name of model, and
   the value should be a Malli `:map`
-  ```clojure {:user [:map ,,,]
+
+  ```clojure
+  {:user [:map ,,,]
    :post [:map ,,,]
    :comment [:map ,,,]}
   ```
