@@ -1,8 +1,9 @@
 (ns gungnir.test.util.model
   (:require
-   [gungnir.core :as gungnir]))
+   [gungnir.core :as gungnir]
+   [gungnir.model]))
 
-(defmethod gungnir/model :user [_]
+(def model-user
   [:map
    {:has-many {:post :user/posts
                :comment :user/comments}
@@ -17,7 +18,7 @@
    [:user/created-at {:auto true} inst?]
    [:user/updated-at {:auto true} inst?]])
 
-(defmethod gungnir/model :post [_]
+(def model-post
   [:map
    {:belongs-to {:user :post/user-id}
     :has-many {:comment :post/comments}}
@@ -28,7 +29,7 @@
    [:post/created-at {:auto true} inst?]
    [:post/updated-at {:auto true} inst?]])
 
-(defmethod gungnir/model :comment [_]
+(def model-comment
   [:map
    {:belongs-to {:user :comment/user-id
                  :post :comment/post-id}}
@@ -39,7 +40,7 @@
    [:comment/created-at {:auto true} inst?]
    [:comment/updated-at {:auto true} inst?]])
 
-(defmethod gungnir/model :token [_]
+(def model-token
   [:map
    {:belongs-to {:user :token/user-id}}
    [:token/id {:primary-key true} uuid?]
@@ -59,3 +60,12 @@
 
 (defmethod gungnir/format-error [:user/username :duplicate-key] [_ _]
   "username taken")
+
+(defn init!
+  "Initializes the models and saves them to Gungnir."
+  []
+  (gungnir.model/register!
+   {:user model-user
+    :post model-post
+    :comment model-comment
+    :token model-token}))

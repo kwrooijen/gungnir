@@ -2,6 +2,7 @@
   (:refer-clojure :exclude [keys cast])
   (:require
    #?(:clj [clojure.instant])
+   [gungnir.model]
    [clojure.edn :as edn]
    [clojure.string :as string]
    [differ.core :as differ]
@@ -55,8 +56,6 @@
       (string/replace #"-" " ")
       (string/capitalize)))
 
-(def optional-keys #{:virtual :primary-key :auto})
-
 (defn- validator->malli-fn [{:validator/keys [key message fn]}]
   [:fn {:error/message message
         :error/path [key]}
@@ -109,18 +108,8 @@
   (-> (into {} (mapv f m))
       (select-keys (gungnir.core/keys model))))
 
-(defn add-optional [properties]
-  (if (seq (select-keys properties optional-keys))
-    (assoc properties :optional true)
-    properties))
-
-(defn model-k->model [model-k]
-  (-> (model model-k)
-      (->> (update-children (partial update-child-properties add-optional)))
-      (mu/update-properties assoc :table model-k)))
-
 (defn cast [m ?model]
-  (let [?model (if (keyword? ?model) (model-k->model ?model) ?model)
+  (let [?model (if (keyword? ?model) (gungnir.model/find ?model) ?model)
         table (name (table ?model))
         ->key (fn [k] (keyword table (-> (name k) (string/replace #"_" "-"))))]
     (map-select-keys ?model (fn [[k v]] [(->key k) v]) m)))
@@ -193,7 +182,7 @@
      (vector? ?params) (changeset {} ?origin ?params)))
   ([origin params validators]
    (let [model-k (-> params clojure.core/keys first namespace keyword)
-         model (model-k->model model-k)
+         model (gungnir.model/find model-k)
          sane-origin (advanced-decode-with-defaults model (select-keys origin (gungnir.core/keys model)))
          diff (-> (differ/diff sane-origin (advanced-decode model params))
                   (first)
@@ -208,11 +197,11 @@
       :changeset/result (remove-virtual-keys (or (:value validated) validated) model)
       :changeset/errors (me/humanize validated)})))
 
-(defn primary-key [model]
-  (let [model (if (or (vector? model)
-                      (m/schema? model))
-                model
-                (model-k->model model))]
+(defn primary-key [?model]
+  (let [model (if (or (vector? ?model)
+                      (m/schema? ?model))
+                ?model
+                (gungnir.model/find ?model))]
     (reduce (fn [_ child]
               (when (-> child child-properties :primary-key)
                 (reduced (first child))))
@@ -228,20 +217,20 @@
 (defn record->model [record]
   (-> record
       (record->table)
-      (model-k->model)))
+      (gungnir.model/find)))
 
 (defn record->primary-key [record]
   (-> (record->model record)
       (primary-key)))
 
 (defn belongs-to-key [k1 k2]
-  (-> k2 model-k->model m/properties :belongs-to (get k1)))
+  (-> k2 gungnir.model/find m/properties :belongs-to (get k1)))
 
 (defn column->model [column]
   (-> column
-      namespace
-      keyword
-      model-k->model))
+      (namespace)
+      (keyword)
+      (gungnir.model/find)))
 
 (defn column->properties [column]
   (-> (column->model column)

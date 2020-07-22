@@ -1,19 +1,20 @@
 (ns gungnir.db
   (:refer-clojure)
   (:require
+   ;; NOTE [next.jdbc.date-time] Must be included to prevent date errors
+   ;; https://cljdoc.org/d/seancorfield/next.jdbc/1.0.13/api/next.jdbc.date-time
+   [next.jdbc.date-time]
+   [clojure.pprint]
    [clojure.string :as string]
    [gungnir.core :as gungnir]
+   [gungnir.model]
+   [hikari-cp.core :as hikari-cp]
    [honeysql.core :as sql]
    [honeysql.helpers :as q]
    [honeysql.types]
    [malli.core :as m]
    [next.jdbc :as jdbc]
-   ;; NOTE [next.jdbc.date-time] Must be included to prevent date errors
-   ;; https://cljdoc.org/d/seancorfield/next.jdbc/1.0.13/api/next.jdbc.date-time
-   [next.jdbc.date-time]
-   [next.jdbc.result-set :as result-set]
-   [hikari-cp.core :as hikari-cp]
-   [clojure.pprint])
+   [next.jdbc.result-set :as result-set])
   (:import (java.sql SQLException ResultSet)
            (org.postgresql.jdbc PgArray)))
 
@@ -117,7 +118,7 @@
     (get properties type {})))
 
 (defn record->relation-data [form table]
-  (let [model (gungnir/model-k->model table)
+  (let [model (gungnir.model/find table)
         primary-key (gungnir/primary-key model)
         properties (m/properties model)
         select (set (:select form))
