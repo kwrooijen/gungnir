@@ -11,6 +11,7 @@
    [differ "0.3.3"]
    [hikari-cp "2.13.0"]]
   :codox {:doc-files ["README.md", "doc/modules/model.md"]
+          :output-path "docs/"
           :html {:namespace-list :nested}
           :metadata {:doc/format :markdown}
           :themes [:rdash]}
