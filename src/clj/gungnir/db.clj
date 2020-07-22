@@ -3,6 +3,7 @@
   (:require
    ;; NOTE [next.jdbc.date-time] Must be included to prevent date errors
    ;; https://cljdoc.org/d/seancorfield/next.jdbc/1.0.13/api/next.jdbc.date-time
+   [clojure.spec.alpha :as s]
    [gungnir.record]
    [gungnir.field]
    [gungnir.util.malli :as util.malli]
@@ -20,14 +21,42 @@
   (:import (java.sql SQLException ResultSet)
            (org.postgresql.jdbc PgArray)))
 
+(s/def :sql/datasource
+  (partial instance? javax.sql.DataSource))
+
 (defonce ^:dynamic *database* nil)
 
-(defn set-datasource! [datasource]
+(s/fdef set-datasource!
+  :args (s/cat :datasource :sql/datasource)
+  :ret nil?)
+(defn set-datasource!
+  "Set the `datasource` to be used by Gungnir."
+  [datasource]
   (when *database*
     (hikari-cp/close-datasource *database*))
-  (alter-var-root #'gungnir.db/*database* (fn [_] datasource)))
+  (alter-var-root #'gungnir.db/*database* (fn [_] datasource))
+  nil)
 
+(s/fdef make-datasource!
+  :args
+  (s/alt :arity-1
+         (s/cat :?options (s/or :url string?
+                                :options map?))
+         :arity-2
+         (s/cat :url string?
+                :options map?))
+  :ret nil?)
 (defn make-datasource!
+  "The following options are supported for `?options`
+  * DATABASE_URL - The universal database url used by services such as Heroku / Render
+  * JDBC_DATABASE_URL - The standard Java Database Connectivity URL
+  * HikariCP configuration map - https://github.com/tomekw/hikari-cp#configuration-options
+
+  When both `url` and `options` are supplied:
+
+  `url` - DATABSE_URL or JDBC_DATABASE_URL
+  `options` - HikariCP options
+  "
   ([?options]
    (cond
      (map? ?options)
@@ -38,8 +67,8 @@
   ([url options]
    (set-datasource! (hikari-cp/make-datasource (merge options {:jdbc-url url})))))
 
-(declare query-1!)
 (declare query!)
+(declare query-1!)
 
 (defrecord RelationAtom [type state]
   clojure.lang.IAtom
