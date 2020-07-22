@@ -99,8 +99,8 @@
   (RelationAtom.
    :belongs-to
    (atom {:select (list :*)
-          :from (list t2)
-          :where [:= (gungnir/primary-key t2) foreign-key]})))
+          :from (list (gungnir.model/table t2))
+          :where [:= (gungnir.model/primary-key t2) foreign-key]})))
 
 (defn add-belongs-to [{:keys [table]} record [k v]]
   (assoc record (keyword (name table) (name k)) (belongs-to-atom k (get record v))))
@@ -121,7 +121,7 @@
 
 (defn record->relation-data [form table]
   (let [model (gungnir.model/find table)
-        primary-key (gungnir/primary-key model)
+        primary-key (gungnir.model/primary-key model)
         properties (m/properties model)
         select (set (:select form))
         table (:table properties)]
@@ -132,7 +132,7 @@
      :primary-key primary-key}))
 
 (defn process-query-row [form row]
-  (let [table (gungnir/record->table row)
+  (let [table (gungnir.record/table row)
         {:keys [has-one has-many belongs-to] :as relation-data}
         (record->relation-data form table)]
     (if (or (seq has-one)
@@ -286,8 +286,8 @@
     errors changeset
     (empty? diff) origin
     :else
-    (let [primary-key (gungnir/primary-key model)]
-      (-> (q/update (gungnir/table model))
+    (let [primary-key (gungnir.model/primary-key model)]
+      (-> (q/update (gungnir.model/table model))
           (q/sset (model->insert-values model diff))
           (q/where [:= primary-key (get sane-origin primary-key)])
           (execute-one! changeset {:namespace-as-table? false})))))

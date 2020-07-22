@@ -185,17 +185,6 @@
       :changeset/result (remove-virtual-keys (or (:value validated) validated) model)
       :changeset/errors (me/humanize validated)})))
 
-(defn primary-key [?model]
-  (let [model (if (or (vector? ?model)
-                      (m/schema? ?model))
-                ?model
-                (gungnir.model/find ?model))]
-    (reduce (fn [_ child]
-              (when (-> child util.malli/child-properties :primary-key)
-                (reduced (first child))))
-            nil
-            (m/children model))))
-
 (defn belongs-to-key [k1 k2]
   (-> k2 gungnir.model/find m/properties :belongs-to (get k1)))
 

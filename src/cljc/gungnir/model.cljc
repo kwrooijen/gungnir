@@ -18,7 +18,7 @@
 (defn- ?model->model [?model]
   (if (model? ?model)
     ?model
-    (gungnir.model/find ?model)))
+    (get @models ?model)))
 
 (defn- add-optional [properties]
   (if (seq (select-keys properties optional-keys))
@@ -83,3 +83,14 @@
   [?model]
   (let [model (?model->model ?model)]
     (:primary-key (m/properties model))))
+
+(s/fdef table
+  :args (s/cat :?model (s/or :model-key keyword?
+                             :model :gungnir/model))
+  :ret keyword?)
+(defn table
+  "Get the table of `?model`. `?model` can either be a keyword or
+  a model."
+  [?model]
+  (let [model (?model->model ?model)]
+    (:table (m/properties model))))

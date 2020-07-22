@@ -4,6 +4,7 @@
    #?(:clj gungnir.db)
    [malli.core :as m]
    [gungnir.core :as gungnir]
+   [gungnir.model]
    [gungnir.record]
    [honeysql.format :as fmt]
    [honeysql.helpers :as q]
@@ -25,6 +26,11 @@
        (gungnir.db/insert! changeset))
      :cljs changeset))
 
+(defn- args->map [args]
+  (->> args
+       flatten
+       (apply hash-map)))
+
 (defn- process-arguments [form args]
   (if (map? form)
     [form (partition 2 args)]
@@ -35,10 +41,7 @@
                        (if (keyword? v)
                          [:= k (str v)]
                          [:= k v]))
-                     (->> args
-                          flatten
-                          (apply hash-map)
-                          (gungnir/advanced-decode model)))))
+                     (gungnir/advanced-decode model args))))
 
 (defn all!
   "Find multiple records from `table`, where `args` are a key value pair of
@@ -53,11 +56,12 @@
            (and (keyword? form)
                 (= 1 (count args))))
      (let [[form args] (process-arguments form args)
-         model (gungnir/record->model args)]
+           m (args->map args)
+           model (gungnir.record/model m)]
        (cond-> form
          (not (:select form)) (q/select :*)
-         true (q/from (gungnir/record->table args))
-         true (q/merge-where (args->where model args))
+         true (q/from (gungnir.record/table m))
+         true (q/merge-where (args->where model m))
          true (query!)))
 
      ;; If only table is given, and no conditionals
@@ -71,23 +75,25 @@
   columns and values. Optionally extend the query using a HoneySQL `form`."
   ([form & args]
    (let [[form args] (process-arguments form args)
-         model (gungnir/record->model args)]
+         m (args->map args)
+         model (gungnir.record/model m)]
      (cond-> form
        (not (:select form)) (q/select :*)
-       true (q/from (:table (m/properties model)))
-       true (q/merge-where (args->where model args))
+       true (q/from (gungnir.model/table model))
+       true (q/merge-where (args->where model m))
        true (query-1!)))))
 
 (defn find!
   "Find a single record by its `primary-key` from `table`.
   Optionally extend the query using a HoneySQL `form`. "
-  ([table primary-key] (find! {} table primary-key))
-  ([form table primary-key]
+  ([model-k primary-key] (find! {} model-k primary-key))
+  ([form model-k primary-key]
    (cond-> form
      (not (:select form)) (q/select :*)
-     true (q/from table)
-     true (q/merge-where [:= (gungnir/primary-key table) #?(:clj (gungnir.db/try-uuid primary-key)
-                                                            :cljs primary-key)])
+     true (q/from (gungnir.model/table model-k))
+     true (q/merge-where [:= (gungnir.model/primary-key model-k)
+                          #?(:clj (gungnir.db/try-uuid primary-key)
+                             :cljs primary-key)])
      true (query-1!))))
 
 ;; HoneySQL Overrides
