@@ -12,7 +12,8 @@
    ;; https://cljdoc.org/d/seancorfield/next.jdbc/1.0.13/api/next.jdbc.date-time
    [next.jdbc.date-time]
    [next.jdbc.result-set :as result-set]
-   [hikari-cp.core :as hikari-cp])
+   [hikari-cp.core :as hikari-cp]
+   [clojure.pprint])
   (:import (java.sql SQLException ResultSet)
            (org.postgresql.jdbc PgArray)))
 
@@ -64,8 +65,81 @@
       (#{:has-many} type) (-> this .-state deref query!)
       (#{:belongs-to} type) (-> this .-state deref query-1!))))
 
+(defmethod clojure.pprint/simple-dispatch RelationAtom [o]
+  ((get-method clojure.pprint/simple-dispatch clojure.lang.IPersistentMap) o))
+
 (defmethod print-method RelationAtom [_ ^java.io.Writer w]
   (.write w "<relation-atom>"))
+
+(defn has-one-atom [t1 t2 primary-key]
+  (RelationAtom.
+   :has-one
+   (atom {:select (list :*)
+          :from (list t2)
+          :where [:= (gungnir/belongs-to-key t1 t2) primary-key]})))
+
+(defn add-has-one [{:keys [table primary-key]} record [k v]]
+  (assoc record v (has-one-atom table k primary-key)))
+
+(defn has-many-atom [t1 t2 primary-key]
+  (RelationAtom.
+   :has-many
+   (atom {:select (list :*)
+          :from (list t2)
+          :where [:= (gungnir/belongs-to-key t1 t2) primary-key]})))
+
+(defn add-has-many [{:keys [table primary-key]} record [k v]]
+  (assoc record v (has-many-atom table k primary-key)))
+
+(defn belongs-to-atom [t2 foreign-key]
+  (RelationAtom.
+   :belongs-to
+   (atom {:select (list :*)
+          :from (list t2)
+          :where [:= (gungnir/primary-key t2) foreign-key]})))
+
+(defn add-belongs-to [{:keys [table]} record [k v]]
+  (assoc record (keyword (name table) (name k)) (belongs-to-atom k (get record v))))
+
+(defn apply-relations
+  [record {:keys [has-one has-many belongs-to primary-key] :as relation-data}]
+  (let [relation-data (assoc relation-data :primary-key (get record primary-key))]
+    (as-> record $
+      (reduce (partial add-has-one relation-data) $ has-one)
+      (reduce (partial add-has-many relation-data) $ has-many)
+      (reduce (partial add-belongs-to relation-data) $ belongs-to))))
+
+(defn get-relation [^clojure.lang.PersistentHashSet select
+                    ^clojure.lang.PersistentArrayMap properties
+                    ^clojure.lang.Keyword type]
+  (let [relations (get properties type {})]
+    (if (= #{:*} select)
+      relations
+      (->> relations
+           (filter (comp select second))
+           (into {})))))
+
+(defn record->relation-data [form table]
+  (let [model (gungnir/model-k->model table)
+        primary-key (gungnir/primary-key model)
+        properties (m/properties model)
+        select (set (:select form))
+        table (:table properties)]
+    {:has-one (get-relation select properties :has-one)
+     :has-many (get-relation select properties :has-many)
+     :belongs-to (get-relation select properties :belongs-to)
+     :table table
+     :primary-key primary-key}))
+
+(defn process-query-row [form row]
+  (let [table (gungnir/record->table row)
+        {:keys [has-one has-many belongs-to] :as relation-data}
+        (record->relation-data form table)]
+    (if (or (seq has-one)
+            (seq has-many)
+            (seq belongs-to))
+      (apply-relations row relation-data)
+      row)))
 
 (extend-protocol result-set/ReadableColumn
   PgArray
@@ -200,7 +274,8 @@
     changeset
     (-> (q/insert-into (gungnir/table model))
         (q/values [(model->insert-values model result)])
-        (execute-one! changeset))))
+        (execute-one! changeset)
+        (->> (process-query-row {:select '(:*)})))))
 
 (defn update! [{:changeset/keys [model errors diff origin] :as changeset}]
   (cond
@@ -230,75 +305,6 @@
                 as-kebab-maps
                 column-reader)})
 
-(defn has-one-atom [t1 t2 primary-key]
-  (RelationAtom.
-   :has-one
-   (atom {:select (list :*)
-          :from (list t2)
-          :where [:= (gungnir/belongs-to-key t1 t2) primary-key]})))
-
-(defn add-has-one [{:keys [table primary-key]} record [k v]]
-  (assoc record v (has-one-atom table k primary-key)))
-
-(defn has-many-atom [t1 t2 primary-key]
-  (RelationAtom.
-   :has-many
-   (atom {:select (list :*)
-          :from (list t2)
-          :where [:= (gungnir/belongs-to-key t1 t2) primary-key]})))
-
-(defn add-has-many [{:keys [table primary-key]} record [k v]]
-  (assoc record v (has-many-atom table k primary-key)))
-
-(defn belongs-to-atom [t2 foreign-key]
-  (RelationAtom.
-   :belongs-to
-   (atom {:select (list :*)
-          :from (list t2)
-          :where [:= (gungnir/primary-key t2) foreign-key]})))
-
-(defn add-belongs-to [{:keys [table]} record [k v]]
-  (assoc record (keyword (name table) (name k)) (belongs-to-atom k (get record v))))
-
-(defn apply-relations
-  [record {:keys [has-one has-many belongs-to primary-key] :as relation-data}]
-  (let [relation-data (assoc relation-data :primary-key (get record primary-key))]
-    (as-> record $
-      (reduce (partial add-has-one relation-data) $ has-one)
-      (reduce (partial add-has-many relation-data) $ has-many)
-      (reduce (partial add-belongs-to relation-data) $ belongs-to))))
-
-(defn get-relation [^clojure.lang.PersistentHashSet select
-                    ^clojure.lang.PersistentArrayMap properties
-                    ^clojure.lang.Keyword type]
-  (let [relations (get properties type {})]
-    (if (= #{:*} select)
-      relations
-      (->> relations
-           (filter (comp select second))
-           (into {})))))
-
-(defn record->relation-data [form table]
-  (let [model (gungnir/model-k->model table)
-        primary-key (gungnir/primary-key model)
-        properties (m/properties model)
-        select (set (:select form))
-        table (:table properties)]
-    {:has-one (get-relation select properties :has-one)
-     :has-many (get-relation select properties :has-many)
-     :belongs-to (get-relation select properties :belongs-to)
-     :table table
-     :primary-key primary-key}))
-
-(defn process-query-row [form row]
-  (let [table (gungnir/record->table row)
-        {:keys [has-one has-many belongs-to] :as relation-data}
-        (record->relation-data form table)]
-    (if (or (seq has-one)
-            (seq has-many)
-            (seq belongs-to))
-      (apply-relations row relation-data)
-      row)))
 
 (defn query! [form]
   (reduce (fn [acc row]

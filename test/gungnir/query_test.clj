@@ -158,10 +158,11 @@
                     q/insert!)]
 
     (testing "comment has one post"
-      (is (= post
+      (is (= (:post/id post)
              (-> comment
                  :comment/post
-                 deref))))))
+                 (deref)
+                 :post/id))))))
 
 (deftest test-relation-has-many)
 
