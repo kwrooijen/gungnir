@@ -33,8 +33,8 @@
 
 (defn- process-arguments [form args]
   (if (map? form)
-    [form (partition 2 args)]
-    [{} (partition 2 (conj args form))]))
+    [form (args->map (partition 2 args))]
+    [{} (args->map (partition 2 (conj args form)))]))
 
 (defn- args->where [model args]
   (into [:and] (mapv (fn [[k v]]
@@ -56,12 +56,11 @@
            (and (keyword? form)
                 (= 1 (count args))))
      (let [[form args] (process-arguments form args)
-           m (args->map args)
-           model (gungnir.record/model m)]
+           model (gungnir.record/model args)]
        (cond-> form
          (not (:select form)) (q/select :*)
-         true (q/from (gungnir.record/table m))
-         true (q/merge-where (args->where model m))
+         true (q/from (gungnir.record/table args))
+         true (q/merge-where (args->where model args))
          true (query!)))
 
      ;; If only table is given, and no conditionals
@@ -75,12 +74,11 @@
   columns and values. Optionally extend the query using a HoneySQL `form`."
   ([form & args]
    (let [[form args] (process-arguments form args)
-         m (args->map args)
-         model (gungnir.record/model m)]
+         model (gungnir.record/model args)]
      (cond-> form
        (not (:select form)) (q/select :*)
        true (q/from (gungnir.model/table model))
-       true (q/merge-where (args->where model m))
+       true (q/merge-where (args->where model args))
        true (query-1!)))))
 
 (defn find!
