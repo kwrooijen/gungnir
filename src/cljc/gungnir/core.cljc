@@ -168,6 +168,14 @@
              uuid-transformer
              date-transformer)))
 
+(defn- auto-keys [model]
+  (->> (m/children model)
+       (filter (comp :auto child-properties))
+       (map first)))
+
+(defn- remove-auto-keys [m model]
+  (apply dissoc m (auto-keys model)))
+
 (defn changeset
   ([params]
    (changeset {} params []))
@@ -179,7 +187,9 @@
    (let [model-k (-> params clojure.core/keys first namespace keyword)
          model (model-k->model model-k)
          origin (advanced-decode-with-defaults model (select-keys origin (gungnir.core/keys model)))
-         diff (first (differ/diff origin (advanced-decode model params)))
+         diff (-> (differ/diff origin (advanced-decode model params))
+                  (first)
+                  (remove-auto-keys model))
          validated (validate (merge origin diff) model validators)]
      {:changeset/model model
       :changeset/validators validators

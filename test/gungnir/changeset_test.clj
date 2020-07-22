@@ -73,14 +73,12 @@
              :user/password)))))
 
 (deftest test-auto-property
-  ;; TODO, fix failing test
   (testing "auto should not be in result"
-    ;; (is (= (java.util.Date. 1495636054438)
-    ;;      (-> existing-user
-    ;;          (changeset {:user/created-at (java.util.Date. 123)})
-    ;;          :changeset/result
-    ;;          :user/created-at)))
-    ))
+    (is (= (java.util.Date. 1495636054438)
+         (-> existing-user
+             (changeset {:user/created-at (java.util.Date. 123)})
+             :changeset/result
+             :user/created-at)))))
 
 (deftest test-virtual-property
   ;; TODO, fix failing test
