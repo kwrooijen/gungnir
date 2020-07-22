@@ -56,7 +56,7 @@
   {:token/type :token/reset})
 
 (deftest test-find!
-  (let [{:user/keys [id]} (-> user-1 changeset q/insert!)]
+  (let [{:user/keys [id]} (-> user-1 changeset q/save!)]
     (testing "Find user by primary key"
       (is (= user-1-email (-> (q/find! :user id) :user/email))))
 
@@ -68,8 +68,8 @@
     (is (nil? (-> (q/find! :user "1e626bf3-8fdf-4a66-b708-7aa35dafede9"))))))
 
 (deftest test-find-by!
-  (let [{:user/keys [id] :as user} (-> user-1 changeset q/insert!)
-        _post (-> post-1 (assoc :post/user-id id) changeset q/insert!)]
+  (let [{:user/keys [id] :as user} (-> user-1 changeset q/save!)
+        _post (-> post-1 (assoc :post/user-id id) changeset q/save!)]
     (testing "Find user by email"
       (is (= user-1-email (-> (q/find-by! :user/email user-1-email) :user/email))))
 
@@ -87,9 +87,9 @@
                  :post/title))))))
 
 (deftest test-all!
-  (let [{:user/keys [id] :as user} (-> user-1 changeset q/insert!)
-        _post-1 (-> post-1 (assoc :post/user-id id) changeset q/insert!)
-        _post-2 (-> post-2 (assoc :post/user-id id) changeset q/insert!)]
+  (let [{:user/keys [id] :as _user} (-> user-1 changeset q/save!)
+        _post-1 (-> post-1 (assoc :post/user-id id) changeset q/save!)
+        _post-2 (-> post-2 (assoc :post/user-id id) changeset q/save!)]
     (testing "Find posts by user id"
       (is (= #{post-1-title post-2-title}
              (-> (q/all! :post/user-id id) (->> (mapv :post/title)) set))))
@@ -108,50 +108,50 @@
                  first
                  :post/title))))))
 
-(deftest test-insert!
+(deftest test-insert-save!
   (testing "inserting a new user"
-    (let [user (-> user-1 changeset q/insert!)]
+    (let [user (-> user-1 changeset q/save!)]
       (is (nil? (:changeset/errors user)))
       (is (uuid? (:user/id user)))
       (is (some? (q/find! :user (:user/id user))))))
 
   (testing "inserting an invalid user"
-    (let [user (-> user-1 (assoc :user/password "123") changeset q/insert!)]
+    (let [user (-> user-1 (assoc :user/password "123") changeset q/save!)]
       (is (some? (:changeset/errors user)))
       (is (nil? (:user/id user)))
       (is (nil? (q/find! :user (:user/id user)))))))
 
-(deftest test-update!
-  (let [user (-> user-1 changeset q/insert!)
-        user-2 (-> user-2 changeset q/insert! (update :user/id str))]
+(deftest test-update-save!
+  (let [user (-> user-1 changeset q/save!)
+        user-2 (-> user-2 changeset q/save! (update :user/id str))]
     (testing "updating an existing user"
       (let [new-email "user-updated@test.com"
-            new-user (q/update! (changeset user {:user/email new-email}))]
+            new-user (q/save! (changeset user {:user/email new-email}))]
         (is (nil? (:changeset/errors new-user)))
         (is (uuid? (:user/id new-user)))
         (is (some? (q/find! :user (:user/id user))))))
 
     (testing "updating an existing user with str uuid"
       (let [new-email "user-updated-2@test.com"
-            new-user (q/update! (changeset user-2 {:user/email new-email}))]
+            new-user (q/save! (changeset user-2 {:user/email new-email}))]
         (is (nil? (:changeset/errors new-user)))
         (is (uuid? (:user/id new-user)))
         (is (some? (q/find! :user (:user/id user))))))
 
     (testing "updating an invalid user"
-      (let [new-user (q/update! (changeset user {:user/password "123"}))]
+      (let [new-user (q/save! (changeset user {:user/password "123"}))]
         (is (some? (:changeset/errors new-user)))
         (is (nil? (:user/id new-user)))
         (is (= user-1-password (:user/password (q/find! :user (:user/id user)))))))))
 
 (deftest test-delete!
   (testing "deleting existing user"
-    (let [user (-> user-1 changeset q/insert!)]
+    (let [user (-> user-1 changeset q/save!)]
       (is (= true (q/delete! user)))
       (is (nil? (q/find! :user (:user/id user))))))
 
   (testing "deleting existing user with str uuid"
-    (let [user (-> user-1 changeset q/insert! (update :user/id str))]
+    (let [user (-> user-1 changeset q/save! (update :user/id str))]
       (is (= true (q/delete! user)))
       (is (nil? (q/find! :user (:user/id user))))))
 
@@ -161,8 +161,8 @@
       (is (nil? (q/find! :user uuid))))))
 
 (deftest test-relation-has-one
-  (let [user (-> user-1 changeset q/insert!)
-        token (-> token-1 (assoc :token/user-id (:user/id user)) changeset q/insert!)]
+  (let [user (-> user-1 changeset q/save!)
+        token (-> token-1 (assoc :token/user-id (:user/id user)) changeset q/save!)]
     (testing "user has one token"
       (is (= (:token/id token)
              (-> user
@@ -196,17 +196,17 @@
                  :user/id))))))
 
 (deftest test-relation-has-many
-  (let [user (-> user-1 changeset q/insert!)
-        post-1 (-> post-1 (assoc :post/user-id (:user/id user)) changeset q/insert!)
-        post-2 (-> post-2 (assoc :post/user-id (:user/id user)) changeset q/insert!)
+  (let [user (-> user-1 changeset q/save!)
+        post-1 (-> post-1 (assoc :post/user-id (:user/id user)) changeset q/save!)
+        post-2 (-> post-2 (assoc :post/user-id (:user/id user)) changeset q/save!)
         comment-1 (-> comment-1 (assoc :comment/user-id (:user/id user)
                                        :comment/post-id (:post/id post-1))
                       changeset
-                      q/insert!)
+                      q/save!)
         comment-2 (-> comment-2 (assoc :comment/user-id (:user/id user)
                                        :comment/post-id (:post/id post-2))
                       changeset
-                      q/insert!)]
+                      q/save!)]
 
     (testing "user has many posts"
       (is (= #{(:post/id post-1) (:post/id post-2)}
@@ -233,13 +233,13 @@
                  (set)))))))
 
 (deftest test-relation-belongs-to
-  (let [user (-> user-1 changeset q/insert!)
-        post (-> post-1 (assoc :post/user-id (:user/id user)) changeset q/insert!)
+  (let [user (-> user-1 changeset q/save!)
+        post (-> post-1 (assoc :post/user-id (:user/id user)) changeset q/save!)
         comment (-> comment-1
                     (assoc :comment/user-id (:user/id user)
                            :comment/post-id (:post/id post))
                     changeset
-                    q/insert!)]
+                    q/save!)]
 
     (testing "comment belongs to post"
       (is (= (:post/id post)
@@ -273,13 +273,13 @@
                  :comment/id))))))
 
 (deftest test-before-save
-  (let [_user (-> user-1 (update :user/email string/upper-case) changeset q/insert!)]
+  (let [_user (-> user-1 (update :user/email string/upper-case) changeset q/save!)]
     (testing "saving email as lowercase"
       (let [result (q/find-by! :user/email user-1-email)]
         (is (= (string/lower-case (:user/email user-1)) (:user/email result)))))))
 
 (deftest test-before-read
-  (let [_user (-> user-1 changeset q/insert!)]
+  (let [_user (-> user-1 changeset q/save!)]
     (testing "finding user by case-insensitive email"
       (let [result-1 (q/find-by! :user/email user-1-email)
             result-2 (q/find-by! :user/email (string/upper-case user-1-email))
@@ -289,8 +289,8 @@
         (is (some? result-3))))))
 
 (deftest test-after-read
-  (let [user (-> user-1 changeset q/insert!)
-        token (-> token-1 (assoc :token/user-id (:user/id user)) changeset q/insert!)]
+  (let [user (-> user-1 changeset q/save!)
+        token (-> token-1 (assoc :token/user-id (:user/id user)) changeset q/save!)]
     (testing "reading keywords"
       (let [{:token/keys [type]} (q/find-by! :token/id (:token/id token))]
         (is (= (:token/type token) (:token/type token-1) type))))))

@@ -8,12 +8,6 @@
    [honeysql.helpers :as q]
    [clojure.string :as string]))
 
-#?(:clj (def insert! gungnir.db/insert!)
-   :cljs (def insert! identity))
-
-#?(:clj (def update! gungnir.db/update!)
-   :cljs (def update! identity))
-
 #?(:clj (def delete! gungnir.db/delete!)
    :cljs (def delete! identity))
 
@@ -23,9 +17,14 @@
 #?(:clj (def query-1! gungnir.db/query-1!)
    :cljs (def query-1! identity))
 
-;; TODO Save should look if the changeset has a primary-key. If it does, then it
-;; should run the `update!` function. Otherwise it runs the `insert!` function.
-;; (defn save! [changeset])
+(defn save! [{:changeset/keys [model result] :as changeset}]
+  #?(:clj
+     (if (-> result
+             (get (gungnir/primary-key model))
+             (some?))
+       (gungnir.db/update! changeset)
+       (gungnir.db/insert! changeset))
+     :cljs changeset))
 
 (defn- process-arguments [form args]
   (if (map? form)
