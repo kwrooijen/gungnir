@@ -43,6 +43,11 @@
 (def comment-1
   {:comment/content comment-1-content})
 
+(def comment-2-content "comment-2 content")
+
+(def comment-2
+  {:comment/content comment-2-content})
+
 (deftest test-find!
   (let [{:user/keys [id]} (-> user-1 changeset q/insert!)]
     (testing "Find user by primary key"
@@ -183,7 +188,42 @@
                  (deref)
                  :user/id))))))
 
-(deftest test-relation-has-many)
+(deftest test-relation-has-many
+  (let [user (-> user-1 changeset q/insert!)
+        post-1 (-> post-1 (assoc :post/user-id (:user/id user)) changeset q/insert!)
+        post-2 (-> post-2 (assoc :post/user-id (:user/id user)) changeset q/insert!)
+        comment-1 (-> comment-1 (assoc :comment/user-id (:user/id user)
+                                       :comment/post-id (:post/id post-1))
+                      changeset
+                      q/insert!)
+        comment-2 (-> comment-2 (assoc :comment/user-id (:user/id user)
+                                       :comment/post-id (:post/id post-2))
+                      changeset
+                      q/insert!)]
+
+    (testing "user has many posts"
+      (is (= #{(:post/id post-1) (:post/id post-2)}
+             (-> user
+                 :user/posts
+                 (deref)
+                 (->> (map :post/id))
+                 (set)))))
+
+    (testing "find! user has many posts"
+      (is (= #{(:post/id post-1) (:post/id post-2)}
+             (-> (q/find! :user (:user/id user))
+                 :user/posts
+                 (deref)
+                 (->> (map :post/id))
+                 (set)))))
+
+    (testing "all! posts have many comments"
+      (is (= #{(:comment/id comment-1) (:comment/id comment-2)}
+             (-> (q/all! :post)
+                 (->> (map (comp deref :post/comments)))
+                 (flatten)
+                 (->> (map :comment/id))
+                 (set)))))))
 
 (deftest test-relation-belongs-to
   (let [user (-> user-1 changeset q/insert!)
