@@ -235,7 +235,7 @@
 
 (defn before-save-keys [model k]
   (-> model
-      (gungnir/get-child k)
+      (gungnir.model/child k)
       (util.malli/child-properties)
       (get :before-save [])))
 

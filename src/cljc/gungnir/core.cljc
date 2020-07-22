@@ -7,14 +7,6 @@
    [malli.core :as m]
    [gungnir.util.malli :as util.malli]))
 
-(defn get-child [model k]
-  (reduce
-   (fn [_ child]
-     (when (#{k} (first child))
-       (reduced child)))
-   nil
-   (m/children model)))
-
 (defn apply-child? [child]
   (empty? (select-keys (util.malli/child-properties child) [:virtual :auto])))
 
