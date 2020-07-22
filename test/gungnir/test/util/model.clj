@@ -8,10 +8,10 @@
                :comment :user/comments}
     :has-one {:token :user/token}}
    [:user/id {:primary-key true} uuid?]
-   [:user/email {:on-save [:string/lower-case]
+   [:user/email {:before-save [:string/lower-case]
                  :before-read [:string/lower-case]}
     [:re {:error/message "Invalid email"} #".+@.+\..+"]]
-   [:user/password {:on-save [:bcrypt]} [:string {:min 6}]]
+   [:user/password [:string {:min 6}]]
    [:user/password-confirmation {:virtual true} [:string {:min 6}]]
    [:user/created-at {:auto true} inst?]
    [:user/updated-at {:auto true} inst?]])

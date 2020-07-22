@@ -272,7 +272,11 @@
                  (first)
                  :comment/id))))))
 
-(deftest test-before-save)
+(deftest test-before-save
+  (let [_user (-> user-1 (update :user/email string/upper-case) changeset q/insert!)]
+    (testing "saving email as lowercase"
+      (let [result (q/find-by! :user/email user-1-email)]
+        (is (= (string/lower-case (:user/email user-1)) (:user/email result)))))))
 
 (deftest test-before-read
   (let [_user (-> user-1 changeset q/insert!)]
