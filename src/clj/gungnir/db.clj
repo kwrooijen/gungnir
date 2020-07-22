@@ -146,7 +146,6 @@
                :namespace-as-table? (:namespace-as-table? opts true)
                :quoting :ansi)))
 
-
 (defn- remove-quotes [s]
   (string/replace s #"\"" ""))
 
@@ -191,11 +190,11 @@
        (println (honey->sql form))
        (update changeset :changeset/errors merge (exception->map e))))))
 
-(defn- apply-before-save [field v]
+(defn- apply-before-save [field-k field-v]
   (reduce (fn [acc before-save-k]
             (gungnir.model/before-save before-save-k acc))
-          v
-          (gungnir.field/before-save field)))
+          field-v
+          (gungnir.field/before-save field-k)))
 
 (defn- parse-insert-value [k value]
   (cond
@@ -208,18 +207,22 @@
     :else
     value))
 
-(defn- record->insert-values [result]
-  (map-kv (fn [[k v]]
-            [k (->> (apply-before-save k v)
-                    (parse-insert-value k))])
-          result))
+(defn- field->insert-value [[field-k field-v]]
+  [field-k (->> (apply-before-save field-k field-v)
+                (parse-insert-value field-k))])
+
+(defn- record->insert-values [record]
+  (map-kv field->insert-value record))
 
 (defn- maybe-deref [record]
   (if (#{RelationAtom} (type record))
     @record
     record))
 
-(defn try-uuid [?uuid]
+(defn try-uuid
+  "Try to convert `?uuid` to a `java.util.UUID` if it is a
+  string. Otherwise return `?uuid` as supplied."
+  [?uuid]
   (if (string? ?uuid)
     (try (java.util.UUID/fromString ?uuid)
          (catch Exception _ ?uuid))
