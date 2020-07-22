@@ -1,4 +1,4 @@
-# Gungnir Changesets
+# Gungnir Model
 
 ## Malli Schemas
 
