@@ -35,7 +35,7 @@
        (filter (comp :virtual util.malli/child-properties))
        (map first)))
 
-(defn validate
+(defn- validate
   ([m model] (validate m model []))
   ([m model validators]
    (if (seq validators)
