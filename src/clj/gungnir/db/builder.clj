@@ -1,13 +1,8 @@
 (ns gungnir.db.builder
   (:require
-   [gungnir.db.builder]
-   [gungnir.record]
    [gungnir.field]
-   [next.jdbc.date-time]
-   [clojure.pprint]
    [clojure.string :as string]
    [gungnir.model]
-   [honeysql.types]
    [next.jdbc.result-set :as result-set])
   (:import (java.sql ResultSet)
            (org.postgresql.jdbc PgArray)))

@@ -219,6 +219,9 @@
     @record
     record))
 
+(s/fdef try-uuid!
+  :args (s/cat :?uuid any?)
+  :ret any?)
 (defn try-uuid
   "Try to convert `?uuid` to a `java.util.UUID` if it is a
   string. Otherwise return `?uuid` as supplied."
@@ -228,6 +231,10 @@
          (catch Exception _ ?uuid))
     ?uuid))
 
+(s/fdef insert!
+  :args (s/cat :changeset :gungnir/changeset)
+  :ret (s/or :changeset :gungnir/changeset
+             :record map?))
 (defn insert! [{:changeset/keys [model errors result] :as changeset}]
   (if errors
     changeset
@@ -238,6 +245,10 @@
         result
         (process-query-row {:select '(:*)} result)))))
 
+(s/fdef update!
+  :args (s/cat :changeset :gungnir/changeset)
+  :ret (s/or :changeset :gungnir/changeset
+             :record map?))
 (defn update! [{:changeset/keys [model errors diff origin sane-origin] :as changeset}]
   (cond
     errors changeset
@@ -249,6 +260,9 @@
           (q/where [:= primary-key (get sane-origin primary-key)])
           (execute-one! changeset {:namespace-as-table? false})))))
 
+(s/fdef delete!
+  :args (s/cat :record map?)
+  :ret boolean?)
 (defn delete! [record]
   (when-let [record (maybe-deref record)]
     (let [table (gungnir.record/table record)
