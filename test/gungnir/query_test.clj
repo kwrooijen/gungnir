@@ -169,7 +169,11 @@
       (let [new-user (q/save! (changeset user {:user/password "123"}))]
         (is (some? (:changeset/errors new-user)))
         (is (nil? (:user/id new-user)))
-        (is (= user-1-password (:user/password (q/find! :user (:user/id user)))))))))
+        (is (= user-1-password (:user/password (q/find! :user (:user/id user)))))))
+
+    (testing "don't update if no diff"
+      (let [new-user (q/save! (changeset user {:user/email user-1-email}))]
+        (is (= user new-user))))))
 
 (deftest test-delete!
   (testing "deleting existing user"

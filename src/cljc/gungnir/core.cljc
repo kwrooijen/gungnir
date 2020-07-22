@@ -194,15 +194,16 @@
   ([origin params validators]
    (let [model-k (-> params clojure.core/keys first namespace keyword)
          model (model-k->model model-k)
-         origin (advanced-decode-with-defaults model (select-keys origin (gungnir.core/keys model)))
-         diff (-> (differ/diff origin (advanced-decode model params))
+         sane-origin (advanced-decode-with-defaults model (select-keys origin (gungnir.core/keys model)))
+         diff (-> (differ/diff sane-origin (advanced-decode model params))
                   (first)
                   (remove-auto-keys model))
-         validated (validate (merge origin diff) model validators)]
+         validated (validate (merge sane-origin diff) model validators)]
      {:changeset/model model
       :changeset/validators validators
       :changeset/diff diff
       :changeset/origin origin
+      :changeset/sane-origin sane-origin
       :changeset/params params
       :changeset/result (remove-virtual-keys (or (:value validated) validated) model)
       :changeset/errors (me/humanize validated)})))

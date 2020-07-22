@@ -278,7 +278,7 @@
         result
         (process-query-row {:select '(:*)} result)))))
 
-(defn update! [{:changeset/keys [model errors diff origin] :as changeset}]
+(defn update! [{:changeset/keys [model errors diff origin sane-origin] :as changeset}]
   (cond
     errors changeset
     (empty? diff) origin
@@ -286,7 +286,7 @@
     (let [primary-key (gungnir/primary-key model)]
       (-> (q/update (gungnir/table model))
           (q/sset (model->insert-values model diff))
-          (q/where [:= primary-key (get origin primary-key)])
+          (q/where [:= primary-key (get sane-origin primary-key)])
           (execute-one! changeset {:namespace-as-table? false})))))
 
 (defn delete! [record]
