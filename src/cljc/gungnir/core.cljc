@@ -27,18 +27,3 @@
 
 (defn belongs-to-key [k1 k2]
   (-> k2 gungnir.model/find m/properties :belongs-to (get k1)))
-
-(defn column->model [column]
-  (-> column
-      (namespace)
-      (keyword)
-      (gungnir.model/find)))
-
-(defn column->properties [column]
-  (-> (column->model column)
-      (get-child column)
-      (util.malli/child-properties)))
-
-(defn column->before-read [column]
-  (-> (column->properties column)
-      :before-read))

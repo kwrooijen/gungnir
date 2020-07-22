@@ -16,6 +16,10 @@
                :props (s/nilable map?)
                :spec any?)))
 
+(s/def :gungnir.model/field-or-key
+  (s/or :field-key qualified-keyword?
+        :field :gungnir.model/field))
+
 (s/def :gungnir/model
   (s/or :schema
         (s/and m/schema?
@@ -35,7 +39,7 @@
   (s/or :model-key keyword?
         :model :gungnir/model))
 
-
+;; Changeset
 
 ;; TODO change to keyword
 (s/def :changeset/model :gungnir/model)

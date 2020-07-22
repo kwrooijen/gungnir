@@ -146,3 +146,15 @@
   (->> (?model->model ?model)
        (m/children)
        (mapv first)))
+
+(s/fdef child
+  :args (s/cat :?model :gungnir/model-or-key :k qualified-keyword?)
+  :ret (s/nilable :gungnir.model/field))
+(defn child
+  "Get the child `k` from `?model`. Returns `nil` if not found."
+  [?model k]
+  (->> (?model->model ?model)
+       (m/children)
+       (reduce (fn [_ child] (when (#{k} (first child))
+                               (reduced child)))
+               nil)))

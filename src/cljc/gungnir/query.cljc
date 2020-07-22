@@ -3,7 +3,7 @@
   (:require
    #?(:clj gungnir.db)
    [gungnir.decode]
-   [gungnir.core :as gungnir]
+   [gungnir.field]
    [gungnir.model]
    [gungnir.record]
    [honeysql.format :as fmt]
@@ -118,7 +118,7 @@ e.g. `[:= :user/age 20 20]`"}
   (reduce #(gungnir.model/before-read %2 %1) b before-read-fns))
 
 (defn handle-before-read [a b more]
-  (let [before-read-fns (gungnir/column->before-read a)]
+  (let [before-read-fns (gungnir.field/before-read a)]
     (if (or recurred? (empty? before-read-fns))
       [b more]
       [(apply-before-read-fns b before-read-fns)

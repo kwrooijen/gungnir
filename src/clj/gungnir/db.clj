@@ -4,6 +4,7 @@
    ;; NOTE [next.jdbc.date-time] Must be included to prevent date errors
    ;; https://cljdoc.org/d/seancorfield/next.jdbc/1.0.13/api/next.jdbc.date-time
    [gungnir.record]
+   [gungnir.field]
    [gungnir.util.malli :as util.malli]
    [next.jdbc.date-time]
    [clojure.pprint]
@@ -169,7 +170,7 @@
 
 (defn column-reader [builder ^ResultSet rs i]
   (let [column (nth (:cols builder) (dec i))
-        after-read (:after-read (gungnir/column->properties column))]
+        after-read (:after-read (gungnir.field/properties column))]
     (when-let [value (.getObject rs i)]
       (if (seq after-read)
         (reduce (fn [v f] (gungnir.model/after-read f v))
