@@ -88,7 +88,7 @@
                   (first)
                   (remove-auto-keys model))
          validated (validate (merge sane-origin diff) model validators)]
-     {:changeset/model model
+     {:changeset/model model-k
       :changeset/validators validators
       :changeset/diff diff
       :changeset/origin origin

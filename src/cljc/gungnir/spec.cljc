@@ -41,8 +41,7 @@
 
 ;; Changeset
 
-;; TODO change to keyword
-(s/def :changeset/model :gungnir/model)
+(s/def :changeset/model keyword?)
 
 (s/def :changeset/validators (s/coll-of keyword?))
 
