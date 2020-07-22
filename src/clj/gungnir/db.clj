@@ -4,6 +4,7 @@
    ;; https://cljdoc.org/d/seancorfield/next.jdbc/1.0.13/api/next.jdbc.date-time
    [clojure.spec.alpha :as s]
    [gungnir.db.builder]
+   [gungnir.db.util]
    [gungnir.record]
    [gungnir.field]
    [next.jdbc.date-time]
@@ -352,7 +353,8 @@
      (map? ?options)
      (set-datasource! (hikari-cp/make-datasource ?options))
      (string? ?options)
-     ;; TODO support DATABASE_URL
-     (set-datasource! (hikari-cp/make-datasource {:jdbc-url ?options}))))
+     (make-datasource! ?options {})))
   ([url options]
-   (set-datasource! (hikari-cp/make-datasource (merge options {:jdbc-url url})))))
+   (set-datasource!
+    (hikari-cp/make-datasource
+     (merge options {:jdbc-url (gungnir.db.util/->jdbc-database-url url)})))))
