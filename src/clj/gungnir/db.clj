@@ -1,9 +1,9 @@
 (ns gungnir.db
-  (:refer-clojure)
   (:require
    ;; NOTE [next.jdbc.date-time] Must be included to prevent date errors
    ;; https://cljdoc.org/d/seancorfield/next.jdbc/1.0.13/api/next.jdbc.date-time
    [clojure.spec.alpha :as s]
+   [gungnir.db.builder]
    [gungnir.record]
    [gungnir.field]
    [gungnir.util.malli :as util.malli]
@@ -18,7 +18,7 @@
    [malli.core :as m]
    [next.jdbc :as jdbc]
    [next.jdbc.result-set :as result-set])
-  (:import (java.sql SQLException ResultSet)
+  (:import (java.sql SQLException)
            (org.postgresql.jdbc PgArray)))
 
 (s/def :sql/datasource
@@ -26,50 +26,10 @@
 
 (defonce ^:dynamic *database* nil)
 
-(s/fdef set-datasource!
-  :args (s/cat :datasource :sql/datasource)
-  :ret nil?)
-(defn set-datasource!
-  "Set the `datasource` to be used by Gungnir."
-  [datasource]
-  (when *database*
-    (hikari-cp/close-datasource *database*))
-  (alter-var-root #'gungnir.db/*database* (fn [_] datasource))
-  nil)
-
-(s/fdef make-datasource!
-  :args
-  (s/alt :arity-1
-         (s/cat :?options (s/or :url string?
-                                :options map?))
-         :arity-2
-         (s/cat :url string?
-                :options map?))
-  :ret nil?)
-(defn make-datasource!
-  "The following options are supported for `?options`
-  * DATABASE_URL - The universal database url used by services such as Heroku / Render
-  * JDBC_DATABASE_URL - The standard Java Database Connectivity URL
-  * HikariCP configuration map - https://github.com/tomekw/hikari-cp#configuration-options
-
-  When both `url` and `options` are supplied:
-
-  `url` - DATABSE_URL or JDBC_DATABASE_URL
-  `options` - HikariCP options
-  "
-  ([?options]
-   (cond
-     (map? ?options)
-     (set-datasource! (hikari-cp/make-datasource ?options))
-     (string? ?options)
-     ;; TODO support DATABASE_URL
-     (set-datasource! (hikari-cp/make-datasource {:jdbc-url ?options}))))
-  ([url options]
-   (set-datasource! (hikari-cp/make-datasource (merge options {:jdbc-url url})))))
-
 (declare query!)
 (declare query-1!)
 
+;; TODO can this be moved to a new namespace? gungnir.db.relation ?
 (defrecord RelationAtom [type state]
   clojure.lang.IAtom
   (reset [this f]
@@ -104,37 +64,37 @@
 (defmethod print-method RelationAtom [_ ^java.io.Writer w]
   (.write w "<relation-atom>"))
 
-(defn has-one-atom [t1 t2 primary-key]
+(defn- has-one-atom [t1 t2 primary-key]
   (RelationAtom.
    :has-one
    (atom {:select (list :*)
           :from (list t2)
           :where [:= (gungnir.model/belongs-to-relation-table t1 t2) primary-key]})))
 
-(defn add-has-one [{:keys [table primary-key]} record [k v]]
+(defn- add-has-one [{:keys [table primary-key]} record [k v]]
   (assoc record v (has-one-atom table k primary-key)))
 
-(defn has-many-atom [t1 t2 primary-key]
+(defn- has-many-atom [t1 t2 primary-key]
   (RelationAtom.
    :has-many
    (atom {:select (list :*)
           :from (list t2)
           :where [:= (gungnir.model/belongs-to-relation-table t1 t2) primary-key]})))
 
-(defn add-has-many [{:keys [table primary-key]} record [k v]]
+(defn- add-has-many [{:keys [table primary-key]} record [k v]]
   (assoc record v (has-many-atom table k primary-key)))
 
-(defn belongs-to-atom [t2 foreign-key]
+(defn- belongs-to-atom [t2 foreign-key]
   (RelationAtom.
    :belongs-to
    (atom {:select (list :*)
           :from (list (gungnir.model/table t2))
           :where [:= (gungnir.model/primary-key t2) foreign-key]})))
 
-(defn add-belongs-to [{:keys [table]} record [k v]]
+(defn- add-belongs-to [{:keys [table]} record [k v]]
   (assoc record (keyword (name table) (name k)) (belongs-to-atom k (get record v))))
 
-(defn apply-relations
+(defn- apply-relations
   [record {:keys [has-one has-many belongs-to primary-key] :as relation-data}]
   (let [relation-data (assoc relation-data :primary-key (get record primary-key))]
     (as-> record $
@@ -142,13 +102,13 @@
       (reduce (partial add-has-many relation-data) $ has-many)
       (reduce (partial add-belongs-to relation-data) $ belongs-to))))
 
-(defn get-relation [^clojure.lang.PersistentHashSet select
+(defn- get-relation [^clojure.lang.PersistentHashSet select
                     ^clojure.lang.PersistentArrayMap properties
                     ^clojure.lang.Keyword type]
   (when (= #{:*} select)
     (get properties type {})))
 
-(defn record->relation-data [form table]
+(defn- record->relation-data [form table]
   (let [model (gungnir.model/find table)
         primary-key (gungnir.model/primary-key model)
         properties (m/properties model)
@@ -177,34 +137,8 @@
   (result-set/read-column-by-index ^PgArray [^PgArray v _2 _3]
     (vec (.getArray v))))
 
-(defn try-uuid [?uuid]
-  (if (string? ?uuid)
-    (try (java.util.UUID/fromString ?uuid)
-         (catch Exception _ ?uuid))
-    ?uuid))
-
-(defn map-kv [f m]
+(defn- map-kv [f m]
   (into {} (map f m)))
-
-(defn ->kebab [s]
-  (string/replace s #"_" "-"))
-
-(defn ->snake [s]
-  (string/replace s #"-" "_"))
-
-(defn- as-kebab-maps [rs opts]
-  (let [opts (assoc opts :qualifier-fn ->kebab :label-fn ->kebab)]
-    (result-set/as-modified-maps rs opts)))
-
-(defn column-reader [builder ^ResultSet rs i]
-  (let [column (nth (:cols builder) (dec i))
-        after-read (:after-read (gungnir.field/properties column))]
-    (when-let [value (.getObject rs i)]
-      (if (seq after-read)
-        (reduce (fn [v f] (gungnir.model/after-read f v))
-                (if (#{PgArray} (type value)) (vec (.getArray value)) value)
-                after-read)
-        (result-set/read-column-by-index value (:rsmeta builder) i)))))
 
 (defn- honey->sql
   ([m] (honey->sql m {}))
@@ -213,11 +147,6 @@
                :namespace-as-table? (:namespace-as-table? opts true)
                :quoting :ansi)))
 
-(def ^:private execute-opts
-  {:return-keys true
-   :builder-fn (result-set/builder-adapter
-                as-kebab-maps
-                column-reader)})
 
 (defn- remove-quotes [s]
   (string/replace s #"\"" ""))
@@ -227,7 +156,7 @@
     [(.getErrorCode e)
      (.getSQLState e)]))
 
-(defn sql-key->keyword [sql-key]
+(defn- sql-key->keyword [sql-key]
   (-> sql-key
       (string/replace #"_key$" "")
       (string/replace-first #"_" "/")
@@ -252,11 +181,13 @@
            (.getMessage e))
   {:unknown [(.getSQLState e)]})
 
-(defn execute-one!
+(defn- execute-one!
   ([form changeset] (execute-one! form changeset {}))
   ([form changeset opts]
    (try
-     (jdbc/execute-one! *database* (honey->sql form opts) execute-opts)
+     (jdbc/execute-one! *database* (honey->sql form opts)
+                        {:return-keys true
+                         :builder-fn gungnir.db.builder/column-builder})
      (catch Exception e
        (println (honey->sql form))
        (update changeset :changeset/errors merge (exception->map e))))))
@@ -298,6 +229,12 @@
     @record
     record))
 
+(defn try-uuid [?uuid]
+  (if (string? ?uuid)
+    (try (java.util.UUID/fromString ?uuid)
+         (catch Exception _ ?uuid))
+    ?uuid))
+
 (defn insert! [{:changeset/keys [model errors result] :as changeset}]
   (if errors
     changeset
@@ -327,16 +264,16 @@
       (-> (q/delete-from table)
           (q/where [:= primary-key (try-uuid primary-key-value)])
           (honey->sql)
-          (as-> sql (jdbc/execute-one! *database* sql {:builder-fn as-kebab-maps}))
+          (as-> sql (jdbc/execute-one! *database* sql {:builder-fn gungnir.db.builder/kebab-map-builder}))
           :next.jdbc/update-count
           (= 1)))))
 
 (def ^:private query-opts
-  {:builder-fn (result-set/builder-adapter
-                as-kebab-maps
-                column-reader)})
+  {:builder-fn gungnir.db.builder/column-builder})
 
-
+(s/fdef query!
+  :args (s/cat :form map?)
+  :ret (s/coll-of map?))
 (defn query! [form]
   (reduce (fn [acc row]
             (->> (next.jdbc.result-set/datafiable-row row *database* query-opts)
@@ -345,6 +282,51 @@
           []
           (jdbc/plan *database* (honey->sql form) query-opts)))
 
+(s/fdef query-1!
+  :args (s/cat :form map?)
+  :ret (s/nilable map?))
 (defn query-1! [form]
   (when-let [row (jdbc/execute-one! *database* (honey->sql form) query-opts)]
     (process-query-row form row)))
+
+(s/fdef set-datasource!
+  :args (s/cat :datasource :sql/datasource)
+  :ret nil?)
+(defn set-datasource!
+  "Set the `datasource` to be used by Gungnir."
+  [datasource]
+  (when *database*
+    (hikari-cp/close-datasource *database*))
+  (alter-var-root #'gungnir.db/*database* (fn [_] datasource))
+  nil)
+
+(s/fdef make-datasource!
+  :args
+  (s/alt :arity-1
+         (s/cat :?options (s/or :url string?
+                                :options map?))
+         :arity-2
+         (s/cat :url string?
+                :options map?))
+  :ret nil?)
+
+(defn make-datasource!
+  "The following options are supported for `?options`
+  * DATABASE_URL - The universal database url used by services such as Heroku / Render
+  * JDBC_DATABASE_URL - The standard Java Database Connectivity URL
+  * HikariCP configuration map - https://github.com/tomekw/hikari-cp#configuration-options
+
+  When both `url` and `options` are supplied:
+
+  `url` - DATABSE_URL or JDBC_DATABASE_URL
+  `options` - HikariCP options
+  "
+  ([?options]
+   (cond
+     (map? ?options)
+     (set-datasource! (hikari-cp/make-datasource ?options))
+     (string? ?options)
+     ;; TODO support DATABASE_URL
+     (set-datasource! (hikari-cp/make-datasource {:jdbc-url ?options}))))
+  ([url options]
+   (set-datasource! (hikari-cp/make-datasource (merge options {:jdbc-url url})))))
