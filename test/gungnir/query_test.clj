@@ -69,6 +69,7 @@
 
 (deftest test-find-by!
   (let [{:user/keys [id] :as user} (-> user-1 changeset q/save!)
+        token (-> token-1 (assoc :token/user-id (:user/id user)) changeset q/save!)
         _post (-> post-1 (assoc :post/user-id id) changeset q/save!)]
     (testing "Find user by email"
       (is (= user-1-email (-> (q/find-by! :user/email user-1-email) :user/email))))
@@ -84,7 +85,11 @@
     (testing "Find post by user-id with auto uuid"
       (is (= post-1-title
              (-> (q/find-by! :post/user-id (str id))
-                 :post/title))))))
+                 :post/title))))
+    (testing "keyword arguments"
+      (is (= (:token/id token)
+             (-> (q/find-by! :token/type :token/verify)
+                 :token/id))))))
 
 (deftest test-all!
   (let [{:user/keys [id] :as _user} (-> user-1 changeset q/save!)
@@ -106,7 +111,18 @@
                  (q/all! :post/user-id id
                          :post/title post-1-title)
                  first
-                 :post/title))))))
+                 :post/title))))
+    (testing "Find posts by table name"
+      (is (= #{post-1-title post-2-title}
+             (-> (q/all! :post)
+                 (->> (map :post/title))
+                 set))))
+
+    (testing "Find posts by table name and limit"
+      (is (= 1
+             (-> (q/limit 1)
+                 (q/all! :post)
+                 (count)))))))
 
 (deftest test-insert-save!
   (testing "inserting a new user"
