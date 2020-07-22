@@ -1,30 +1,23 @@
 (ns gungnir.query
   (:refer-clojure :exclude [update find])
   (:require
-   #?(:clj gungnir.db)
+   [clojure.string :as string]
+   [gungnir.db]
    [gungnir.decode]
    [gungnir.field]
    [gungnir.model]
    [gungnir.record]
    [honeysql.format :as fmt]
-   [honeysql.helpers :as q]
-   [clojure.string :as string]))
+   [honeysql.helpers :as q]))
 
-#?(:clj (def delete! gungnir.db/delete!)
-   :cljs (def delete! identity))
+(def delete! gungnir.db/delete!)
 
-#?(:clj (def query! gungnir.db/query!)
-   :cljs (def query! identity))
+(def query! gungnir.db/query!)
 
-#?(:clj (def query-1! gungnir.db/query-1!)
-   :cljs (def query-1! identity))
-
-(defn save! [{:changeset/keys [model result] :as changeset}]
-  #?(:clj
+(defn save! [{:changeset/keys [result] :as changeset}]
      (if (some? (gungnir.record/primary-key-value result))
        (gungnir.db/update! changeset)
-       (gungnir.db/insert! changeset))
-     :cljs changeset))
+       (gungnir.db/insert! changeset)))
 
 (defn- args->map [args]
   (->> args
@@ -79,7 +72,7 @@
        (not (:select form)) (q/select :*)
        true (q/from (gungnir.model/table model))
        true (q/merge-where (args->where model args))
-       true (query-1!)))))
+       true (gungnir.db/query-1!)))))
 
 (defn find!
   "Find a single record by its `primary-key` from `table`.
@@ -90,9 +83,8 @@
      (not (:select form)) (q/select :*)
      true (q/from (gungnir.model/table model-k))
      true (q/merge-where [:= (gungnir.model/primary-key model-k)
-                          #?(:clj (gungnir.db/try-uuid primary-key)
-                             :cljs primary-key)])
-     true (query-1!))))
+                          (gungnir.db/try-uuid primary-key)])
+     true (gungnir.db/query-1!))))
 
 ;; HoneySQL Overrides
 
