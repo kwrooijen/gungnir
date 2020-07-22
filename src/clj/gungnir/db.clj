@@ -172,7 +172,7 @@
         after-read (:after-read (gungnir/column->properties column))]
     (when-let [value (.getObject rs i)]
       (if (seq after-read)
-        (reduce (fn [v f] (gungnir/after-read f v))
+        (reduce (fn [v f] (gungnir.model/after-read f v))
                 (if (#{PgArray} (type value)) (vec (.getArray value)) value)
                 after-read)
         (result-set/read-column-by-index value (:rsmeta builder) i)))))
@@ -209,13 +209,13 @@
   (let [error (.getMessage e)
         sql-key (remove-quotes (re-find #"\".*\"" error))
         record-key (sql-key->keyword sql-key)]
-    {record-key [(gungnir/format-error record-key :duplicate-key)]}))
+    {record-key [(gungnir.model/format-error record-key :duplicate-key)]}))
 
 (defmethod exception->map [0 "42P01"] [^SQLException e]
   (let [error (.getMessage e)
         sql-key (remove-quotes (re-find #"\".*\"" error))
         table-key (sql-key->keyword sql-key)]
-    {table-key [(gungnir/format-error table-key :undefined-table)]}))
+    {table-key [(gungnir.model/format-error table-key :undefined-table)]}))
 
 (defmethod exception->map :default [^SQLException e]
   (println "Unhandled SQL execption "
@@ -240,7 +240,7 @@
 
 (defn apply-before-save [model k v]
   (reduce (fn [acc before-save-k]
-            (gungnir/before-save before-save-k acc))
+            (gungnir.model/before-save before-save-k acc))
           v
           (before-save-keys model k)))
 
@@ -274,7 +274,7 @@
 (defn insert! [{:changeset/keys [model errors result] :as changeset}]
   (if errors
     changeset
-    (let [result (-> (q/insert-into (gungnir/table model))
+    (let [result (-> (q/insert-into (gungnir.model/table model))
                      (q/values [(model->insert-values model result)])
                      (execute-one! changeset))]
       (if (:changeset/errors result)

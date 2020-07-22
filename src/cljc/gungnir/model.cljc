@@ -1,6 +1,8 @@
 (ns gungnir.model
-  (:refer-clojure :exclude [find])
+  (:refer-clojure :exclude [find keys])
   (:require
+   [clojure.string :as string]
+   [clojure.edn :as edn]
    [malli.util :as mu]
    [gungnir.util.malli :as util.malli]
    [malli.core :as m]
@@ -38,6 +40,48 @@
                          (filter (comp :primary-key util.malli/child-properties))
                          (ffirst))]
     [k (mu/update-properties v assoc :primary-key primary-key)]))
+
+(defmulti validator (fn [model validator] [model validator]))
+(defmethod validator :default [k]
+  (throw (ex-info "Unknown validator" {:validator k})))
+
+(defmulti before-save (fn [k v] k))
+(defmethod before-save :default [_ v] v)
+
+(defmethod before-save :string/lower-case [_ v]
+  (string/lower-case v))
+
+(defmulti after-read (fn [k _v] k))
+(defmethod after-read :default [_ v] v)
+
+(defmethod after-read :edn/read-string [_ v]
+  (if (vector? v)
+    (mapv edn/read-string v)
+    (edn/read-string v)))
+
+(defmulti before-read (fn [k _v] k))
+
+(defmethod before-read :string/lower-case [_ v]
+  (string/lower-case v))
+
+#?(:clj
+ (defmethod before-read :uuid [_ v]
+   (cond-> v
+     (not (uuid? v)) java.util.UUID/fromString)))
+
+(defmethod before-read :default [_ v] v)
+
+(defmulti format-error (fn [k e] [k e]))
+
+(defmethod format-error :default [k e] e)
+
+(defmulti format-key (fn [k] k))
+
+(defmethod format-key :default [k]
+  (-> (name k)
+      (string/replace #"-" " ")
+      (string/capitalize)))
+
 
 (s/fdef register!
   :args (s/cat :model-map (s/map-of
@@ -94,3 +138,15 @@
   [?model]
   (let [model (?model->model ?model)]
     (:table (m/properties model))))
+
+(s/fdef keys
+  :args (s/cat :?model
+               (s/or :model-key keyword?
+                     :model :gungnir/model))
+  :ret (s/coll-of qualified-keyword?))
+(defn keys
+  "Get all keys from `model` as qualified-keywords."
+  [?model]
+  (->> (?model->model ?model)
+       (m/children)
+       (mapv first)))

@@ -1,7 +1,7 @@
 (ns gungnir.changeset-test
   (:require
    [clojure.test :refer :all]
-   [gungnir.core :as gungnir :refer [changeset]]
+   [gungnir.changeset :as gungnir :refer [changeset]]
    [gungnir.test.util :as util]))
 
 (use-fixtures :once util/once-fixture)

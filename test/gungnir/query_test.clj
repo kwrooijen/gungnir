@@ -2,7 +2,7 @@
   (:require
    [clojure.string :as string]
    [clojure.test :refer :all]
-   [gungnir.core :refer [changeset]]
+   [gungnir.changeset :refer [changeset]]
    [gungnir.query :as q]
    [gungnir.test.util :as util]))
 

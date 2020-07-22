@@ -53,12 +53,12 @@
   (= (:user/password m)
      (:user/password-confirmation m)))
 
-(defmethod gungnir/validator [:user :register/password-match?] [_ _]
+(defmethod gungnir.model/validator [:user :register/password-match?] [_ _]
   {:validator/key :user/password-confirmation
    :validator/fn password-match?
    :validator/message "Passwords don't match"})
 
-(defmethod gungnir/format-error [:user/username :duplicate-key] [_ _]
+(defmethod gungnir.model/format-error [:user/username :duplicate-key] [_ _]
   "username taken")
 
 (defn init!

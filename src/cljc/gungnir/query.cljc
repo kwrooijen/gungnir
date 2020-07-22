@@ -2,7 +2,7 @@
   (:refer-clojure :exclude [update find])
   (:require
    #?(:clj gungnir.db)
-   [malli.core :as m]
+   [gungnir.decode]
    [gungnir.core :as gungnir]
    [gungnir.model]
    [gungnir.record]
@@ -41,7 +41,7 @@
                        (if (keyword? v)
                          [:= k (str v)]
                          [:= k v]))
-                     (gungnir/advanced-decode model args))))
+                     (gungnir.decode/advanced-decode model args))))
 
 (defn all!
   "Find multiple records from `table`, where `args` are a key value pair of
@@ -115,7 +115,7 @@ e.g. `[:= :user/age 20 20]`"}
          ")")))
 
 (defn apply-before-read-fns [b before-read-fns]
-  (reduce #(gungnir/before-read %2 %1) b before-read-fns))
+  (reduce #(gungnir.model/before-read %2 %1) b before-read-fns))
 
 (defn handle-before-read [a b more]
   (let [before-read-fns (gungnir/column->before-read a)]
