@@ -31,6 +31,7 @@
    "CREATE TABLE IF NOT EXISTS \"user\" "
    " ( id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY "
    " , email TEXT NOT NULL UNIQUE "
+   " , username TEXT UNIQUE "
    " , password TEXT NOT NULL "
    " , created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL "
    " , updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL "

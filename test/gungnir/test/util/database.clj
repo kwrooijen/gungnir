@@ -26,3 +26,14 @@
      "DELETE from \"comment\";"
      "DELETE from \"post\";"
      "DELETE from \"user\";")]))
+
+(defn drop!
+  "Clear the database from any rows in the database."
+  []
+  (next.jdbc/execute!
+   *database*
+   [(str
+     "DROP TABLE \"token\";"
+     "DROP TABLE \"comment\";"
+     "DROP TABLE \"post\";"
+     "DROP TABLE \"user\";")]))

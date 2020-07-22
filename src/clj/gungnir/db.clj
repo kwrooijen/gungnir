@@ -113,12 +113,8 @@
 (defn get-relation [^clojure.lang.PersistentHashSet select
                     ^clojure.lang.PersistentArrayMap properties
                     ^clojure.lang.Keyword type]
-  (let [relations (get properties type {})]
-    (if (= #{:*} select)
-      relations
-      (->> relations
-           (filter (comp select second))
-           (into {})))))
+  (when (= #{:*} select)
+    (get properties type {})))
 
 (defn record->relation-data [form table]
   (let [model (gungnir/model-k->model table)

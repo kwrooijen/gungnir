@@ -8,6 +8,7 @@
                :comment :user/comments}
     :has-one {:token :user/token}}
    [:user/id {:primary-key true} uuid?]
+   [:user/username {:optional true} [:maybe string?]]
    [:user/email {:before-save [:string/lower-case]
                  :before-read [:string/lower-case]}
     [:re {:error/message "Invalid email"} #".+@.+\..+"]]
@@ -55,3 +56,6 @@
   {:validator/key :user/password-confirmation
    :validator/fn password-match?
    :validator/message "Passwords don't match"})
+
+(defmethod gungnir/format-error [:user/username :duplicate-key] [_ _]
+  "username taken")

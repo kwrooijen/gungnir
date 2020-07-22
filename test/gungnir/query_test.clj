@@ -25,6 +25,17 @@
   {:user/email user-2-email
    :user/password user-2-password})
 
+(def user-3-email "user-3@test.com")
+
+(def user-3-password "133456")
+
+(def user-3-username "foobar")
+
+(def user-3
+  {:user/email user-3-email
+   :user/username user-3-username
+   :user/password user-3-password})
+
 (def post-1-title "post-1 title")
 (def post-1-content "post-1 content")
 
@@ -310,3 +321,14 @@
     (testing "reading keywords"
       (let [{:token/keys [type]} (q/find-by! :token/id (:token/id token))]
         (is (= (:token/type token) (:token/type token-1) type))))))
+
+(deftest test-duplicate-key
+  (let [_ (-> user-1 changeset q/save!)
+        user-1 (-> user-1 changeset q/save!)
+        _ (-> user-3 changeset q/save!)
+        user-2 (-> user-3 (assoc :user/email "some@random.email") changeset q/save!)]
+    (testing "uniqueness of email"
+      (is (= [:duplicate-key] (-> user-1 :changeset/errors :user/email))))
+
+    (testing "custom error message for duplicate-key"
+      (is (= ["username taken"] (-> user-2 :changeset/errors :user/username))))))
