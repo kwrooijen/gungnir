@@ -219,6 +219,9 @@
     @record
     record))
 
+(def ^:private query-opts
+  {:builder-fn gungnir.db.builder/column-builder})
+
 (s/fdef try-uuid!
   :args (s/cat :?uuid any?)
   :ret any?)
@@ -234,8 +237,13 @@
 (s/fdef insert!
   :args (s/cat :changeset :gungnir/changeset)
   :ret (s/or :changeset :gungnir/changeset
-             :record map?))
-(defn insert! [{:changeset/keys [model errors result] :as changeset}]
+        :record map?))
+(defn insert!
+  "Insert a row based on the `changeset` provided. This function assumes
+  that the `:changeset/result` key does not have a primary-key with a
+  values. Returns the inserted row on succes. On failure return the
+  `changeset` with an updated `:changeset/errors` key."
+  [{:changeset/keys [model errors result] :as changeset}]
   (if errors
     changeset
     (let [result (-> (q/insert-into (gungnir.model/table model))
@@ -249,7 +257,12 @@
   :args (s/cat :changeset :gungnir/changeset)
   :ret (s/or :changeset :gungnir/changeset
              :record map?))
-(defn update! [{:changeset/keys [model errors diff origin sane-origin] :as changeset}]
+(defn update!
+  "Update a row based on the `changeset` provided. This function assumes
+  that the `:changeset/result` key has a primary-key with a
+  values. Returns the updated row on succes. On failure return the
+  `changeset` with an updated `:changeset/errors` key."
+  [{:changeset/keys [model errors diff origin sane-origin] :as changeset}]
   (cond
     errors changeset
     (empty? diff) origin
@@ -263,7 +276,11 @@
 (s/fdef delete!
   :args (s/cat :record map?)
   :ret boolean?)
-(defn delete! [record]
+(defn delete!
+  "Delete a row from the database based on `record`. The row will be
+  deleted based on the `primary-key`. Return `true` on deletion. If no
+  match is found return `false`."
+  [record]
   (when-let [record (maybe-deref record)]
     (let [table (gungnir.record/table record)
           primary-key (gungnir.record/primary-key record)
@@ -275,13 +292,13 @@
           :next.jdbc/update-count
           (= 1)))))
 
-(def ^:private query-opts
-  {:builder-fn gungnir.db.builder/column-builder})
-
 (s/fdef query!
   :args (s/cat :form map?)
   :ret (s/coll-of map?))
-(defn query! [form]
+(defn query!
+  "Execute a query based on the HoneySQL `form` and return a collection
+  of maps. If no result is found return an empty vector."
+  [form]
   (reduce (fn [acc row]
             (->> (next.jdbc.result-set/datafiable-row row *database* query-opts)
                  (process-query-row form)
@@ -292,7 +309,10 @@
 (s/fdef query-1!
   :args (s/cat :form map?)
   :ret (s/nilable map?))
-(defn query-1! [form]
+(defn query-1!
+  "Execute a query based on the HoneySQL `form` and return a map. If no
+  result is found return `nil`."
+  [form]
   (when-let [row (jdbc/execute-one! *database* (honey->sql form) query-opts)]
     (process-query-row form row)))
 
