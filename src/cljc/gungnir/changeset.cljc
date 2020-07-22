@@ -50,14 +50,14 @@
       (select-keys (gungnir.model/keys model))))
 
 (s/fdef changeset
-  :ret :gungnir/changeset
   :args (s/alt :arity-1 (s/cat :params map?)
                :arity-2 (s/cat :?origin map?
                                :?params (s/or :origin map?
                                               :validators vector?))
                :arity-3 (s/cat :origin map?
                                :params map?
-                               :validators (s/coll-of keyword?))))
+                               :validators (s/coll-of keyword?)))
+  :ret :gungnir/changeset)
 (defn changeset
   "Create a changeset to be inserted into the database.
   Changesets can either be used to create or update a row.
@@ -98,8 +98,8 @@
       :changeset/errors (me/humanize validated)})))
 
 (s/fdef cast
-  :ret (s/map-of qualified-keyword? any?)
-  :args (s/cat :m map? :?model :gungnir/model-or-key))
+  :args (s/cat :m map? :?model :gungnir/model-or-key)
+  :ret (s/map-of qualified-keyword? any?))
 (defn cast
   "Cast the map `m` to a record of `?model`. Any unknown keys will be
   discarded. Strings and keywords will be converted to
