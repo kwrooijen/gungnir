@@ -22,6 +22,7 @@
   (next.jdbc/execute!
    *database*
    [(str
+     "DELETE from \"token\";"
      "DELETE from \"comment\";"
      "DELETE from \"post\";"
      "DELETE from \"user\";")]))

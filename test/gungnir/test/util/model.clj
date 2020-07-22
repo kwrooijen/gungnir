@@ -5,7 +5,8 @@
 (defmethod gungnir/model :user [_]
   [:map
    {:has-many {:post :user/posts
-               :comment :user/comments}}
+               :comment :user/comments}
+    :has-one {:token :user/token}}
    [:user/id {:primary-key true} uuid?]
    [:user/email {:on-save [:string/lower-case]
                  :before-read [:string/lower-case]}
@@ -36,6 +37,14 @@
    [:comment/post-id uuid?]
    [:comment/created-at {:auto true} inst?]
    [:comment/updated-at {:auto true} inst?]])
+
+(defmethod gungnir/model :token [_]
+  [:map
+   {:belongs-to {:user :token/user-id}}
+   [:token/id {:primary-key true} uuid?]
+   [:token/user-id uuid?]
+   [:token/created-at {:auto true} inst?]
+   [:token/updated-at {:auto true} inst?]])
 
 (defn- password-match? [m]
   (= (:user/password m)

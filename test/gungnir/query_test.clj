@@ -150,6 +150,44 @@
 
 (deftest test-relation-has-one
   (let [user (-> user-1 changeset q/insert!)
+        token (-> {:token/user-id (:user/id user)} changeset q/insert!)]
+
+    (testing "user has one token"
+      (is (= (:token/id token)
+             (-> user
+                 :user/token
+                 (deref)
+                 :token/id))))
+
+    (testing "find! user has one token"
+      (is (= (:token/id token)
+             (-> (q/find! :user (:user/id user))
+                 :user/token
+                 (deref)
+                 :token/id))))
+
+    (testing "user has one token, back to user"
+      (is (= (:user/id user)
+             (-> user
+                 :user/token
+                 (deref)
+                 :token/user
+                 (deref)
+                 :user/id))))
+
+    (testing "find! user has one token, back to user"
+      (is (= (:user/id user)
+             (-> (q/find! :user (:user/id user))
+                 :user/token
+                 (deref)
+                 :token/user
+                 (deref)
+                 :user/id))))))
+
+(deftest test-relation-has-many)
+
+(deftest test-relation-belongs-to
+  (let [user (-> user-1 changeset q/insert!)
         post (-> post-1 (assoc :post/user-id (:user/id user)) changeset q/insert!)
         comment (-> comment-1
                     (assoc :comment/user-id (:user/id user)
@@ -157,16 +195,19 @@
                     changeset
                     q/insert!)]
 
-    (testing "comment has one post"
+    (testing "comment belongs to post"
+      (is (= (:post/id post)
+             (-> comment
+                 :comment/post
+                 (deref)
+                 :post/id))))
+
+    (testing "poast belongs to post"
       (is (= (:post/id post)
              (-> comment
                  :comment/post
                  (deref)
                  :post/id))))))
-
-(deftest test-relation-has-many)
-
-(deftest test-relation-belongs-to)
 
 (deftest test-before-save)
 

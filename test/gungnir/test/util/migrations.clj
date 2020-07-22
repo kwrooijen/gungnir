@@ -70,6 +70,20 @@
    " , updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL "
    " );"))
 
+(def token-table-migration
+  "Create a `token` table.
+
+  Relations
+  * comment belongs_to user
+  "
+  (str
+   "CREATE TABLE IF NOT EXISTS token "
+   " ( id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY "
+   " , user_id uuid references \"user\"(id)"
+   " , created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL "
+   " , updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL "
+   " );"))
+
 (defn init!
   "Run migrations to create all tables. The migrations are idempotent,
   so they can be run multiple times."
@@ -78,4 +92,5 @@
   (next.jdbc/execute-one! *database* [trigger-updated-at-migration])
   (next.jdbc/execute-one! *database* [user-table-migration])
   (next.jdbc/execute-one! *database* [post-table-migration])
-  (next.jdbc/execute-one! *database* [comment-table-migration]))
+  (next.jdbc/execute-one! *database* [comment-table-migration])
+  (next.jdbc/execute-one! *database* [token-table-migration]))
