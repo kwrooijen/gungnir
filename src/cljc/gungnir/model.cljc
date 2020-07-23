@@ -82,7 +82,6 @@
       (string/replace #"-" " ")
       (string/capitalize)))
 
-
 (s/fdef register!
   :args (s/cat :model-map (s/map-of simple-keyword? :gungnir/model))
   :ret nil?)
@@ -94,9 +93,10 @@
   the value should be a Malli `:map`
 
   ```clojure
-  {:user [:map ,,,]
-   :post [:map ,,,]
-   :comment [:map ,,,]}
+  (gungnir.model/register!
+   {:user [:map ,,,]
+    :post [:map ,,,]
+    :comment [:map ,,,]})
   ```
   "
   [model-map]

@@ -2,7 +2,48 @@
 
 ## Malli Schemas
 
+Models in Gungnir are defined using [malli](https://github.com/metosin/malli/).
+These models define your Clojure data structures, and how they interact with
+your database.
+
+* Only data you describe as valid will be saved to the database.
+* Perform transformations to your data when reading / writing to the database.
+* Create descriptive error messages for your end user.
+
+```clojure
+;; Define a user model
+
+(def user-model
+ [:map
+  {:has-many {:post :user/posts
+              :comment :user/comments}}
+  [:user/id {:primary-key true} uuid?]
+  [:user/email {:before-save [:string/lower-case]
+                :before-read [:string/lower-case]}
+   [:re {:error/message "Invalid email"} #".+@.+\..+"]]
+  [:user/password {:on-save [:bcrypt]} [:string {:min 6}]]
+  [:user/password-confirmation {:virtual true} [:string {:min 6}]]
+  [:user/created-at {:auto true} inst?]
+  [:user/updated-at {:auto true} inst?]])
+```
+
+## Registering Models
+
+Models can be registered using the `gungnir.model/register!` function. Generally
+you'd want your system state manager to manage this. E.g. Integrant, Component,
+Mount.
+
+```clojure
+(gungnir.model/register!
+ {:user user-model
+  :post post-model
+  :comment comment-model})
+```
+
 ## Model Field Properties
+
+Malli schemas support adding properties. Gungnir has a few custom properties
+that can be used.
 
 ### `:primary-key` (required)
 
@@ -121,3 +162,141 @@ is also built-in Gungnir, so you don't have to defined it yourself.
 ```
 
 ## Model Relation Definitions
+
+Gungnir can handle relational mapping for you. This is done by adding relation
+definitions to the models properties. For more information regarding querying
+relations visit the [query](https://kwrooijen.github.io/gungnir/query.html)
+page.
+
+### `:has-many`
+
+Describe a `:has-many` relation which can be queried through the current
+model. This relational query will return a vector of results.
+
+```clojure
+[:map
+ {:has-many {:post :user/posts}}
+ ,,,]
+```
+
+### `:has-one`
+
+Describe a `:has-one` relation which can be queried through the current
+model. This relational query will return a result or `nil`.
+
+```clojure
+[:map
+ {:has-one {:reset-token :user/reset-token}}
+ ,,,]
+```
+
+### `:belongs-to`
+
+Describe a `:belongs-to` relation which can be queried through the current
+model. This relational query will return a result or `nil`.
+
+```clojure
+[:map
+ {:belongs-to {:user :post/user-id}}
+ ,,,]
+```
+
+### Example
+
+In the example below we define the following relations:
+
+* user **has_many** comments, through `:user/comments`
+* user **has_many** posts, through `:user/posts`
+* post **belongs_to** user, through `:post/user`
+* post **has_many** comments, through `:post/comments`
+* comment **belongs_to** post, through `:comment/user`
+* comment **belongs_to** user, through `:comment/post`
+
+```clojure
+(def model-user
+ [:map
+  {:has-many {:post :user/posts
+              :comment :user/comments}}
+  [:user/id {:primary-key true} uuid?]
+  ,,,])
+
+(def model-post
+ [:map
+  {:belongs-to {:user :post/user-id}
+   :has-many {:comment :post/comments}}
+  [:post/id {:primary-key true} uuid?]
+  [:post/user-id uuid?]
+  ,,,])
+
+(def model-comment
+ [:map
+  {:belongs-to {:user :comment/user-id
+                :post :comment/post-id}}
+  [:comment/id {:primary-key true} uuid?]
+  [:comment/user-id uuid?]
+  [:comment/post-id uuid?]
+  ,,,])
+```
+
+## Model Validators
+
+In some situations you will want to have extra validations for specific
+situations. Visit the
+[changeset](https://kwrooijen.github.io/gungnir/changeset.html) page to learn
+how to use validators.
+
+Validators are defined using the `gungnir.model/validator`
+multimethod. Which is matched with a `qualified-keyword`.
+
+The `gungnir.model/validator` multimethod should return the following map.
+
+* `:validator/key` - The key this validator is related to. If the validator
+  check fails it will mark this key as the failing key.
+* `:validator/fn` - The function to be run to check the validation. This
+  function takes a single argument, which is the map that is being validated.
+* `:validator/message` - The error message to be displayed when the validation
+  check fails. This will be assigned to the `:validation/key` as its error.
+
+### Example
+
+Check if the `:user/password` and `:user/password-validation` match during
+registration. Since `:map` keys are isolated from each other this would be a
+good solution.
+
+```clojure
+(defn password-match? [m]
+  (= (:user/password m)
+     (:user/password-confirmation m)))
+
+(defmethod gungnir/validator :user/password-match? [_]
+  {:validator/key :user/password-confirmation
+   :validator/fn password-match?
+   :validator/message "Passwords don't match"})
+```
+
+## Model Database Error Formatting
+
+Sometimes even with the perfect model you can still gets errors from the
+database. This can happen when you try to insert a row which contains an
+existing key with a `UNIQUE CONSTRAINT`. Normally JDBC would throw an exception
+for these cases. Gungnir will instead catch them and place them in your
+[changesets](https://kwrooijen.github.io/gungnir/changeset.html)
+`:changeset/errors` key. This error will be identified with a unique keyword and
+can be modified per field using the `gungnir.model/format-error` multimethod.
+
+### Example
+
+During registration, you won't know if an email exists until you hit the
+database. If an email exists (assuming you have a `UNIQUE CONSTRAINT` on the
+email column) Gungnir will return a `:duplicate-key` error. This error can
+transformed to make it more understandable for your end users.
+
+```clojure
+(defmethod gungnir.model/format-error [:user/email :duplicate-key] [_ _]
+  "Email already exists")
+```
+
+---
+
+Previous: [migrations](https://kwrooijen.github.io/gungnir/migrations.html) ---
+Next: [changeset](https://kwrooijen.github.io/gungnir/changeset.html)
