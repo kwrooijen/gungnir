@@ -47,11 +47,11 @@
 (s/fdef all!
   :args
   (s/alt :arity-1
-         (s/cat :table keyword?)
+         (s/cat :table simple-keyword?)
 
          :arity-2
          (s/cat :form (s/or :form map?
-                            :field keyword?)
+                            :field qualified-keyword?)
                 :args (s/* any?)))
   :ret (s/coll-of map?))
 (defn all!
@@ -82,7 +82,7 @@
 
 (s/fdef find-by!
   :args (s/cat :form (s/or :form map?
-                           :field keyword?)
+                           :field qualified-keyword?)
                :args (s/* any?))
   :ret (s/nilable map?))
 (defn find-by!
@@ -100,12 +100,12 @@
 (s/fdef find!
   :args
   (s/alt :arity-2
-         (s/cat :model-k keyword?
+         (s/cat :model-k simple-keyword?
                 :primary-key-value any?)
 
          :arity-3
          (s/cat :form map?
-                :model-k keyword?
+                :model-k simple-keyword?
                 :primary-key-value any?))
   :ret (s/nilable map?))
 (defn find!

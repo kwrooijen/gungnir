@@ -18,7 +18,7 @@
 
 (s/fdef table
   :args (s/cat :record map?)
-  :ret keyword?)
+  :ret simple-keyword?)
 (defn table
   "Return the table name `record`."
   [record]

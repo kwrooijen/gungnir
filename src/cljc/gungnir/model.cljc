@@ -65,9 +65,9 @@
   (string/lower-case v))
 
 #?(:clj
- (defmethod before-read :uuid [_ v]
-   (cond-> v
-     (not (uuid? v)) java.util.UUID/fromString)))
+   (defmethod before-read :uuid [_ v]
+     (cond-> v
+       (not (uuid? v)) java.util.UUID/fromString)))
 
 (defmethod before-read :default [_ v] v)
 
@@ -84,10 +84,7 @@
 
 
 (s/fdef register!
-  :args (s/cat :model-map (s/map-of
-                           (s/and keyword?
-                                  (comp not qualified-keyword?))
-                           :gungnir/model))
+  :args (s/cat :model-map (s/map-of simple-keyword? :gungnir/model))
   :ret nil?)
 (defn register!
   "Adds the `model-map` to the current available models for Gungnir. You
@@ -112,7 +109,7 @@
   nil)
 
 (s/fdef find
-  :args (s/cat :k keyword?)
+  :args (s/cat :k simple-keyword?)
   :ret (s/nilable :gungnir/model))
 (defn find
   "Find a model by `key`. Returns `nil` if not found."
@@ -131,7 +128,7 @@
 
 (s/fdef table
   :args (s/cat :?model :gungnir/model-or-key)
-  :ret keyword?)
+  :ret simple-keyword?)
 (defn table
   "Get the table of `?model`. `?model` can either be a keyword or
   a model."
@@ -170,7 +167,7 @@
   (m/properties (?model->model ?model)))
 
 (s/fdef belongs-to-relation-table
-  :args (s/cat :model-1-key keyword?
+  :args (s/cat :model-1-key simple-keyword?
                :model-2 :gungnir/model-or-key)
   :ret (s/nilable qualified-keyword?))
 (defn belongs-to-relation-table

@@ -36,14 +36,14 @@
                 :rest (s/+ :gungnir.model/field)))))
 
 (s/def :gungnir/model-or-key
-  (s/or :model-key keyword?
+  (s/or :model-key simple-keyword?
         :model :gungnir/model))
 
 ;; Changeset
 
-(s/def :changeset/model keyword?)
+(s/def :changeset/model simple-keyword?)
 
-(s/def :changeset/validators (s/coll-of keyword?))
+(s/def :changeset/validators (s/coll-of qualified-keyword?))
 
 (s/def :changeset/diff map?)
 

@@ -34,7 +34,7 @@
 
 (s/fdef before-read
   :args (s/cat :field :gungnir.model/field-or-key)
-  :ret (s/coll-of keyword?))
+  :ret (s/coll-of qualified-keyword?))
 (defn before-read
   "Get the `:before-read` keywords from `?field`. Return an empty vector
   if not found."
@@ -44,7 +44,7 @@
 
 (s/fdef before-save
   :args (s/cat :field :gungnir.model/field-or-key)
-  :ret (s/coll-of keyword?))
+  :ret (s/coll-of qualified-keyword?))
 (defn before-save
   "Get the `:before-save` keywords from `?field`. Return an empty vector if not
   found."

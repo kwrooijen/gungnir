@@ -56,7 +56,7 @@
                                               :validators vector?))
                :arity-3 (s/cat :origin map?
                                :params map?
-                               :validators (s/coll-of keyword?)))
+                               :validators (s/coll-of qualified-keyword?)))
   :ret :gungnir/changeset)
 (defn changeset
   "Create a changeset to be inserted into the database.
