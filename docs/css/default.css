@@ -649,3 +649,4 @@ blockquote {
 }
 .doc, .public, .namespace .index {max-width: 924px; font-size: 16px; margin: 0 auto;}
 .markdown h2 {font-weight: bold;}
+.footer-navigation {display: flex; justify-content: space-between; padding: 20px 0 30px;}

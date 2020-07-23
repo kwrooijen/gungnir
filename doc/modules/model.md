@@ -303,5 +303,7 @@ exception code. Read more at the
 
 ---
 
-Previous: [migrations](https://kwrooijen.github.io/gungnir/migrations.html) ---
-Next: [changeset](https://kwrooijen.github.io/gungnir/changeset.html)
+<div class="footer-navigation">
+<span>Previous: <a href="https://kwrooijen.github.io/gungnir/migrations.html">migrations</a></span>
+<span>Next: <a href="https://kwrooijen.github.io/gungnir/changeset.html">changeset</a></span>
+</div>

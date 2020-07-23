@@ -26,4 +26,7 @@ that serve this purpose.
 
 ---
 
-Next: [database](https://kwrooijen.github.io/gungnir/database.html)
+<div class="footer-navigation">
+<span></span>
+<span>Next: <a href="https://kwrooijen.github.io/gungnir/database.html">database</a></span>
+</div>

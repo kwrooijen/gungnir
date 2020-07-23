@@ -51,5 +51,7 @@ A custom connection pool can also be set using the
 
 ---
 
-Previous: [guide](https://kwrooijen.github.io/gungnir/guide.html) ---
-Next: [migrations](https://kwrooijen.github.io/gungnir/migrations.html)
+<div class="footer-navigation">
+<span>Previous: <a href="https://kwrooijen.github.io/gungnir/guide.html">guide</a></span>
+<span>Next: <a href="https://kwrooijen.github.io/gungnir/migrations.html">migrations</a></span>
+</div>

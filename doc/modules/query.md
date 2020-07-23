@@ -6,5 +6,7 @@
 
 ---
 
-Previous: [model](https://kwrooijen.github.io/gungnir/model.html) ---
-Next: [changeset](https://kwrooijen.github.io/gungnir/changeset.html)
+<div class="footer-navigation">
+<span>Previous: <a href="https://kwrooijen.github.io/gungnir/model.html">model</a></span>
+<span>Next: <a href="https://kwrooijen.github.io/gungnir/changeset.html">changeset</a></span>
+</div>
