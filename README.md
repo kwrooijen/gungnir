@@ -7,7 +7,6 @@ A high level, data driven database library for Clojure data mapping.
 [![Clojars Project](https://img.shields.io/clojars/v/gungnir.svg)](https://clojars.org/kwrooijen/gungnir)
 [![Slack](https://img.shields.io/badge/clojurians-gungnir-blue.svg?logo=slack)](https://clojurians.slack.com/messages/gungnir/)
 
-
 [Read the guide](https://kwrooijen.github.io/gungnir/guide.html)
 
 ## Rationale
@@ -73,3 +72,5 @@ access to `relational atoms` which can be dereffed to query any related rows.
 Released under the [MIT License] by [Kevin William van Rooijen].
 
 [Kevin William van Rooijen]: https://twitter.com/kwrooijen
+
+[MIT License]: https://github.com/kwrooijen/gungnir/blob/master/LICENSE
