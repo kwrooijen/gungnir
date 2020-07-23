@@ -1,4 +1,4 @@
-# Gungnir Model
+# Model
 
 ## Malli Schemas
 
