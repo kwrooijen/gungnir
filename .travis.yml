@@ -1,5 +1,13 @@
 language: clojure
-before_script: lein ancient
+
+services:
+  - docker
+
+before_script:
+  - docker-compose up -d
+  - lein ancient
+
 script: lein cloverage --codecov
+
 after_success:
   - bash <(curl -s https://codecov.io/bash) -f target/coverage/codecov.json
