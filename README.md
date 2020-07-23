@@ -14,13 +14,11 @@ A high level, data driven database library for Clojure data mapping.
 
 ### Plug & Play setup
 
-Getting your database stack setup in Clojure can be a bit of a chore. It can be
-daunting for new Clojurians (and especially those that have never used
-Java). The Clojure community tends to lean towards the "pick the libraries that
-you need" method rather than using a "framework" when building an
-application. Which just makes it more challenging for new users. Once you're
-familiar with the Clojure ecosystem you'll know which libraries you prefer and
-create your own setup. And that's exactly what I've done.
+The Clojure community tends to lean towards the "pick the libraries that you
+need" method rather than using a "framework" when building an application. Which
+can make it challenging for new users. Once you're familiar with the Clojure
+ecosystem you'll know which libraries you prefer and create your own setup. And
+that's exactly what I've done.
 
 If you want complete control over your database stack, then this is probably not
 for you. If you're a beginner and are overwhelmed with all the necessary
