@@ -296,6 +296,11 @@ transformed to make it more understandable for your end users.
   "Email already exists")
 ```
 
+Note: Gungnir is in its early stages, and only few errors are handled. If an
+unhandled error occurs gungnir will instead of keyword return a Postgresql
+exception code. Read more at the
+[database](https://kwrooijen.github.io/gungnir/database.html) section.
+
 ---
 
 Previous: [migrations](https://kwrooijen.github.io/gungnir/migrations.html) ---
