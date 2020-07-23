@@ -8,6 +8,8 @@ A high level, data driven database library for Clojure data mapping.
 [![Slack](https://img.shields.io/badge/clojurians-gungnir-blue.svg?logo=slack)](https://clojurians.slack.com/messages/gungnir/)
 
 
+[Read the guide](https://kwrooijen.github.io/gungnir/guide.html)
+
 ## Rationale
 
 ### Plug & Play setup

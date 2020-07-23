@@ -12,7 +12,13 @@
   :plugins [[lein-cloverage "1.1.2"]
             [lein-codox "0.10.7"]
             [lein-ancient "0.6.15"]]
-  :codox {:doc-files ["README.md", "doc/modules/model.md"]
+  :codox {:doc-files ["README.md"
+                      "doc/guide.md"
+                      "doc/modules/changeset.md"
+                      "doc/modules/database.md"
+                      "doc/modules/migrations.md"
+                      "doc/modules/model.md"
+                      "doc/modules/query.md"]
           :output-path "docs/"
           :html {:namespace-list :nested}
           :metadata {:doc/format :markdown}

@@ -162,6 +162,7 @@
       (string/replace #"_" "-")
       (keyword)))
 
+;; TODO remove the 0
 (defmethod exception->map [0 "23505"] [^SQLException e]
   (let [error (.getMessage e)
         sql-key (remove-quotes (re-find #"\".*\"" error))
