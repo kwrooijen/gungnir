@@ -41,8 +41,7 @@
                          (ffirst))]
     [k (mu/update-properties v assoc :primary-key primary-key)]))
 
-;; TODO Only accept the validator key
-(defmulti validator (fn [model validator] [model validator]))
+(defmulti validator (fn [validator] validator))
 (defmethod validator :default [k]
   (throw (ex-info "Unknown validator" {:validator k})))
 

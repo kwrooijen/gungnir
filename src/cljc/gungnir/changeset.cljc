@@ -16,11 +16,10 @@
         :error/path [key]}
    fn])
 
-(defn- ->malli-fns [model validators]
-  (let [table (gungnir.model/table model)]
-    (mapv (fn [validator]
-            (validator->malli-fn (gungnir.model/validator table validator)))
-          validators)))
+(defn- ->malli-fns [validators]
+  (mapv (fn [validator]
+          (validator->malli-fn (gungnir.model/validator validator)))
+        validators))
 
 (defn- auto-keys [model]
   (->> (m/children model)
@@ -39,7 +38,7 @@
   ([m model] (validate m model []))
   ([m model validators]
    (if (seq validators)
-     (or (m/explain (reduce conj [:and model] (->malli-fns model validators)) m) m)
+     (or (m/explain (reduce conj [:and model] (->malli-fns validators)) m) m)
      (or (m/explain model m) m))))
 
 (defn- remove-virtual-keys [m model]

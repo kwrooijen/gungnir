@@ -53,7 +53,7 @@
   (= (:user/password m)
      (:user/password-confirmation m)))
 
-(defmethod gungnir.model/validator [:user :register/password-match?] [_ _]
+(defmethod gungnir.model/validator :user/password-match? [_]
   {:validator/key :user/password-confirmation
    :validator/fn password-match?
    :validator/message "Passwords don't match"})

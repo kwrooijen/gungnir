@@ -101,12 +101,12 @@
                 :user/password "123456"
                 :user/password-confirmation "123456"}]
       (is (-> user
-              (changeset [:register/password-match?])
+              (changeset [:user/password-match?])
               :changeset/errors
               nil?))
 
       (is (-> (assoc user :user/password-confirmation "123456+7")
-              (changeset [:register/password-match?])
+              (changeset [:user/password-match?])
               :changeset/errors
               :user/password-confirmation
               some?))))
@@ -116,6 +116,6 @@
                 :user/password "1234"
                 :user/password-confirmation "1234"}]
       (is (-> user
-              (changeset [:register/password-match?])
+              (changeset [:user/password-match?])
               :changeset/errors
               some?)))))
