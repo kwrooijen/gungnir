@@ -79,12 +79,18 @@ rows. [Read
 more](https://kwrooijen.github.io/gungnir/model.html#model-relation-definitions),
 [and more](https://kwrooijen.github.io/gungnir/query.html#querying-relations)
 
-
 ## Resources
 
 ### Guide
 
+[Read the guide](https://kwrooijen.github.io/gungnir/guide.html) For a full
+overview of all the features and how to use them.
+
 ### Code Playground
+
+The [Gungnir code playground](https://github.com/kwrooijen/gungnir-playground)
+is a repository with an "interactive tutorial". Clone the repository and execute
+the code in the core module step by step.
 
 ## Author / License
 
