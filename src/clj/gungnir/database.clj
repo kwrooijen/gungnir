@@ -277,9 +277,10 @@
   :args (s/cat :record map?)
   :ret boolean?)
 (defn delete!
-  "Delete a row from the database based on `record`. The row will be
-  deleted based on the `primary-key`. Return `true` on deletion. If no
-  match is found return `false`."
+  "Delete a row from the database based on `record` which can either be
+  a namespaced map or relational atom. The row will be deleted based
+  on it's `primary-key`. Return `true` on deletion. If no match is
+  found return `false`."
   [record]
   (when-let [record (maybe-deref record)]
     (let [table (gungnir.record/table record)
