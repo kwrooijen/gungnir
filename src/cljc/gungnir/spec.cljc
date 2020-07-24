@@ -49,7 +49,7 @@
 
 (s/def :changeset/origin map?)
 
-(s/def :changeset/sane-origin map?)
+(s/def :changeset/transformed-origin map?)
 
 (s/def :changeset/params map?)
 
@@ -63,7 +63,7 @@
          :changeset/validators
          :changeset/diff
          :changeset/origin
-         :changeset/sane-origin
+         :changeset/transformed-origin
          :changeset/params
          :changeset/result
          :changeset/errors]))

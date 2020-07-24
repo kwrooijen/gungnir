@@ -262,7 +262,7 @@
   that the `:changeset/result` key has a primary-key with a
   values. Returns the updated row on succes. On failure return the
   `changeset` with an updated `:changeset/errors` key."
-  [{:changeset/keys [model errors diff origin sane-origin] :as changeset}]
+  [{:changeset/keys [model errors diff origin transformed-origin] :as changeset}]
   (cond
     errors changeset
     (empty? diff) origin
@@ -270,7 +270,7 @@
     (let [primary-key (gungnir.model/primary-key model)]
       (-> (q/update (gungnir.model/table model))
           (q/sset (record->insert-values diff))
-          (q/where [:= primary-key (get sane-origin primary-key)])
+          (q/where [:= primary-key (get transformed-origin primary-key)])
           (execute-one! changeset {:namespace-as-table? false})))))
 
 (s/fdef delete!
