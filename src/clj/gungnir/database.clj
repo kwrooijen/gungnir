@@ -152,8 +152,7 @@
 
 (defmulti exception->map
   (fn [^SQLException e]
-    [(.getErrorCode e)
-     (.getSQLState e)]))
+    (.getSQLState e)))
 
 (defn- sql-key->keyword [sql-key]
   (-> sql-key
@@ -162,14 +161,13 @@
       (string/replace #"_" "-")
       (keyword)))
 
-;; TODO remove the 0
-(defmethod exception->map [0 "23505"] [^SQLException e]
+(defmethod exception->map "23505" [^SQLException e]
   (let [error (.getMessage e)
         sql-key (remove-quotes (re-find #"\".*\"" error))
         record-key (sql-key->keyword sql-key)]
     {record-key [(gungnir.model/format-error record-key :duplicate-key)]}))
 
-(defmethod exception->map [0 "42P01"] [^SQLException e]
+(defmethod exception->map "42P01" [^SQLException e]
   (let [error (.getMessage e)
         sql-key (remove-quotes (re-find #"\".*\"" error))
         table-key (sql-key->keyword sql-key)]
