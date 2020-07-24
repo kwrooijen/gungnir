@@ -11,13 +11,13 @@
   <p><code>gungnir.query/all!</code> - Find a collection of records based on key value matches  or return an empty vector.</p></li>
 </ul>
 <h2><a href="#gungnir-query-find-by-" name="gungnir-query-find-by-"></a>gungnir.query/find-by!</h2>
-<p>Run a query and return a single record or nil, based on matching keys and values. </p>
-<pre><code class="clojure">(find-by :user/email "user@test.com" 
+<p>Run a query and return a single record or nil, based on matching keys and values.</p>
+<pre><code class="clojure">(find-by :user/email "user@test.com"
          :user/validated true)
 </code></pre>
 <p>Optionally extend the queries using HoneySQL</p>
 <pre><code class="clojure">(-&gt; (select :user/username)
-    (find-by :user/email "user@test.com" 
+    (find-by :user/email "user@test.com"
              :user/validated true))
 </code></pre>
 <h2><a href="#gungnir-query-find-" name="gungnir-query-find-"></a>gungnir.query/find!</h2>
@@ -54,7 +54,7 @@
 <h3><a href="#arity-1" name="arity-1"></a>Arity 1</h3>
 <p><code>?table</code> - either a <code>simple-keyword</code> representing a Gungnir which will return all rows of that table. Or it a <code>HoneySQL</code> form query the database using that.</p>
 <pre><code class="clojure">(all! :user)
- 
+
 (-&gt; (select :*)
     (from :user)
     (all!))
@@ -64,7 +64,7 @@
 <p><code>args</code> - a collection of keys and values. Where the keys are <code>qualified-keywords</code> representing a model fields which will be matched with the values. If no key value pairs are provided then you must supply a model name as a <code>simple-keyword</code>.</p>
 <pre><code class="clojure">(all! :user/validated false
 :user/type :user/pro)
- 
+
 (-&gt; (where [:&gt; :user/date expiration-date])
 (all! :user))
 </code></pre>
