@@ -8,6 +8,11 @@ A high level, data driven database library for Clojure data mapping.
 [![Clojars Project](https://img.shields.io/clojars/v/gungnir.svg)](https://clojars.org/kwrooijen/gungnir)
 [![Slack](https://img.shields.io/badge/clojurians-gungnir-blue.svg?logo=slack)](https://clojurians.slack.com/messages/gungnir/)
 
+> It is said that Gungnir could strike any target, regardless of the wielder's
+> skill.
+>
+> -- Developer, speaking to the database admin.
+
 [Read the guide](https://kwrooijen.github.io/gungnir/guide.html)
 
 ## Rationale
@@ -22,7 +27,7 @@ that's exactly what I've done.
 
 If you want complete control over your database stack, then this is probably not
 for you. If you're a beginner and are overwhelmed with all the necessary
-libraries and configuration, if you're looking for a Clojure database library
+libraries and configuration, or if you're looking for a Clojure database library
 that aims to provide a quality of life experience similar to Ruby's ActiveRecord
 or Elixir's Ecto, then stick around.
 
