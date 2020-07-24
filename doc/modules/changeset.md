@@ -145,8 +145,8 @@ Here's a real-world example on how this might look like using a Ring handler.
 ```clojure
 (defn attempt-register-user [request]
   (-> (:form-params request)
-      (gungnir.model/cast :user)
-      (gungnir.model/changeset [:user/password-match?])
+      (gungnir.changeset/cast :user)
+      (gungnir.changeset/changeset [:user/password-match?])
       (gungnir.query/save!)))
 
 (defn handler-user-registration [request]

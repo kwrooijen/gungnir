@@ -81,8 +81,8 @@
   ```clojure
   (all! :user)
 
-  (-> (q/select :*)
-      (q/from :user)
+  (-> (select :*)
+      (from :user)
       (all!))
   ```
 
@@ -100,7 +100,7 @@
   (all! :user/validated false
         :user/type :user/pro)
 
-  (-> (q/where [:> :user/date expiration-date])
+  (-> (where [:> :user/date expiration-date])
       (all! :user))
   ```
   "
@@ -130,15 +130,29 @@
        true (gungnir.database/query!)))))
 
 (s/fdef find-by!
-  :args (s/cat :form (s/or :form map?
-                           :field qualified-keyword?)
+  :args (s/cat :?form (s/or :form map?
+                            :field qualified-keyword?)
                :args (s/* any?))
   :ret (s/nilable map?))
 (defn find-by!
-  "Find a single record from `table`, where `args` are a key value pair of
-  columns and values. Optionally extend the query using a HoneySQL `form`."
-  ([form & args]
-   (let [[form args] (process-arguments form args)
+  "Run a query and return a single record or nil, based on matching keys and
+  values.
+
+  ```clojure
+  (find-by :user/email \"user@test.com\"
+          :user/validated true)
+  ```
+
+  Optionally extend the queries using HoneySQL
+
+  ```clojure
+  (-> (select :user/username)
+      (find-by :user/email \"user@test.com\"
+               :user/validated true))
+  ```
+  "
+  ([?form & args]
+   (let [[form args] (process-arguments ?form args)
          model (gungnir.record/model args)]
      (cond-> form
        (not (:select form)) (q/select :*)
@@ -173,6 +187,12 @@
 
   `form` - HoneySQL form which will be used to query the database.
 
+  ```clojure
+  (-> (select :*)
+      (from :user)
+      (where [:= :user/id user-id])
+      (find!))
+  ```
   ## Arity 2
 
   Find a record by it's primary-key from the table represented by the
@@ -181,6 +201,10 @@
   `model-key` - Model key which will identify which table to read from.
 
   `primary-key-value` - The value of the primary key to match with.
+
+  ```clojure
+  (find! :user user-id)
+  ```
 
   ## Arity 3
 
@@ -195,7 +219,14 @@
 
 
   Find a single record by its `primary-key-value` from `table`.
-  Optionally extend the query using a HoneySQL `form`."
+  Optionally extend the query using a HoneySQL `form`.
+
+  ```clojure
+  (-> (select :user/email)
+      (where [:= :user/active false])
+      (find! :user user-id))
+  ```
+  "
   ([form] (gungnir.database/query-1! form))
   ([model-key primary-key-value] (find! {} model-key primary-key-value))
   ([form model-key primary-key-value]

@@ -648,6 +648,6 @@ blockquote {
   }
 }
 .doc, .public, .namespace .index {max-width: 924px; font-size: 16px; margin: 0 auto;}
-.markdown h2 {font-weight: bold;}
-.markdown h1 {font-weight: bold;}
+.markdown h1,h2,h3,h4 {font-weight: bold;}
 .footer-navigation {display: flex; justify-content: space-between; padding: 20px 0 30px;}
+.markdown hr {margin-top: 30px; color: #eee;}
