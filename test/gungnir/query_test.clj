@@ -442,3 +442,32 @@
                  (q/all!)
                  (->> (mapv :post/id))
                  (set)))))))
+
+(deftest test-load!
+  (let [user-1 (-> user-1 changeset q/save!)
+        post-1 (-> post-1 (assoc :post/user-id (:user/id user-1)) changeset q/save!)
+        post-2 (-> post-2 (assoc :post/user-id (:user/id user-1)) changeset q/save!)
+        comment-1 (-> comment-1 (assoc :comment/user-id (:user/id user-1)
+                                       :comment/post-id (:post/id post-1))
+                      changeset
+                      q/save!)]
+    (testing "load! should deref a user's posts"
+      (is (= #{(:post/id post-1)
+               (:post/id post-2)}
+             (-> (q/find! :user (:user/id user-1))
+                 (q/load! :user/posts)
+                 :user/posts
+                 (->> (mapv :post/id))
+                 (set)))))
+
+    (testing "load! should deref a user's posts and comments"
+      (is (= #{(:post/id post-1)
+               (:post/id post-2)
+               (:comment/id comment-1)}
+             (-> (q/find! :user (:user/id user-1))
+                 (q/load! :user/posts :user/comments)
+                 ((juxt :user/posts :user/comments))
+                 (flatten)
+                 (->> (mapv #(or (:post/id %)
+                                 (:comment/id %))))
+                 (set)))))))

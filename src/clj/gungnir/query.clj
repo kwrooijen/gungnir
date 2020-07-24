@@ -29,6 +29,16 @@
                          [:= k v]))
                      (gungnir.decode/advanced-decode model args))))
 
+(defn load!
+  "Load the relations `field-keys` of `record`, but retain the structure."
+  [record & field-keys]
+  (reduce (fn [acc k]
+            (if (get acc k)
+              (clojure.core/update acc k deref)
+              acc))
+          record
+          field-keys))
+
 (def ^{:doc "Delete a row from the database based on `record` which can either
   be a namespaced map or relational atom. The row will be deleted based on it's
   `primary-key`. Return `true` on deletion. If no match is found return
