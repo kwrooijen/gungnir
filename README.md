@@ -44,7 +44,7 @@ again.
 ### Plug & Play™
 
 Include Gungnir in your project, and off you go! Gungnir includes (almost)
-everything you need for your app.
+everything for your database needs.
 
 * [next-jdbc](https://github.com/seancorfield/next-jdbc)
 * [hikari-cp](https://github.com/brettwooldridge/HikariCP)
@@ -83,7 +83,7 @@ more](https://kwrooijen.github.io/gungnir/model.html#model-relation-definitions)
 
 ### Guide
 
-[Read the guide](https://kwrooijen.github.io/gungnir/guide.html) For a full
+[Read the guide](https://kwrooijen.github.io/gungnir/guide.html) for a full
 overview of all the features and how to use them.
 
 ### Code Playground

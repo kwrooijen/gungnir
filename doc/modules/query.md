@@ -2,6 +2,12 @@
 
 ## Query API
 
+### gungnir.query/find!
+
+### gungnir.query/find-by!
+
+### gungnir.query/all!
+
 ## Querying Relations
 
 ---
