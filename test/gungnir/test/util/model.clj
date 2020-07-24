@@ -36,6 +36,7 @@
    [:comment/content string?]
    [:comment/user-id uuid?]
    [:comment/post-id uuid?]
+   [:comment/rating {:optional true} int?]
    [:comment/created-at {:auto true} inst?]
    [:comment/updated-at {:auto true} inst?]])
 

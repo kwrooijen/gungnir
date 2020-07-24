@@ -130,8 +130,6 @@ happens when you have more than 1 value to compare to.
 e.g. `[:= :user/age 20 20]`"}
   recurred? false)
 
-(declare recurred?)
-
 (defn- expand-binary-ops [op & args]
   (binding [recurred? true]
     (str "("
@@ -144,9 +142,9 @@ e.g. `[:= :user/age 20 20]`"}
   (reduce #(gungnir.model/before-read %2 %1) b before-read-fns))
 
 (defn- handle-before-read [a b more]
-  (let [before-read-fns (gungnir.field/before-read a)]
-    (if (or recurred? (empty? before-read-fns))
-      [b more]
+  (if recurred?
+    [b more]
+    (let [before-read-fns (gungnir.field/before-read a)]
       [(apply-before-read-fns b before-read-fns)
        (map #(apply-before-read-fns % before-read-fns) more)])))
 

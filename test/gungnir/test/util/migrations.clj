@@ -67,6 +67,7 @@
    " , content TEXT "
    " , user_id uuid references \"user\"(id)"
    " , post_id uuid references post(id)"
+   " , rating INT DEFAULT 0"
    " , created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL "
    " , updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL "
    " );"))

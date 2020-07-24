@@ -50,6 +50,13 @@
   {:post/title post-2-title
    :post/content post-2-content})
 
+(def post-3-title "post-3 title")
+(def post-3-content "post-3 content")
+
+(def post-3
+  {:post/title post-3-title
+   :post/content post-3-content})
+
 (def comment-1-content "comment-1 content")
 
 (def comment-1
@@ -59,6 +66,19 @@
 
 (def comment-2
   {:comment/content comment-2-content})
+
+
+(def comment-3-content "comment-3 content")
+
+(def comment-3
+  {:comment/content comment-3-content
+   :comment/rating 45})
+
+(def comment-4-content "comment-4 content")
+
+(def comment-4
+  {:comment/content comment-4-content
+   :comment/rating 80})
 
 (def token-1
   {:token/type :token/verify})
@@ -244,7 +264,6 @@
                                        :comment/post-id (:post/id post-2))
                       changeset
                       q/save!)]
-
     (testing "user has many posts"
       (is (= #{(:post/id post-1) (:post/id post-2)}
              (-> user
@@ -268,6 +287,7 @@
                  (flatten)
                  (->> (map :comment/id))
                  (set)))))))
+
 
 (deftest test-relation-belongs-to
   (let [user (-> user-1 changeset q/save!)
@@ -342,3 +362,62 @@
 
     (testing "custom error message for duplicate-key"
       (is (= ["username taken"] (-> user-2 :changeset/errors :user/username))))))
+
+(deftest test-custom-where-clause
+  (let [user-1 (-> user-1 changeset q/save!)
+        post-1 (-> post-1 (assoc :post/user-id (:user/id user-1)) changeset q/save!)
+        post-2 (-> post-2 (assoc :post/user-id (:user/id user-1)) changeset q/save!)
+        comment-3 (-> comment-3 (assoc :comment/user-id (:user/id user-1)
+                                       :comment/post-id (:post/id post-1))
+                      changeset
+                      q/save!)
+        comment-4 (-> comment-4 (assoc :comment/user-id (:user/id user-1)
+                                       :comment/post-id (:post/id post-2))
+                      changeset
+                      q/save!)]
+
+    (testing "all! with custom where clause"
+      (is (= [(:comment/id comment-3)]
+             (-> (q/where [:<> :comment/id (:comment/id comment-4)])
+                 (q/all! :comment)
+                 (->> (mapv :comment/id))))))
+
+    (testing "all! with custom where clause and nested conditionals"
+      (is (= [(:comment/id comment-3)]
+             (-> (q/where [:<> :comment/content (:comment/content comment-4) "random"])
+                 (q/all! :comment)
+                 (->> (mapv :comment/id))))))
+
+    (testing "all! with custom where clause and nested conditionals equality"
+      (is (= []
+             (-> (q/where [:= :comment/content (:comment/content comment-4) "random"])
+                 (q/all! :comment)
+                 (->> (mapv :comment/id))))))
+
+    (testing "all! with custom where clause gt"
+      (is (= [(:comment/id comment-4)]
+             (-> (q/where [:> :comment/rating 50])
+                 (q/all! :comment)
+                 (->> (mapv :comment/id))))))
+
+    (testing "all! with custom where clause lt"
+      (is (= [(:comment/id comment-3)]
+             (-> (q/where [:< :comment/rating 50])
+                 (q/all! :comment)
+                 (->> (mapv :comment/id))))))
+
+    (testing "all! with custom where clause lte"
+      (is (= #{(:comment/id comment-3)
+               (:comment/id comment-4)}
+             (-> (q/where [:<= :comment/rating 80])
+                 (q/all! :comment)
+                 (->> (mapv :comment/id))
+                 (set)))))
+
+    (testing "all! with custom where clause gte"
+      (is (= #{(:comment/id comment-3)
+               (:comment/id comment-4)}
+             (-> (q/where [:>= :comment/rating 45])
+                 (q/all! :comment)
+                 (->> (mapv :comment/id))
+                 (set)))))))
