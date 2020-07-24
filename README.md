@@ -20,7 +20,7 @@ A high level, data driven database library for Clojure data mapping.
 ### Plug & Play setup
 
 The Clojure community tends to lean towards the "pick the libraries that you
-need" method rather than using a "framework" when building an application. Which
+need" method rather than using a "framework" when building an application. This
 can make it challenging for new users. Once you're familiar with the Clojure
 ecosystem you'll know which libraries you prefer and create your own setup. And
 that's exactly what I've done.
