@@ -11,7 +11,7 @@ A high level, data driven database library for Clojure data mapping.
 > It is said that Gungnir could strike any target, regardless of the wielder's
 > skill.
 >
-> -- Developer, speaking to the database admin.
+> - Developer, speaking to the database admin.
 
 [Read the guide](https://kwrooijen.github.io/gungnir/guide.html)
 
