@@ -4,6 +4,7 @@ A high level, data driven database library for Clojure data mapping.
 
 [![Build Status](https://travis-ci.org/kwrooijen/gungnir.svg?branch=master)](https://travis-ci.org/kwrooijen/gungnir)
 [![codecov](https://codecov.io/gh/kwrooijen/gungnir/branch/master/graph/badge.svg)](https://codecov.io/gh/kwrooijen/gungnir)
+[![Dependencies Status](https://versions.deps.co/kwrooijen/gungnir/status.svg)](https://versions.deps.co/kwrooijen/gungnir)
 [![Clojars Project](https://img.shields.io/clojars/v/gungnir.svg)](https://clojars.org/kwrooijen/gungnir)
 [![Slack](https://img.shields.io/badge/clojurians-gungnir-blue.svg?logo=slack)](https://clojurians.slack.com/messages/gungnir/)
 
@@ -48,24 +49,37 @@ everything you need for your app.
 
 ### Models
 
-Define models to map your Clojure data to SQL. Gungnir uses models to provides
-seamless translation between Clojure and SQL.
+Gungnir uses models to provide data validation and seamless translation between
+Clojure and SQL. [Read more](https://kwrooijen.github.io/gungnir/model.html)
 
 ### Changesets
 
-Inspired by Elixir Ecto's Changesets. These are used for validating your data
-before creating and updating it in the database.
+Inspired by Elixir Ecto's Changesets. Validating your data before creating and
+updating it in the database. View the actual changes being made, and aggregate
+any error messages. [Read
+more](https://kwrooijen.github.io/gungnir/changeset.html)
 
 ### Querying & Extension to HoneySQL
 
 Gungnir isn't here to reinvent the wheel. Even though we have an interface for
 querying the database, we can still make use of HoneySQL syntax. This allows us
-to expand our queries, or write more complex ones for the edge cases.
+to expand our queries, or write more complex ones for the edge cases. [Read
+more](https://kwrooijen.github.io/gungnir/query.html)
 
 ### Relational mapping
 
 Relations are easily accessed with Gungnir. Records with relations will have
-access to `relational atoms` which can be dereffed to query any related rows.
+access to `relational atoms` which can be dereffed to query any related
+rows. [Read
+more](https://kwrooijen.github.io/gungnir/model.html#model-relation-definitions)
+, [and more](https://kwrooijen.github.io/gungnir/query.html#querying-relations)
+
+
+## Resources
+
+### Guide
+
+### Code Playground
 
 ## Author / License
 
