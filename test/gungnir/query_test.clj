@@ -421,3 +421,24 @@
                  (q/all! :comment)
                  (->> (mapv :comment/id))
                  (set)))))))
+
+(deftest test-only-honeysql-map
+  (let [user-1 (-> user-1 changeset q/save!)
+        post-1 (-> post-1 (assoc :post/user-id (:user/id user-1)) changeset q/save!)
+        post-2 (-> post-2 (assoc :post/user-id (:user/id user-1)) changeset q/save!)]
+
+    (testing "using find! with only a HoneySQL map"
+      (is (= (:post/id post-1)
+             (-> (q/select :*)
+                 (q/from :post)
+                 (q/where [:= :post/id (:post/id post-1)])
+                 (q/find!)
+                 (:post/id)))))
+    (testing "using all! with only a HoneySQL map"
+      (is (= #{(:post/id post-1)
+               (:post/id post-2)}
+             (-> (q/select :*)
+                 (q/from :post)
+                 (q/all!)
+                 (->> (mapv :post/id))
+                 (set)))))))

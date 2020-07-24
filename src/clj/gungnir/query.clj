@@ -31,10 +31,6 @@
 
 (def delete! gungnir.database/delete!)
 
-(def query! gungnir.database/query!)
-
-(def query-1! gungnir.database/query-1!)
-
 (s/fdef save!
   :args (s/cat :changeset :gungnir/changeset)
   :ret (s/or :changeset :gungnir/changeset
@@ -47,38 +43,40 @@
 (s/fdef all!
   :args
   (s/alt :arity-1
-         (s/cat :table simple-keyword?)
-
+         (s/cat :?table (s/or :table simple-keyword?
+                              :form map?))
          :arity-2
-         (s/cat :form (s/or :form map?
+         (s/cat :?form (s/or :form map?
                             :field qualified-keyword?)
                 :args (s/* any?)))
   :ret (s/coll-of map?))
 (defn all!
   "Find multiple records from `table`, where `args` are a key value pair of
   columns and values. Optionally extend the query using a HoneySQL `form`."
-  ([table]
-   (-> (q/select :*)
-       (q/from table)
-       (query!)))
-  ([form & args]
-   (if (or (and (map? form)
+  ([?table]
+   (if (map? ?table)
+     (gungnir.database/query! ?table)
+     (-> (q/select :*)
+         (q/from ?table)
+         (gungnir.database/query!))))
+  ([?form & args]
+   (if (or (and (map? ?form)
                 (> (count args) 1))
-           (and (keyword? form)
+           (and (keyword? ?form)
                 (= 1 (count args))))
-     (let [[form args] (process-arguments form args)
+     (let [[form args] (process-arguments ?form args)
            model (gungnir.record/model args)]
        (cond-> form
          (not (:select form)) (q/select :*)
          true (q/from (gungnir.record/table args))
          true (q/merge-where (args->where model args))
-         true (query!)))
+         true (gungnir.database/query!)))
 
      ;; If only table is given, and no conditionals
-     (cond-> (if (map? form) form {})
-       (not (:select form)) (q/select :*)
+     (cond-> (if (map? ?form) ?form {})
+       (not (:select ?form)) (q/select :*)
        true (q/from (first args))
-       true (query!)))))
+       true (gungnir.database/query!)))))
 
 (s/fdef find-by!
   :args (s/cat :form (s/or :form map?
@@ -99,18 +97,22 @@
 
 (s/fdef find!
   :args
-  (s/alt :arity-2
-         (s/cat :model-k simple-keyword?
-                :primary-key-value any?)
+  (s/alt
+   :arity-1
+   (s/cat :form map?)
 
-         :arity-3
-         (s/cat :form map?
-                :model-k simple-keyword?
-                :primary-key-value any?))
+   :arity-2 (s/cat :model-k simple-keyword?
+                   :primary-key-value any?)
+
+   :arity-3
+   (s/cat :form map?
+          :model-k simple-keyword?
+          :primary-key-value any?))
   :ret (s/nilable map?))
 (defn find!
   "Find a single record by its `primary-key-value` from `table`.
-  Optionally extend the query using a HoneySQL `form`. "
+  Optionally extend the query using a HoneySQL `form`."
+  ([form] (gungnir.database/query-1! form))
   ([model-k primary-key-value] (find! {} model-k primary-key-value))
   ([form model-k primary-key-value]
    (cond-> form
