@@ -71,8 +71,8 @@ more](https://kwrooijen.github.io/gungnir/query.html)
 Relations are easily accessed with Gungnir. Records with relations will have
 access to `relational atoms` which can be dereffed to query any related
 rows. [Read
-more](https://kwrooijen.github.io/gungnir/model.html#model-relation-definitions)
-, [and more](https://kwrooijen.github.io/gungnir/query.html#querying-relations)
+more](https://kwrooijen.github.io/gungnir/model.html#model-relation-definitions),
+[and more](https://kwrooijen.github.io/gungnir/query.html#querying-relations)
 
 
 ## Resources
