@@ -122,15 +122,19 @@ must supply a model name as a `simple-keyword`.
 
 ```clojure
 (all! :user/validated false
-:user/type :user/pro)
+      :user/type :user/pro)
 
 (-> (where [:> :user/date expiration-date])
-(all! :user))
+    (limit 30)
+    (all! :user))
 ```
 
 ---
 
 ## Querying Relations
+
+
+
 
 ---
 

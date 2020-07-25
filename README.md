@@ -34,9 +34,9 @@ or Elixir's Ecto, then stick around.
 ### Data Driven
 
 I cannot stress this enough, I really dislike macros. Clojure and a large part
-of its community have taught me the beauty of writing data driven code. With
-libraries such as HoneySQL, Hiccup, Integrant, Reitit, Malli, I think this is
-the Golden age of Data Driven Clojure. I never want to see macros in my API
+of it's community have taught me the beauty of writing data driven code. With
+great libraries such as HoneySQL, Hiccup, Integrant, Reitit, Malli, I think this
+is the Golden age of Data Driven Clojure. I never want to see macros in my API
 again.
 
 ## Features
@@ -59,8 +59,8 @@ Clojure and SQL. [Read more](https://kwrooijen.github.io/gungnir/model.html)
 
 ### Changesets
 
-Inspired by Elixir Ecto's Changesets. Validating your data before creating and
-updating it in the database. View the actual changes being made, and aggregate
+Inspired by Elixir Ecto's Changesets. Validate your data before inserting or
+updating it in your database. View the actual changes being made, and aggregate
 any error messages. [Read
 more](https://kwrooijen.github.io/gungnir/changeset.html)
 
@@ -90,7 +90,7 @@ overview of all the features and how to use them.
 
 The [Gungnir code playground](https://github.com/kwrooijen/gungnir-playground)
 is a repository with an "interactive tutorial". Clone the repository and execute
-the code in the core module step by step.
+the code in the core namespace step by step.
 
 ## Author / License
 

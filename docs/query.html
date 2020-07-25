@@ -63,10 +63,11 @@
 <p><code>?form</code> - either a <code>HoneySQL</code> form which will extend the query. Or a <code>qualified-keyword</code> representing a model field.</p>
 <p><code>args</code> - a collection of keys and values. Where the keys are <code>qualified-keywords</code> representing a model fields which will be matched with the values. If no key value pairs are provided then you must supply a model name as a <code>simple-keyword</code>.</p>
 <pre><code class="clojure">(all! :user/validated false
-:user/type :user/pro)
+      :user/type :user/pro)
 
 (-&gt; (where [:&gt; :user/date expiration-date])
-(all! :user))
+    (limit 30)
+    (all! :user))
 </code></pre>
 <hr />
 <h2><a href="#querying-relations" name="querying-relations"></a>Querying Relations</h2>
