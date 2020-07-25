@@ -19,7 +19,6 @@ flexible. Additionally there's a convenience method to querying relations.
 Run a query and return a single record or nil, based on matching keys and
 values.
 
-
 ```clojure
 (find-by :user/email "user@test.com"
          :user/validated true)
@@ -133,8 +132,102 @@ must supply a model name as a `simple-keyword`.
 
 ## Querying Relations
 
+Gungnir provides an atom for reading with relations. If you've defined relations
+in the [model](https://kwrooijen.github.io/gungnir/model.html) these atoms will
+become available when you query records.
 
+### Relation atom
 
+The way these atoms work is you don't query the relations immediately. Instead
+the query will only be executed once you `deref` the atom. Additionally you can
+modify the query this atom will execute beforehand by using `swap!` and any
+`HoneySQL` formatting function.
+
+### Relation atom - deref
+
+A very simple example would be to find a user by their email. If in the `:user` model
+has a `has-many` definition like this:
+
+```clojure
+{:has-many :post :user/posts}
+```
+
+You'll be able to query a user's posts like this:
+
+```clojure
+(-> (q/find-by! :user/email "user-posts@mail.com")
+    :user/posts
+    (deref))
+```
+
+If posts also have many comments, you can deref those relations as well simply
+by following the path.
+
+```clojure
+(-> (q/find-by! :user/email "user-posts@mail.com")
+    :user/posts
+    (deref)
+    (first)
+    :post/comments
+    (deref)) ;; Results in the first post's comments
+```
+
+Relations are a two way street, technically speaking you could go back to the
+origin record using `deref`.
+
+```clojure
+(-> (q/find-by! :user/email "user-posts@mail.com")
+    :user/posts
+    (deref)
+    (first)
+    :post/user
+    (deref)) ;; Back to the origin user record
+```
+
+### Relation atom - swap!
+
+If we don't want all the user's atom, but only their top five, you can modify
+the atom with `swap!` before executing `deref`.
+
+```clojure
+(-> (q/find-by! :user/email "user-posts@mail.com")
+    :user/posts
+    (swap! q/limit 5)
+    (swap! q/order-by [:post/score :desc])
+    (deref))
+```
+
+### gungnir.query/load!
+
+Another helper function provided by Gungnir is the `gungnir.query/load!`
+function. This allows you to deref relations in a record without having to
+remove them from the record itself.
+
+```clojure
+(-> (q/find-by! :user/email "user-posts@mail.com")
+    (q/load! :user/posts :user/comments))
+
+;; => #:user{:id #uuid ",,,"
+;; =>        :posts [#:post{,,,}
+;; =>                ,,,]
+;; =>        :comments [#:comment{,,,}
+;; =>                   ,,,]}
+```
+
+Combined with this you can use the `update` core function to modify the atoms
+before loading.
+
+```clojure
+(-> (q/find-by! :user/email "user-posts@mail.com")
+    (update :user/posts q/limit 1)
+    (update :user/comment q/limit 1)
+    (q/load! :user/posts :user/comments))
+
+;; Notice only 1 element in the vectors
+;; => #:user{:id #uuid ",,,"
+;; =>        :posts [#:post{,,,}]
+;; =>        :comments [#:comment{,,,}]
+```
 
 ---
 
