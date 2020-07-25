@@ -17,7 +17,7 @@ A high level, data driven database library for Clojure data mapping.
 
 ## Rationale
 
-### Plug & Play setup
+### Plug & Play setup with quality of life
 
 The Clojure community tends to lean towards the "pick the libraries that you
 need" method rather than using a "framework" when building an application. This
