@@ -8,6 +8,14 @@
   <p>- Developer, speaking to the database admin.</p>
 </blockquote>
 <p><a href="https://kwrooijen.github.io/gungnir/guide.html">Read the guide</a></p>
+<h2><a href="#installation" name="installation"></a>Installation</h2>
+<p>Gungnir is still in its design phase and can result in breaking changes while on the SNAPSHOT version. Any breaking changes will be reflected in the updated documentation.</p>
+<p>Add the following dependencies to your <code>project.clj</code></p>
+<pre><code class="clojure">:dependencies [[kwrooijen/gungnir "0.0.1-SNAPSHOT"]
+               ;; Optionally for frontend validation
+               [kwrooijen/gungnir.ui "0.0.1-SNAPSHOT"]
+               ,,,]
+</code></pre>
 <h2><a href="#rationale" name="rationale"></a>Rationale</h2>
 <h3><a href="#plug-play-setup-with-quality-of-life" name="plug-play-setup-with-quality-of-life"></a>Plug &amp; Play setup with quality of life</h3>
 <p>The Clojure community tends to lean towards the “pick the libraries that you need” method rather than using a “framework” when building an application. This can make it challenging for new users. Once you’re familiar with the Clojure ecosystem you’ll know which libraries you prefer and create your own setup. And that’s exactly what I’ve done.</p>
