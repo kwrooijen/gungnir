@@ -95,6 +95,13 @@ rows. [Read
 more](https://kwrooijen.github.io/gungnir/model.html#model-relation-definitions),
 [and more](https://kwrooijen.github.io/gungnir/query.html#querying-relations)
 
+### Frontend validation
+
+Gungnir also provides an extra package,
+[gungnir.ui](https://github.com/kwrooijen/gungnir.ui). Which provides some
+validation in the frontend. [Read
+more](https://kwrooijen.github.io/gungnir/ui.html)
+
 ## Resources
 
 ### Guide
