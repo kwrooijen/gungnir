@@ -15,6 +15,22 @@ A high level, data driven database library for Clojure data mapping.
 
 [Read the guide](https://kwrooijen.github.io/gungnir/guide.html)
 
+
+## Installation
+
+Gungnir is still in its design phase and can result in breaking changes while on
+the SNAPSHOT version. Any breaking changes will be reflected in the updated
+documentation.
+
+Add the following dependencies to your `project.clj`
+
+```clojure
+:dependencies [[kwrooijen/gungnir "0.0.1-SNAPSHOT"]
+               ;; Optionally for frontend validation
+               [kwrooijen/gungnir.ui "0.0.1-SNAPSHOT"]
+               ,,,]
+```
+
 ## Rationale
 
 ### Plug & Play setup with quality of life
