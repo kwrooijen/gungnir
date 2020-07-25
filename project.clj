@@ -18,7 +18,9 @@
                       "doc/modules/migrations.md"
                       "doc/modules/model.md"
                       "doc/modules/changeset.md"
-                      "doc/modules/query.md"]
+                      "doc/modules/query.md"
+                      "doc/ui.md"
+                      "doc/ui/form.md"]
           :output-path "docs/"
           :html {:namespace-list :nested}
           :metadata {:doc/format :markdown}
