@@ -1,5 +1,6 @@
 (ns gungnir.model.form-validation
   (:require
+   [gungnir.model]
    [malli.core :as m]))
 
 (defmulti handle-validation (fn [k] k))
@@ -9,12 +10,12 @@
     (.-value key-value)))
 
 (defn model-children [model]
-  (->> (m/children model)
+  (->> (m/children (gungnir.model/find model))
        (mapv (comp name first))
        (set)))
 
 (defn model-children-full [model]
-  (->> (m/children model)
+  (->> (m/children (gungnir.model/find model))
        (mapv first)
        set))
 
