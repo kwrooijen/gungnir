@@ -71,20 +71,20 @@
 </code></pre>
 <hr />
 <h2><a href="#querying-relations" name="querying-relations"></a>Querying Relations</h2>
-<p>Gungnir provides an atom for reading with relations. If you’ve defined relations in the <a href="https://kwrooijen.github.io/gungnir/model.html">model</a> these atoms will become available when you query records.</p>
+<p>Gungnir provides an atom for accessing relations. If you’ve defined relations in the <a href="https://kwrooijen.github.io/gungnir/model.html">model</a> these atoms will become available when you query records.</p>
 <h3><a href="#relation-atom" name="relation-atom"></a>Relation atom</h3>
 <p>The way these atoms work is you don’t query the relations immediately. Instead the query will only be executed once you <code>deref</code> the atom. Additionally you can modify the query this atom will execute beforehand by using <code>swap!</code> and any <code>HoneySQL</code> formatting function.</p>
 <h3><a href="#relation-atom-deref" name="relation-atom-deref"></a>Relation atom - deref</h3>
-<p>A very simple example would be to find a user by their email. If in the <code>:user</code> model has a <code>has-many</code> definition like this:</p>
+<p>A very simple example would be to find a user by their email. If in the <code>:user</code> model has a <code>has-many</code> posts definition:</p>
 <pre><code class="clojure">{:has-many :post :user/posts}
 </code></pre>
-<p>You’ll be able to query a user’s posts like this:</p>
-<pre><code class="clojure">(-&gt; (q/find-by! :user/email "user-posts@mail.com")
+<p>You’ll be able to query a user’s posts:</p>
+<pre><code class="clojure">(-&gt; (q/find-by! :user/email "user@test.com")
     :user/posts
-    (deref))
+    (deref)) ;; Query all posts belong to the user "user@test.com"
 </code></pre>
 <p>If posts also have many comments, you can deref those relations as well simply by following the path.</p>
-<pre><code class="clojure">(-&gt; (q/find-by! :user/email "user-posts@mail.com")
+<pre><code class="clojure">(-&gt; (q/find-by! :user/email "user@test.com")
     :user/posts
     (deref)
     (first)
@@ -92,7 +92,7 @@
     (deref)) ;; Results in the first post's comments
 </code></pre>
 <p>Relations are a two way street, technically speaking you could go back to the origin record using <code>deref</code>.</p>
-<pre><code class="clojure">(-&gt; (q/find-by! :user/email "user-posts@mail.com")
+<pre><code class="clojure">(-&gt; (q/find-by! :user/email "user@test.com")
     :user/posts
     (deref)
     (first)
@@ -100,8 +100,8 @@
     (deref)) ;; Back to the origin user record
 </code></pre>
 <h3><a href="#relation-atom-swap-" name="relation-atom-swap-"></a>Relation atom - swap!</h3>
-<p>If we don’t want all the user’s atom, but only their top five, you can modify the atom with <code>swap!</code> before executing <code>deref</code>.</p>
-<pre><code class="clojure">(-&gt; (q/find-by! :user/email "user-posts@mail.com")
+<p>If we don’t want all the user’s posts, but only their top five, you can modify the atom with <code>swap!</code> before executing <code>deref</code>.</p>
+<pre><code class="clojure">(-&gt; (q/find-by! :user/email "user@test.com")
     :user/posts
     (swap! q/limit 5)
     (swap! q/order-by [:post/score :desc])
@@ -109,7 +109,7 @@
 </code></pre>
 <h3><a href="#gungnir-query-load-" name="gungnir-query-load-"></a>gungnir.query/load!</h3>
 <p>Another helper function provided by Gungnir is the <code>gungnir.query/load!</code> function. This allows you to deref relations in a record without having to remove them from the record itself.</p>
-<pre><code class="clojure">(-&gt; (q/find-by! :user/email "user-posts@mail.com")
+<pre><code class="clojure">(-&gt; (q/find-by! :user/email "user@test.com")
     (q/load! :user/posts :user/comments))
 
 ;; =&gt; #:user{:id #uuid ",,,"
@@ -119,7 +119,7 @@
 ;; =&gt;                   ,,,]}
 </code></pre>
 <p>Combined with this you can use the <code>update</code> core function to modify the atoms before loading.</p>
-<pre><code class="clojure">(-&gt; (q/find-by! :user/email "user-posts@mail.com")
+<pre><code class="clojure">(-&gt; (q/find-by! :user/email "user@test.com")
     (update :user/posts q/limit 1)
     (update :user/comment q/limit 1)
     (q/load! :user/posts :user/comments))

@@ -132,8 +132,8 @@ must supply a model name as a `simple-keyword`.
 
 ## Querying Relations
 
-Gungnir provides an atom for reading with relations. If you've defined relations
-in the [model](https://kwrooijen.github.io/gungnir/model.html) these atoms will
+Gungnir provides an atom for accessing relations. If you've defined relations in
+the [model](https://kwrooijen.github.io/gungnir/model.html) these atoms will
 become available when you query records.
 
 ### Relation atom
@@ -146,25 +146,25 @@ modify the query this atom will execute beforehand by using `swap!` and any
 ### Relation atom - deref
 
 A very simple example would be to find a user by their email. If in the `:user` model
-has a `has-many` definition like this:
+has a `has-many` posts definition:
 
 ```clojure
 {:has-many :post :user/posts}
 ```
 
-You'll be able to query a user's posts like this:
+You'll be able to query a user's posts:
 
 ```clojure
-(-> (q/find-by! :user/email "user-posts@mail.com")
+(-> (q/find-by! :user/email "user@test.com")
     :user/posts
-    (deref))
+    (deref)) ;; Query all posts belong to the user "user@test.com"
 ```
 
 If posts also have many comments, you can deref those relations as well simply
 by following the path.
 
 ```clojure
-(-> (q/find-by! :user/email "user-posts@mail.com")
+(-> (q/find-by! :user/email "user@test.com")
     :user/posts
     (deref)
     (first)
@@ -176,7 +176,7 @@ Relations are a two way street, technically speaking you could go back to the
 origin record using `deref`.
 
 ```clojure
-(-> (q/find-by! :user/email "user-posts@mail.com")
+(-> (q/find-by! :user/email "user@test.com")
     :user/posts
     (deref)
     (first)
@@ -186,11 +186,11 @@ origin record using `deref`.
 
 ### Relation atom - swap!
 
-If we don't want all the user's atom, but only their top five, you can modify
+If we don't want all the user's posts, but only their top five, you can modify
 the atom with `swap!` before executing `deref`.
 
 ```clojure
-(-> (q/find-by! :user/email "user-posts@mail.com")
+(-> (q/find-by! :user/email "user@test.com")
     :user/posts
     (swap! q/limit 5)
     (swap! q/order-by [:post/score :desc])
@@ -204,7 +204,7 @@ function. This allows you to deref relations in a record without having to
 remove them from the record itself.
 
 ```clojure
-(-> (q/find-by! :user/email "user-posts@mail.com")
+(-> (q/find-by! :user/email "user@test.com")
     (q/load! :user/posts :user/comments))
 
 ;; => #:user{:id #uuid ",,,"
@@ -218,7 +218,7 @@ Combined with this you can use the `update` core function to modify the atoms
 before loading.
 
 ```clojure
-(-> (q/find-by! :user/email "user-posts@mail.com")
+(-> (q/find-by! :user/email "user@test.com")
     (update :user/posts q/limit 1)
     (update :user/comment q/limit 1)
     (q/load! :user/posts :user/comments))
