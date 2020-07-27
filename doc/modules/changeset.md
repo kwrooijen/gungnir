@@ -121,9 +121,9 @@ proper model maps you can use the `gungnir.changeset/cast` function.
 ;; =>  :user/password-confirmation "12345"}
 ```
 
-Using this function you'll be able to filer out any unnecessary fields based on
+Using this function you'll be able to filter out any unnecessary fields based on
 the model definition. Once the map has been cast, Gungnir will know which model
-to use when you create a changeset.
+to use when you create a changeset because of the namespaced keywords.
 
 ## Saving a changeset
 

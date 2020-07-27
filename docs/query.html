@@ -12,13 +12,13 @@
 </ul>
 <h2><a href="#gungnir-query-find-by-" name="gungnir-query-find-by-"></a>gungnir.query/find-by!</h2>
 <p>Run a query and return a single record or nil, based on matching keys and values.</p>
-<pre><code class="clojure">(find-by :user/email "user@test.com"
-         :user/validated true)
+<pre><code class="clojure">(find-by! :user/email "user@test.com"
+          :user/validated true)
 </code></pre>
-<p>Optionally extend the queries using HoneySQL</p>
+<p>Optionally extend the queries using HoneySQL. <code>gungnir.query</code> aliases the HoneySQL helper functions, so you don’t have to require that separately.</p>
 <pre><code class="clojure">(-&gt; (select :user/username)
-    (find-by :user/email "user@test.com"
-             :user/validated true))
+    (find-by! :user/email "user@test.com"
+              :user/validated true))
 </code></pre>
 <h2><a href="#gungnir-query-find-" name="gungnir-query-find-"></a>gungnir.query/find!</h2>
 <p>Run a query and return a single record or nil.</p>

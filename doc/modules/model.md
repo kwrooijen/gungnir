@@ -8,7 +8,7 @@ your database.
 
 * Only data you describe as valid will be saved to the database.
 * Perform transformations to your data when reading / writing to the database.
-* Create descriptive error messages for your end user.
+* Create descriptive error messages for your end users.
 
 ```clojure
 ;; Define a user model
@@ -47,9 +47,9 @@ that can be used.
 
 ### `:primary-key` (required)
 
-Describe which key is the `PRIMARY KEY` in your database. This is required for
-Gungnir to be able to make use of the full querying API, as well as the
-relational mapping.
+Describe which key is the `PRIMARY KEY` in your table. This is required for
+Gungnir to be able to make use of the querying API, as well as the relational
+mapping.
 
 ```clojure
 [:user/id {:primary-key true} uuid?]
@@ -57,9 +57,9 @@ relational mapping.
 
 ### `:auto`
 
-Tell Gungnir that this key is automatically managed by the database, and Gungir
+Tell Gungnir that this key is automatically managed by the database, and Gungnir
 should never make an attempt to modify it. This is useful for e.g. `TIMESTAMP`
-columns which might update automatically.
+columns which might be updated automatically.
 
 ```sql
 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
@@ -72,8 +72,8 @@ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 ### `:virtual`
 
 Tell Gungnir that you want this key to be part of your Model, but it does not
-exist as a field in the database. Gungnir will make no attempt to query, or save
-this key. Useful for things such as password-confirmation fields.
+exist as a column in the database. Gungnir will make no attempt to query, or
+save this key. Useful for things such as password-confirmation fields.
 
 ```clojure
 [:user/password-confirmation {:virtual true} string?]
@@ -81,17 +81,17 @@ this key. Useful for things such as password-confirmation fields.
 
 ### `:before-save`
 
-Add hooks to a column to be executed before you save to the database. This is
-useful to keep data transformations consistent. For example you always want to
-encrypt passwords before saving them to the database. Passwords could be set
+Add hooks to a column to be executed before you save them to the database. This
+is useful to keep data transformations consistent. For example you always want
+to encrypt passwords before saving them to the database. Passwords could be set
 during creating, updated on the profile page, changed through a password
 reset. In all of these cases you must encrypt the user's inputted password
-before inserting to the database.
+before inserting it to the database.
 
 Add a `:bcrypt` key to the `:before-save` vector for `:user/password`.
 
 ```clojure
-[:user/password {:before-save [:bcrypt} string?]
+[:user/password {:before-save [:bcrypt]} string?]
 ```
 
 And define the `:bycrypt` `:before-save` handler. Handlers take the key and
@@ -106,10 +106,10 @@ will be saved in the database.
 ### `:before-read`
 
 Add hooks to a column to be executed before you read it from database. This is
-useful if want to sanitize any query paramaters before reading. For example you
+useful if want to sanitize any query parameters before reading. For example you
 could save all emails as lowercase (with the `gungnir.model/before-save`
 hook). Then add a `:before-read` hook to lowercase the email field when you
-query the database. That way you'll be able to deal case sensitive data.
+query the database. That way you'll be able to deal with case sensitive data.
 
 Add the `:before-save` and `:before-read` hooks.
 
@@ -131,19 +131,17 @@ Define the hooks to be used
 ```
 
 Gungnir has the `:string/lower-case` hooks built-in, so you don't have to define
-it yourself.
+them yourself.
 
 ### `:after-read`
 
-Add hooks to a column to be executed after you read it from database. This is
-useful if want to transform any data after you read it from the database. You
-could encrypt data before saving it, and decrypt it after reading it for extra
+Add hooks to a column to be executed after you read it from database. You could
+encrypt data before saving it, and decrypt it after reading it for extra
 security. Another use case is saving keywords to the database as strings, and
 parsing it as EDN after reading it.
 
-
 In this case, user has an `:user/option` key, which is a qualified-keyword. You
-can't store keywords in SQL, so it's converted to a string.
+can't store keywords in SQL, so they're converted to strings.
 
 ```clojure
 [:user/option 
@@ -171,7 +169,7 @@ page.
 ### `:has-many`
 
 Describe a `:has-many` relation which can be queried through the current
-model. This relational query will return a vector of results.
+model. This relational query will return a vector of maps.
 
 ```clojure
 [:map
@@ -182,7 +180,7 @@ model. This relational query will return a vector of results.
 ### `:has-one`
 
 Describe a `:has-one` relation which can be queried through the current
-model. This relational query will return a result or `nil`.
+model. This relational query will return a single map or `nil`.
 
 ```clojure
 [:map
@@ -193,7 +191,7 @@ model. This relational query will return a result or `nil`.
 ### `:belongs-to`
 
 Describe a `:belongs-to` relation which can be queried through the current
-model. This relational query will return a result or `nil`.
+model. This relational query will return a single map or `nil`.
 
 ```clojure
 [:map
@@ -240,8 +238,7 @@ In the example below we define the following relations:
 
 ## Model Validators
 
-In some situations you will want to have extra validations for specific
-situations. Visit the
+In some situations you will want to have extra validations. Visit the
 [changeset](https://kwrooijen.github.io/gungnir/changeset.html) page to learn
 how to use validators.
 

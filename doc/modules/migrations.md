@@ -1,7 +1,7 @@
 # Migrations
 
-Migrations are currently not supported by Gungnir. Eventually we'll create a
-data driven solution but for now we'll have to use one of the other libraries
+Migrations are currently not built-in to Gungnir. Eventually we'll create a data
+driven solution but for now we'll have to use one of the other libraries
 available.
 
 [Ragtime](https://github.com/weavejester/ragtime) is the recommended migration
@@ -80,13 +80,13 @@ column which will automatically update.
 ## Running migrations
 
 For convenience you can add the Ragtime configuration in your `user.clj`. This
-will allow yo to access it whenever you enter the REPL in the user namespace.
+will allow you to access it whenever you enter the REPL in the user namespace.
 
 ```clojure
 (ns user
   (:require 
     [ragtime.jdbc :as jdbc]
-    [gungnir.database/*database*]))
+    [gungnir.database]))
 
 (def config
   {:datastore (ragtime.jdbc/sql-database {:datasource gungnir.database/*database*})
@@ -95,7 +95,7 @@ will allow yo to access it whenever you enter the REPL in the user namespace.
 
 Enter the REPL (e.g. `lein repl`). Require the `ragtime.repl` namespace and run
 the migrations using the `ragtime.repl/migrate` function. All pending migrations
-will be run.
+will be executed.
 
 ``` clojure
 user=> (require '[ragtime.repl :as repl])

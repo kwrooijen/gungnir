@@ -83,7 +83,7 @@
 ;; =&gt;  :user/password "123456"
 ;; =&gt;  :user/password-confirmation "12345"}
 </code></pre>
-<p>Using this function you’ll be able to filer out any unnecessary fields based on the model definition. Once the map has been cast, Gungnir will know which model to use when you create a changeset.</p>
+<p>Using this function you’ll be able to filter out any unnecessary fields based on the model definition. Once the map has been cast, Gungnir will know which model to use when you create a changeset because of the namespaced keywords.</p>
 <h2><a href="#saving-a-changeset" name="saving-a-changeset"></a>Saving a changeset</h2>
 <p>Once all validation checks pass, you’ll be able to save a changeset to the database using the <code>gungnir.query/save!</code> function. This function will either insert or update the record depending if a <code>primary-key</code> is available. Gungnir knows which field is the primary-key because it is defined in the model. If you attempt to save the changeset when the <code>:changeset/errors</code> key is not <code>nil</code>, the <code>gungnir.query/save!</code> function will have <strong>no</strong> side effects and return the changeset as is.</p>
 <p>If there are no errors, Gungnir will attempt to insert / update the record in question. Applying this change however can also result in errors (e.g. <code>UNIQUE

@@ -41,13 +41,13 @@ This function accepts any of the following arguments:
 Once established, the datasource will be stored in
 `gungnir.database/*database*`. If you're using the Gungnir
 [query](https://kwrooijen.github.io/gungnir/query.html) API you won't have to
-access this yourself. Currently Gungnir only supports creating a single database
-connection.
+access this yourself. Currently Gungnir only supports creating a single
+datasource.
 
 ## Setting a custom connection pool
 
 A custom connection pool can also be set using the
-`gungnir.database/set-database!` function.
+`gungnir.database/set-datasource!` function.
 
 ---
 

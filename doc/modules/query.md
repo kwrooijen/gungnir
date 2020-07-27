@@ -20,16 +20,17 @@ Run a query and return a single record or nil, based on matching keys and
 values.
 
 ```clojure
-(find-by :user/email "user@test.com"
-         :user/validated true)
+(find-by! :user/email "user@test.com"
+          :user/validated true)
 ```
 
-Optionally extend the queries using HoneySQL
+Optionally extend the queries using HoneySQL. `gungnir.query` aliases the
+HoneySQL helper functions, so you don't have to require that separately.
 
 ```clojure
 (-> (select :user/username)
-    (find-by :user/email "user@test.com"
-             :user/validated true))
+    (find-by! :user/email "user@test.com"
+              :user/validated true))
 ```
 
 ## gungnir.query/find!

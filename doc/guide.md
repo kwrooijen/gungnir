@@ -1,8 +1,8 @@
 # Guide
 
 Gungnir tries to supply all the tools you need to easily manage communication
-between between your Clojure datastructures and SQL. There are a few modules
-that serve this purpose.
+between your Clojure datastructures and SQL. There are a few modules that serve
+this purpose.
 
 * [database](https://kwrooijen.github.io/gungnir/database.html) - Establishing a
   database connection, thread pooling, and handling database errors.

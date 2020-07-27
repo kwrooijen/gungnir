@@ -6,7 +6,7 @@
 <ul>
   <li>Only data you describe as valid will be saved to the database.</li>
   <li>Perform transformations to your data when reading / writing to the database.</li>
-  <li>Create descriptive error messages for your end user.</li>
+  <li>Create descriptive error messages for your end users.</li>
 </ul>
 <pre><code class="clojure">;; Define a user model
 
@@ -33,30 +33,30 @@
 <h2><a href="#model-field-properties" name="model-field-properties"></a>Model Field Properties</h2>
 <p>Malli schemas support adding properties. Gungnir has a few custom properties that can be used.</p>
 <h3><a href="#required-" name="required-"></a><code>:primary-key</code> (required)</h3>
-<p>Describe which key is the <code>PRIMARY KEY</code> in your database. This is required for Gungnir to be able to make use of the full querying API, as well as the relational mapping.</p>
+<p>Describe which key is the <code>PRIMARY KEY</code> in your table. This is required for Gungnir to be able to make use of the querying API, as well as the relational mapping.</p>
 <pre><code class="clojure">[:user/id {:primary-key true} uuid?]
 </code></pre>
 <h3><code>:auto</code></h3>
-<p>Tell Gungnir that this key is automatically managed by the database, and Gungir should never make an attempt to modify it. This is useful for e.g. <code>TIMESTAMP</code> columns which might update automatically.</p>
+<p>Tell Gungnir that this key is automatically managed by the database, and Gungnir should never make an attempt to modify it. This is useful for e.g. <code>TIMESTAMP</code> columns which might be updated automatically.</p>
 <pre><code class="sql">created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 </code></pre>
 <pre><code class="clojure">[:user/created-at {:auto true} inst?]
 </code></pre>
 <h3><code>:virtual</code></h3>
-<p>Tell Gungnir that you want this key to be part of your Model, but it does not exist as a field in the database. Gungnir will make no attempt to query, or save this key. Useful for things such as password-confirmation fields.</p>
+<p>Tell Gungnir that you want this key to be part of your Model, but it does not exist as a column in the database. Gungnir will make no attempt to query, or save this key. Useful for things such as password-confirmation fields.</p>
 <pre><code class="clojure">[:user/password-confirmation {:virtual true} string?]
 </code></pre>
 <h3><code>:before-save</code></h3>
-<p>Add hooks to a column to be executed before you save to the database. This is useful to keep data transformations consistent. For example you always want to encrypt passwords before saving them to the database. Passwords could be set during creating, updated on the profile page, changed through a password reset. In all of these cases you must encrypt the user’s inputted password before inserting to the database.</p>
+<p>Add hooks to a column to be executed before you save them to the database. This is useful to keep data transformations consistent. For example you always want to encrypt passwords before saving them to the database. Passwords could be set during creating, updated on the profile page, changed through a password reset. In all of these cases you must encrypt the user’s inputted password before inserting it to the database.</p>
 <p>Add a <code>:bcrypt</code> key to the <code>:before-save</code> vector for <code>:user/password</code>.</p>
-<pre><code class="clojure">[:user/password {:before-save [:bcrypt} string?]
+<pre><code class="clojure">[:user/password {:before-save [:bcrypt]} string?]
 </code></pre>
 <p>And define the <code>:bycrypt</code> <code>:before-save</code> handler. Handlers take the key and value of field in question. The resulting value of <code>gungnir.model/before-save</code> will be saved in the database.</p>
 <pre><code class="clojure">(defmethod gungnir.model/before-save :bcrypt [_k v]
   (hashers/derive v))
 </code></pre>
 <h3><code>:before-read</code></h3>
-<p>Add hooks to a column to be executed before you read it from database. This is useful if want to sanitize any query paramaters before reading. For example you could save all emails as lowercase (with the <code>gungnir.model/before-save</code> hook). Then add a <code>:before-read</code> hook to lowercase the email field when you query the database. That way you’ll be able to deal case sensitive data.</p>
+<p>Add hooks to a column to be executed before you read it from database. This is useful if want to sanitize any query parameters before reading. For example you could save all emails as lowercase (with the <code>gungnir.model/before-save</code> hook). Then add a <code>:before-read</code> hook to lowercase the email field when you query the database. That way you’ll be able to deal with case sensitive data.</p>
 <p>Add the <code>:before-save</code> and <code>:before-read</code> hooks.</p>
 <pre><code class="clojure">[:user/email 
  {:before-save [:string/lower-case]
@@ -70,10 +70,10 @@
 (defmethod gungnir.model/before-read :string/lower-case [_k v]
   (clojure.string/lower-case v))
 </code></pre>
-<p>Gungnir has the <code>:string/lower-case</code> hooks built-in, so you don’t have to define it yourself.</p>
+<p>Gungnir has the <code>:string/lower-case</code> hooks built-in, so you don’t have to define them yourself.</p>
 <h3><code>:after-read</code></h3>
-<p>Add hooks to a column to be executed after you read it from database. This is useful if want to transform any data after you read it from the database. You could encrypt data before saving it, and decrypt it after reading it for extra security. Another use case is saving keywords to the database as strings, and parsing it as EDN after reading it.</p>
-<p>In this case, user has an <code>:user/option</code> key, which is a qualified-keyword. You can’t store keywords in SQL, so it’s converted to a string.</p>
+<p>Add hooks to a column to be executed after you read it from database. You could encrypt data before saving it, and decrypt it after reading it for extra security. Another use case is saving keywords to the database as strings, and parsing it as EDN after reading it.</p>
+<p>In this case, user has an <code>:user/option</code> key, which is a qualified-keyword. You can’t store keywords in SQL, so they’re converted to strings.</p>
 <pre><code class="clojure">[:user/option 
  {:after-read [:edn/read-string]}
  [:enum :option/one :option/two :option/three]]
@@ -87,19 +87,19 @@
 <h2><a href="#model-relation-definitions" name="model-relation-definitions"></a>Model Relation Definitions</h2>
 <p>Gungnir can handle relational mapping for you. This is done by adding relation definitions to the models properties. For more information regarding querying relations visit the <a href="https://kwrooijen.github.io/gungnir/query.html">query</a> page.</p>
 <h3><code>:has-many</code></h3>
-<p>Describe a <code>:has-many</code> relation which can be queried through the current model. This relational query will return a vector of results.</p>
+<p>Describe a <code>:has-many</code> relation which can be queried through the current model. This relational query will return a vector of maps.</p>
 <pre><code class="clojure">[:map
  {:has-many {:post :user/posts}}
  ,,,]
 </code></pre>
 <h3><code>:has-one</code></h3>
-<p>Describe a <code>:has-one</code> relation which can be queried through the current model. This relational query will return a result or <code>nil</code>.</p>
+<p>Describe a <code>:has-one</code> relation which can be queried through the current model. This relational query will return a single map or <code>nil</code>.</p>
 <pre><code class="clojure">[:map
  {:has-one {:reset-token :user/reset-token}}
  ,,,]
 </code></pre>
 <h3><code>:belongs-to</code></h3>
-<p>Describe a <code>:belongs-to</code> relation which can be queried through the current model. This relational query will return a result or <code>nil</code>.</p>
+<p>Describe a <code>:belongs-to</code> relation which can be queried through the current model. This relational query will return a single map or <code>nil</code>.</p>
 <pre><code class="clojure">[:map
  {:belongs-to {:user :post/user-id}}
  ,,,]
@@ -139,7 +139,7 @@
   ,,,])
 </code></pre>
 <h2><a href="#model-validators" name="model-validators"></a>Model Validators</h2>
-<p>In some situations you will want to have extra validations for specific situations. Visit the <a href="https://kwrooijen.github.io/gungnir/changeset.html">changeset</a> page to learn how to use validators.</p>
+<p>In some situations you will want to have extra validations. Visit the <a href="https://kwrooijen.github.io/gungnir/changeset.html">changeset</a> page to learn how to use validators.</p>
 <p>Validators are defined using the <code>gungnir.model/validator</code> multimethod. Which is matched with a <code>qualified-keyword</code>.</p>
 <p>The <code>gungnir.model/validator</code> multimethod should return the following map.</p>
 <ul>
