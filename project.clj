@@ -2,7 +2,7 @@
   :description "High level Clojure database library"
   :url "https://github.com/kwrooijen/gungnir"
   :license {:name "MIT"}
-  :source-paths ["src/clj" "src/cljs" "src/cljc"]
+  :source-paths ["src/clj" "src/cljc"]
   :dependencies [[seancorfield/next.jdbc "1.1.569"]
                  [org.postgresql/postgresql "42.2.14"]
                  [honeysql "1.0.444"]
