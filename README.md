@@ -15,6 +15,7 @@ A high level, data driven database library for Clojure data mapping.
 
 [Read the guide](https://kwrooijen.github.io/gungnir/guide.html)
 
+[Dutch Clojure Meetup - Gungnir](https://www.youtube.com/watch?v=9Sr_-Vk9wBw)
 
 ## Installation
 
