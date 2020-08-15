@@ -3,8 +3,8 @@
   :url "https://github.com/kwrooijen/gungnir"
   :license {:name "MIT"}
   :source-paths ["src/clj" "src/cljc"]
-  :dependencies [[seancorfield/next.jdbc "1.1.569"]
-                 [org.postgresql/postgresql "42.2.14"]
+  :dependencies [[seancorfield/next.jdbc "1.1.582"]
+                 [org.postgresql/postgresql "42.2.15"]
                  [honeysql "1.0.444"]
                  [metosin/malli "0.0.1-SNAPSHOT"]
                  [differ "0.3.3"]
