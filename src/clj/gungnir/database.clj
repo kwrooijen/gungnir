@@ -4,7 +4,7 @@
    ;; https://cljdoc.org/d/seancorfield/next.jdbc/1.0.13/api/next.jdbc.date-time
    [clojure.spec.alpha :as s]
    [gungnir.database.builder]
-   [gungnir.database.util]
+   [clj-database-url.core]
    [gungnir.record]
    [gungnir.field]
    [next.jdbc.date-time]
@@ -357,4 +357,4 @@
   ([url options]
    (set-datasource!
     (hikari-cp/make-datasource
-     (merge options {:jdbc-url (gungnir.database.util/->jdbc-database-url url)})))))
+     (merge options {:jdbc-url (clj-database-url.core/jdbc-database-url url)})))))
