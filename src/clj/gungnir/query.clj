@@ -11,6 +11,35 @@
    [honeysql.format :as fmt]
    [honeysql.helpers :as q]))
 
+(s/def :honeysql/map map?)
+
+(s/def ::args.all
+  (s/alt :arity-1
+         (s/cat :?table (s/or :table simple-keyword?
+                              :form map?))
+         :arity-2
+         (s/cat :?form (s/or :form map?
+                             :field qualified-keyword?)
+                :args (s/* any?))))
+
+(s/def ::args.find-by
+  (s/cat :?form (s/or :form map?
+                      :field qualified-keyword?)
+         :args (s/* any?)))
+
+(s/def ::args.find
+  (s/alt
+   :arity-1
+   (s/cat :form map?)
+
+   :arity-2 (s/cat :model-k simple-keyword?
+                   :primary-key-value any?)
+
+   :arity-3
+   (s/cat :form map?
+          :model-k simple-keyword?
+          :primary-key-value any?)))
+
 (defn- args->map [args]
   (->> args
        (partition 2)
@@ -66,17 +95,10 @@
     (gungnir.database/update! changeset)
     (gungnir.database/insert! changeset)))
 
-(s/fdef all!
-  :args
-  (s/alt :arity-1
-         (s/cat :?table (s/or :table simple-keyword?
-                              :form map?))
-         :arity-2
-         (s/cat :?form (s/or :form map?
-                             :field qualified-keyword?)
-                :args (s/* any?)))
-  :ret (s/coll-of map?))
-(defn all!
+(s/fdef all
+  :args ::args.all
+  :ret :honeysql/map)
+(defn all
   "Run a query and return a collection of records.
 
   Depending on the types of arguments provided, `all!` will have
@@ -89,11 +111,11 @@
   the database using that.
 
   ```clojure
-  (all! :user)
+  (all :user)
 
   (-> (select :*)
       (from :user)
-      (all!))
+      (all))
   ```
 
   ## Arity 2
@@ -107,19 +129,18 @@
   must supply a model name as a `simple-keyword`.
 
   ```clojure
-  (all! :user/validated false
-        :user/type :user/pro)
+  (all :user/validated false
+       :user/type :user/pro)
 
   (-> (where [:> :user/date expiration-date])
-      (all! :user))
+      (all :user))
   ```
   "
   ([?table]
    (if (map? ?table)
-     (gungnir.database/query! ?table)
+     ?table
      (-> (q/select :*)
-         (q/from ?table)
-         (gungnir.database/query!))))
+         (q/from ?table))))
   ([?form & args]
    (if (or (and (map? ?form)
                 (> (count args) 1))
@@ -130,21 +151,27 @@
        (cond-> form
          (not (:select form)) (q/select :*)
          true (q/from (gungnir.record/table args))
-         true (q/merge-where (args->where model args))
-         true (gungnir.database/query!)))
+         true (q/merge-where (args->where model args))))
 
      ;; If only table is given, and no conditionals
      (cond-> (if (map? ?form) ?form {})
        (not (:select ?form)) (q/select :*)
-       true (q/from (first args))
-       true (gungnir.database/query!)))))
+       true (q/from (first args))))))
 
-(s/fdef find-by!
-  :args (s/cat :?form (s/or :form map?
-                            :field qualified-keyword?)
-               :args (s/* any?))
-  :ret (s/nilable map?))
-(defn find-by!
+(s/fdef all!
+  :args ::args.all
+  :ret (s/coll-of map?))
+(defn all!
+  "Same as `gungnir.query/all` but executes the query with the global
+  datasource."
+  ([& args]
+   (gungnir.database/query! (apply all args))))
+
+
+(s/fdef find-by
+  :args ::args.find-by
+  :ret :honeysql/map)
+(defn find-by
   "Run a query and return a single record or nil, based on matching keys and
   values.
 
@@ -167,27 +194,24 @@
      (cond-> form
        (not (:select form)) (q/select :*)
        true (q/from (gungnir.model/table model))
-       true (q/merge-where (args->where model args))
-       true (gungnir.database/query-1!)))))
+       true (q/merge-where (args->where model args))))))
 
-(s/fdef find!
-  :args
-  (s/alt
-   :arity-1
-   (s/cat :form map?)
-
-   :arity-2 (s/cat :model-k simple-keyword?
-                   :primary-key-value any?)
-
-   :arity-3
-   (s/cat :form map?
-          :model-k simple-keyword?
-          :primary-key-value any?))
+(s/fdef find-by!
+  :args ::args.find-by
   :ret (s/nilable map?))
-(defn find!
+(defn find-by!
+  "Same as `gungnir.query/find-by` but executes the query with the
+  global datasource."
+  ([& args]
+   (gungnir.database/query-1! (apply find-by args))))
+
+(s/fdef find
+  :args ::args.find
+  :ret (s/nilable map?))
+(defn find
   "Run a query and return a single record or nil.
 
-  Depending on the types of arguments provided, `find!` will have
+  Depending on the types of arguments provided, `find` will have
   different behaviors.
 
   ## Arity 1
@@ -201,7 +225,7 @@
   (-> (select :*)
       (from :user)
       (where [:= :user/id user-id])
-      (find!))
+      (find))
   ```
   ## Arity 2
 
@@ -213,7 +237,7 @@
   `primary-key-value` - The value of the primary key to match with.
 
   ```clojure
-  (find! :user user-id)
+  (find :user user-id)
   ```
 
   ## Arity 3
@@ -234,18 +258,27 @@
   ```clojure
   (-> (select :user/email)
       (where [:= :user/active false])
-      (find! :user user-id))
+      (find :user user-id))
   ```
   "
-  ([form] (gungnir.database/query-1! form))
-  ([model-key primary-key-value] (find! {} model-key primary-key-value))
+  ([form] form)
+  ([model-key primary-key-value] (find {} model-key primary-key-value))
   ([form model-key primary-key-value]
    (cond-> form
      (not (:select form)) (q/select :*)
      true (q/from (gungnir.model/table model-key))
      true (q/merge-where [:= (gungnir.model/primary-key model-key)
-                          (gungnir.database/try-uuid primary-key-value)])
-     true (gungnir.database/query-1!))))
+                          (gungnir.database/try-uuid primary-key-value)]))))
+
+(s/fdef find!
+  :args ::args.find
+  :ret (s/nilable map?))
+(defn find!
+  "Same as `gungnir.query/find` but executes the query with the global
+  datasource."
+  [& args]
+  (gungnir.database/query-1!
+   (apply find args)))
 
 ;; HoneySQL Overrides
 
