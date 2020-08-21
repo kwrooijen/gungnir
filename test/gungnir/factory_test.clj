@@ -20,8 +20,16 @@
   {:user/email user-1-email
    :user/password user-1-password})
 
+(def user-2-email "user-2@test.com")
+
+(def user-2-password "123456")
+
+(def user-2
+  {:user/email user-2-email
+   :user/password user-2-password})
+
 (deftest local-datasource
-  (let [{:keys [datasource find!-fn save!-fn]} (gungnir.factory/make-datasource-map! datasource-opts-2)]
+  (let [{:keys [datasource find!-fn save!-fn delete!-fn]} (gungnir.factory/make-datasource-map! datasource-opts-2)]
     (migrations/init! datasource)
     (testing "creating datasource map"
       (is (not= datasource *database*) )
@@ -34,4 +42,11 @@
         (is (uuid? (:user/id user)))
         (is (some? (find!-fn :user (:user/id user))))
         ;; Should not be findable in global datasource
-        (is (nil? (q/find! :user (:user/id user))))))))
+        (is (nil? (q/find! :user (:user/id user))))))
+
+    (testing "deleting user locally"
+      (let [user-1-2 (-> user-2 changeset q/save!)
+            user-2-2 (-> user-2 changeset save!-fn)]
+        (delete!-fn user-1-2)
+        (delete!-fn user-2-2)
+        (is (some? (q/find! :user (:user/id user-1))))))))

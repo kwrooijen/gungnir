@@ -235,7 +235,10 @@
     ?uuid))
 
 (s/fdef insert!
-  :args (s/cat :changeset :gungnir/changeset)
+  :args (s/alt
+         :arity-1 (s/cat :changeset :gungnir/changeset)
+         :arity-2 (s/cat :changeset :gungnir/changeset
+                         :datasource :sql/datasource))
   :ret (s/or :changeset :gungnir/changeset
         :record map?))
 (defn insert!
@@ -243,18 +246,22 @@
   that the `:changeset/result` key does not have a primary-key with a
   values. Returns the inserted row on succes. On failure return the
   `changeset` with an updated `:changeset/errors` key."
-  [{:changeset/keys [model errors result] :as changeset}]
-  (if errors
-    changeset
-    (let [result (-> (q/insert-into (gungnir.model/table model))
-                     (q/values [(record->insert-values result)])
-                     (execute-one! changeset))]
-      (if (:changeset/errors result)
-        result
-        (process-query-row {:select '(:*)} result)))))
+  ([changeset] (insert! changeset *database*))
+  ([{:changeset/keys [model errors result] :as changeset} datasource]
+   (if errors
+     changeset
+     (let [result (-> (q/insert-into (gungnir.model/table model))
+                      (q/values [(record->insert-values result)])
+                      (execute-one! changeset))]
+       (if (:changeset/errors result)
+         result
+         (process-query-row {:select '(:*)} result))))))
 
 (s/fdef update!
-  :args (s/cat :changeset :gungnir/changeset)
+  :args (s/alt
+         :arity-1 (s/cat :changeset :gungnir/changeset)
+         :arity-2 (s/cat :changeset :gungnir/changeset
+                         :datasource :sql/datasource))
   :ret (s/or :changeset :gungnir/changeset
              :record map?))
 (defn update!
@@ -262,60 +269,70 @@
   that the `:changeset/result` key has a primary-key with a
   values. Returns the updated row on succes. On failure return the
   `changeset` with an updated `:changeset/errors` key."
-  [{:changeset/keys [model errors diff origin transformed-origin] :as changeset}]
-  (cond
-    errors changeset
-    (empty? diff) origin
-    :else
-    (let [primary-key (gungnir.model/primary-key model)]
-      (-> (q/update (gungnir.model/table model))
-          (q/sset (record->insert-values diff))
-          (q/where [:= primary-key (get transformed-origin primary-key)])
-          (execute-one! changeset {:namespace-as-table? false})))))
+  ([changeset] (update! changeset *database*))
+  ([{:changeset/keys [model errors diff origin transformed-origin] :as changeset} datasource]
+   (cond
+     errors changeset
+     (empty? diff) origin
+     :else
+     (let [primary-key (gungnir.model/primary-key model)]
+       (-> (q/update (gungnir.model/table model))
+           (q/sset (record->insert-values diff))
+           (q/where [:= primary-key (get transformed-origin primary-key)])
+           (execute-one! changeset {:namespace-as-table? false}))))))
 
 (s/fdef delete!
-  :args (s/cat :record map?)
+  :args (s/alt
+         :arity-1 (s/cat :form map?)
+         :arity-2 (s/cat :form map? :datasource :sql/datasource))
   :ret boolean?)
 (defn delete!
   "Delete a row from the database based on `record` which can either be
   a namespaced map or relational atom. The row will be deleted based
   on it's `primary-key`. Return `true` on deletion. If no match is
   found return `false`."
-  [record]
-  (when-let [record (maybe-deref record)]
-    (let [table (gungnir.record/table record)
-          primary-key (gungnir.record/primary-key record)
-          primary-key-value (gungnir.record/primary-key-value record)]
-      (-> (q/delete-from table)
-          (q/where [:= primary-key (try-uuid primary-key-value)])
-          (honey->sql)
-          (as-> sql (jdbc/execute-one! *database* sql {:builder-fn gungnir.database.builder/kebab-map-builder}))
-          :next.jdbc/update-count
-          (= 1)))))
+  ([record] (delete! record *database*))
+  ([record datasource]
+   (when-let [record (maybe-deref record)]
+     (let [table (gungnir.record/table record)
+           primary-key (gungnir.record/primary-key record)
+           primary-key-value (gungnir.record/primary-key-value record)]
+       (-> (q/delete-from table)
+           (q/where [:= primary-key (try-uuid primary-key-value)])
+           (honey->sql)
+           (as-> sql (jdbc/execute-one! datasource sql {:builder-fn gungnir.database.builder/kebab-map-builder}))
+           :next.jdbc/update-count
+           (= 1))))))
 
 (s/fdef query!
-  :args (s/cat :form map?)
+  :args (s/alt
+         :arity-1 (s/cat :form map?)
+         :arity-2 (s/cat :form map? :datasource :sql/datasource))
   :ret (s/coll-of map?))
 (defn query!
   "Execute a query based on the HoneySQL `form` and return a collection
   of maps. If no result is found return an empty vector."
-  [form]
-  (reduce (fn [acc row]
-            (->> (next.jdbc.result-set/datafiable-row row *database* query-opts)
-                 (process-query-row form)
-                 (conj acc)))
-          []
-          (jdbc/plan *database* (honey->sql form) query-opts)))
+  ([form] (query! form *database*))
+  ([form datasource]
+   (reduce (fn [acc row]
+             (->> (next.jdbc.result-set/datafiable-row row datasource query-opts)
+                  (process-query-row form)
+                  (conj acc)))
+           []
+           (jdbc/plan datasource (honey->sql form) query-opts))))
 
 (s/fdef query-1!
-  :args (s/cat :form map?)
+  :args (s/alt
+         :arity-1 (s/cat :form map?)
+         :arity-2 (s/cat :form map? :datasource :sql/datasource))
   :ret (s/nilable map?))
 (defn query-1!
   "Execute a query based on the HoneySQL `form` and return a map. If no
   result is found return `nil`."
-  [form]
-  (when-let [row (jdbc/execute-one! *database* (honey->sql form) query-opts)]
-    (process-query-row form row)))
+  ([form] (query-1! form *database*))
+  ([form datasource]
+   (when-let [row (jdbc/execute-one! datasource (honey->sql form) query-opts)]
+     (process-query-row form row))))
 
 (s/fdef set-datasource!
   :args (s/cat :datasource :sql/datasource)
