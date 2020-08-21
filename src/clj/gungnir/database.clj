@@ -328,6 +328,33 @@
   (alter-var-root #'gungnir.database/*database* (fn [_] datasource))
   nil)
 
+(s/fdef build-datasource!
+  :args
+  (s/alt :arity-1
+         (s/cat :?options (s/or :url string?
+                                :options map?))
+         :arity-2
+         (s/cat :url string?
+                :options map?))
+  :ret :sql/datasource)
+(defn build-datasource!
+  "The following options are supported for `?options`
+  * DATABASE_URL - The universal database url used by services such as Heroku / Render
+  * JDBC_DATABASE_URL - The standard Java Database Connectivity URL
+  * HikariCP configuration map - https://github.com/tomekw/hikari-cp#configuration-options
+  When both `url` and `options` are supplied:
+  `url` - DATABSE_URL or JDBC_DATABASE_URL
+  `options` - HikariCP options
+  "
+  ([?options]
+   (cond
+     (map? ?options)
+     (hikari-cp/make-datasource ?options)
+     (string? ?options)
+     (build-datasource! ?options {})))
+  ([url options]
+   (hikari-cp/make-datasource
+    (merge options {:jdbc-url (clj-database-url.core/jdbc-database-url url)}))))
 (s/fdef make-datasource!
   :args
   (s/alt :arity-1
@@ -338,23 +365,8 @@
                 :options map?))
   :ret nil?)
 (defn make-datasource!
-  "The following options are supported for `?options`
-  * DATABASE_URL - The universal database url used by services such as Heroku / Render
-  * JDBC_DATABASE_URL - The standard Java Database Connectivity URL
-  * HikariCP configuration map - https://github.com/tomekw/hikari-cp#configuration-options
-
-  When both `url` and `options` are supplied:
-
-  `url` - DATABSE_URL or JDBC_DATABASE_URL
-  `options` - HikariCP options
-  "
+  "Same as `build-datasource!` but also sets the created datasource globally."
   ([?options]
-   (cond
-     (map? ?options)
-     (set-datasource! (hikari-cp/make-datasource ?options))
-     (string? ?options)
-     (make-datasource! ?options {})))
+   (set-datasource! (build-datasource! ?options)))
   ([url options]
-   (set-datasource!
-    (hikari-cp/make-datasource
-     (merge options {:jdbc-url (clj-database-url.core/jdbc-database-url url)})))))
+   (set-datasource! (build-datasource! url options))))
