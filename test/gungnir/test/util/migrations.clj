@@ -90,10 +90,11 @@
 (defn init!
   "Run migrations to create all tables. The migrations are idempotent,
   so they can be run multiple times."
-  []
-  (next.jdbc/execute-one! *database* [uuid-extension-migration])
-  (next.jdbc/execute-one! *database* [trigger-updated-at-migration])
-  (next.jdbc/execute-one! *database* [user-table-migration])
-  (next.jdbc/execute-one! *database* [post-table-migration])
-  (next.jdbc/execute-one! *database* [comment-table-migration])
-  (next.jdbc/execute-one! *database* [token-table-migration]))
+  ([] (init! *database*))
+  ([datasource]
+   (next.jdbc/execute-one! datasource [uuid-extension-migration])
+   (next.jdbc/execute-one! datasource [trigger-updated-at-migration])
+   (next.jdbc/execute-one! datasource [user-table-migration])
+   (next.jdbc/execute-one! datasource [post-table-migration])
+   (next.jdbc/execute-one! datasource [comment-table-migration])
+   (next.jdbc/execute-one! datasource [token-table-migration])))
