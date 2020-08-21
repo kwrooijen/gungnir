@@ -68,14 +68,25 @@
           record
           field-keys))
 
-(def ^{:doc "Delete a row from the database based on `record` which can either
+(s/fdef delete!
+  :args (s/alt
+         :arity-1 (s/cat :form map?)
+         :arity-2 (s/cat :form map? :datasource :sql/datasource))
+  :ret boolean?)
+(defn delete!
+  "Delete a row from the database based on `record` which can either
   be a namespaced map or relational atom. The row will be deleted based on it's
   `primary-key`. Return `true` on deletion. If no match is found return
-  `false`."}
-  delete! gungnir.database/delete!)
+  `false`."
+  ([form] (delete! form gungnir.database/*database*))
+  ([form datasource]
+   (gungnir.database/delete! form datasource)))
 
 (s/fdef save!
-  :args (s/cat :changeset :gungnir/changeset)
+  :args (s/alt
+        :arity-1 (s/cat :changeset :gungnir/changeset)
+        :arity-2 (s/cat :changeset :gungnir/changeset
+                        :datasource :sql/datasource))
   :ret (s/or :changeset :gungnir/changeset
              :record map?))
 (defn save!
@@ -90,10 +101,11 @@
   If during insert / update an error occurs, the changeset will be
   returned with the errors inserted in the `:changeset/errors` key.
   "
-  [{:changeset/keys [result] :as changeset}]
-  (if (some? (gungnir.record/primary-key-value result))
-    (gungnir.database/update! changeset)
-    (gungnir.database/insert! changeset)))
+  ([changeset] (save! changeset gungnir.database/*database*))
+  ([{:changeset/keys [result] :as changeset} datasource]
+   (if (some? (gungnir.record/primary-key-value result))
+     (gungnir.database/update! changeset datasource)
+     (gungnir.database/insert! changeset datasource))) )
 
 (s/fdef all
   :args ::args.all

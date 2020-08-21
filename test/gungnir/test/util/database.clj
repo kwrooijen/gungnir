@@ -26,22 +26,24 @@
 
 (defn clear!
   "Clear the database from any rows in the database."
-  []
-  (next.jdbc/execute!
-   *database*
-   [(str
-     "DELETE from \"token\";"
-     "DELETE from \"comment\";"
-     "DELETE from \"post\";"
-     "DELETE from \"user\";")]))
+  ([] (clear! *database*))
+  ([datasource]
+   (next.jdbc/execute!
+    datasource
+    [(str
+      "DELETE from \"token\";"
+      "DELETE from \"comment\";"
+      "DELETE from \"post\";"
+      "DELETE from \"user\";")])))
 
 (defn drop!
   "Clear the database from any rows in the database."
-  []
-  (next.jdbc/execute!
-   *database*
-   [(str
-     "DROP TABLE \"token\";"
-     "DROP TABLE \"comment\";"
-     "DROP TABLE \"post\";"
-     "DROP TABLE \"user\";")]))
+  ([] (drop! *database*))
+  ([datasource]
+   (next.jdbc/execute!
+    datasource
+    [(str
+      "DROP TABLE \"token\";"
+      "DROP TABLE \"comment\";"
+      "DROP TABLE \"post\";"
+      "DROP TABLE \"user\";")])))

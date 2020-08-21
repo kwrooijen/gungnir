@@ -1,6 +1,6 @@
 (ns gungnir.factory-test
   (:require
-   [gungnir.test.util.database :refer [datasource-opts-2]]
+   [gungnir.test.util.database :as database :refer [datasource-opts-2]]
    [clojure.test :refer :all]
    [gungnir.query :as q]
    [gungnir.database :refer [*database*]]
@@ -29,8 +29,9 @@
    :user/password user-2-password})
 
 (deftest local-datasource
-  (let [{:keys [datasource find!-fn save!-fn delete!-fn]} (gungnir.factory/make-datasource-map! datasource-opts-2)]
+  (let [{:keys [datasource all!-fn find!-fn save!-fn delete!-fn find-by!-fn]} (gungnir.factory/make-datasource-map! datasource-opts-2)]
     (migrations/init! datasource)
+    (database/clear! datasource)
     (testing "creating datasource map"
       (is (not= datasource *database*) )
       (is (instance? javax.sql.DataSource datasource))
@@ -49,4 +50,17 @@
             user-2-2 (-> user-2 changeset save!-fn)]
         (delete!-fn user-1-2)
         (delete!-fn user-2-2)
-        (is (some? (q/find! :user (:user/id user-1))))))))
+        (is (some? (q/find! :user (:user/id user-1-2))))))
+
+    (testing "all posts locally"
+      (let [{:user/keys [id]} (-> user-2 (assoc :user/email "foo@bar.baz") changeset save!-fn)]
+        (save!-fn (changeset {:post/user-id id :post/title "" :post/content ""}))
+        (save!-fn (changeset {:post/user-id id :post/title "" :post/content ""}))
+        (is (seq (all!-fn :post)))
+        (is  (not (seq (q/all! :post))))))
+
+    (testing "find-by user locally"
+      (let [{:user/keys [email]} (-> user-2 (assoc :user/email "foo@bar2.baz") changeset save!-fn)]
+        (is (some? (find-by!-fn :user/email email)))
+        (is (nil? (q/find-by! :user/email email)))))
+    (.close datasource)))

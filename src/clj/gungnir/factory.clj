@@ -7,8 +7,11 @@
   (let [datasource (gungnir.database/build-datasource! ?options)]
     {:close-fn     identity ;; TODO
      :datasource   datasource
-     :find!-fn     gungnir.query/find!
-     :find-by!-fn  gungnir.query/find-by!
-     :all!-fn      gungnir.query/all!
-     :delete!-fn   gungnir.query/delete!
-     :save!-fn     gungnir.query/save!}))
+     :find!-fn     (fn [& args] (-> (apply gungnir.query/find args)
+                                    (gungnir.database/query-1! datasource)))
+     :find-by!-fn  (fn [& args] (-> (apply gungnir.query/find-by args)
+                                    (gungnir.database/query-1! datasource)))
+     :all!-fn      (fn [& args] (-> (apply gungnir.query/all args)
+                                    (gungnir.database/query! datasource)))
+     :delete!-fn   (fn [record]    (gungnir.query/delete! record datasource))
+     :save!-fn     (fn [changeset] (gungnir.query/save! changeset datasource))}))
