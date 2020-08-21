@@ -30,7 +30,7 @@
 (declare query-1!)
 
 ;; TODO can this be moved to a new namespace? gungnir.database.relation ?
-(defrecord RelationAtom [type state]
+(defrecord RelationAtom [type state datasource]
   clojure.lang.IAtom
   (reset [this f]
     (reset! (.-state this) f)
@@ -54,9 +54,9 @@
   clojure.lang.IDeref
   (deref [this]
     (cond
-      (#{:has-one} type) (-> this .-state deref query-1!)
-      (#{:has-many} type) (-> this .-state deref query!)
-      (#{:belongs-to} type) (-> this .-state deref query-1!))))
+      (#{:has-one} type) (-> this .-state deref (query-1! datasource))
+      (#{:has-many} type) (-> this .-state deref (query! datasource))
+      (#{:belongs-to} type) (-> this .-state deref (query-1! datasource)))))
 
 (defmethod clojure.pprint/simple-dispatch RelationAtom [o]
   ((get-method clojure.pprint/simple-dispatch clojure.lang.IPersistentMap) o))
@@ -64,43 +64,46 @@
 (defmethod print-method RelationAtom [_ ^java.io.Writer w]
   (.write w "<relation-atom>"))
 
-(defn- has-one-atom [t1 t2 primary-key]
+(defn- has-one-atom [t1 t2 primary-key datasource]
   (RelationAtom.
    :has-one
    (atom {:select (list :*)
           :from (list t2)
-          :where [:= (gungnir.model/belongs-to-relation-table t1 t2) primary-key]})))
+          :where [:= (gungnir.model/belongs-to-relation-table t1 t2) primary-key]})
+   datasource))
 
-(defn- add-has-one [{:keys [table primary-key]} record [k v]]
-  (assoc record v (has-one-atom table k primary-key)))
+(defn- add-has-one [datasource {:keys [table primary-key]} record [k v]]
+  (assoc record v (has-one-atom table k primary-key datasource)))
 
-(defn- has-many-atom [t1 t2 primary-key]
+(defn- has-many-atom [t1 t2 primary-key datasource]
   (RelationAtom.
    :has-many
    (atom {:select (list :*)
           :from (list t2)
-          :where [:= (gungnir.model/belongs-to-relation-table t1 t2) primary-key]})))
+          :where [:= (gungnir.model/belongs-to-relation-table t1 t2) primary-key]})
+   datasource))
 
-(defn- add-has-many [{:keys [table primary-key]} record [k v]]
-  (assoc record v (has-many-atom table k primary-key)))
+(defn- add-has-many [datasource {:keys [table primary-key]} record [k v]]
+  (assoc record v (has-many-atom table k primary-key datasource)))
 
-(defn- belongs-to-atom [t2 foreign-key]
+(defn- belongs-to-atom [t2 foreign-key datasource]
   (RelationAtom.
    :belongs-to
    (atom {:select (list :*)
           :from (list (gungnir.model/table t2))
-          :where [:= (gungnir.model/primary-key t2) foreign-key]})))
+          :where [:= (gungnir.model/primary-key t2) foreign-key]})
+   datasource))
 
-(defn- add-belongs-to [{:keys [table]} record [k v]]
-  (assoc record (keyword (name table) (name k)) (belongs-to-atom k (get record v))))
+(defn- add-belongs-to [datasource {:keys [table]} record [k v]]
+  (assoc record (keyword (name table) (name k)) (belongs-to-atom k (get record v) datasource)))
 
 (defn- apply-relations
-  [record {:keys [has-one has-many belongs-to primary-key] :as relation-data}]
+  [record {:keys [has-one has-many belongs-to primary-key] :as relation-data} datasource]
   (let [relation-data (assoc relation-data :primary-key (get record primary-key))]
     (as-> record $
-      (reduce (partial add-has-one relation-data) $ has-one)
-      (reduce (partial add-has-many relation-data) $ has-many)
-      (reduce (partial add-belongs-to relation-data) $ belongs-to))))
+      (reduce (partial add-has-one datasource relation-data) $ has-one)
+      (reduce (partial add-has-many datasource relation-data) $ has-many)
+      (reduce (partial add-belongs-to datasource relation-data) $ belongs-to))))
 
 (defn- get-relation [^clojure.lang.PersistentHashSet select
                     ^clojure.lang.PersistentArrayMap properties
@@ -120,14 +123,14 @@
      :table table
      :primary-key primary-key}))
 
-(defn process-query-row [form row]
+(defn process-query-row [form datasource row]
   (let [table (gungnir.record/table row)
         {:keys [has-one has-many belongs-to] :as relation-data}
         (record->relation-data form table)]
     (if (or (seq has-one)
             (seq has-many)
             (seq belongs-to))
-      (apply-relations row relation-data)
+      (apply-relations row relation-data datasource)
       row)))
 
 (extend-protocol result-set/ReadableColumn
@@ -180,10 +183,10 @@
   {:unknown [(.getSQLState e)]})
 
 (defn- execute-one!
-  ([form changeset] (execute-one! form changeset {}))
-  ([form changeset opts]
+  ([form changeset datasource] (execute-one! form changeset datasource {}))
+  ([form changeset datasource opts]
    (try
-     (jdbc/execute-one! *database* (honey->sql form opts)
+     (jdbc/execute-one! datasource (honey->sql form opts)
                         {:return-keys true
                          :builder-fn gungnir.database.builder/column-builder})
      (catch Exception e
@@ -252,10 +255,10 @@
      changeset
      (let [result (-> (q/insert-into (gungnir.model/table model))
                       (q/values [(record->insert-values result)])
-                      (execute-one! changeset))]
+                      (execute-one! changeset datasource))]
        (if (:changeset/errors result)
          result
-         (process-query-row {:select '(:*)} result))))))
+         (process-query-row {:select '(:*)} datasource result))))))
 
 (s/fdef update!
   :args (s/alt
@@ -279,7 +282,7 @@
        (-> (q/update (gungnir.model/table model))
            (q/sset (record->insert-values diff))
            (q/where [:= primary-key (get transformed-origin primary-key)])
-           (execute-one! changeset {:namespace-as-table? false}))))))
+           (execute-one! changeset datasource {:namespace-as-table? false}))))))
 
 (s/fdef delete!
   :args (s/alt
@@ -316,7 +319,7 @@
   ([form datasource]
    (reduce (fn [acc row]
              (->> (next.jdbc.result-set/datafiable-row row datasource query-opts)
-                  (process-query-row form)
+                  (process-query-row form datasource)
                   (conj acc)))
            []
            (jdbc/plan datasource (honey->sql form) query-opts))))
@@ -332,7 +335,7 @@
   ([form] (query-1! form *database*))
   ([form datasource]
    (when-let [row (jdbc/execute-one! datasource (honey->sql form) query-opts)]
-     (process-query-row form row))))
+     (process-query-row form datasource row))))
 
 (s/fdef set-datasource!
   :args (s/cat :datasource :sql/datasource)
