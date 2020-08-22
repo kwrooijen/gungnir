@@ -30,7 +30,7 @@
 (declare query-1!)
 
 ;; TODO can this be moved to a new namespace? gungnir.database.relation ?
-(defrecord RelationAtom [type state]
+(defrecord RelationAtom [type state datasource]
   clojure.lang.IAtom
   (reset [this f]
     (reset! (.-state this) f)
@@ -54,9 +54,9 @@
   clojure.lang.IDeref
   (deref [this]
     (cond
-      (#{:has-one} type) (-> this .-state deref query-1!)
-      (#{:has-many} type) (-> this .-state deref query!)
-      (#{:belongs-to} type) (-> this .-state deref query-1!))))
+      (#{:has-one} type) (-> this .-state deref (query-1! datasource))
+      (#{:has-many} type) (-> this .-state deref (query! datasource))
+      (#{:belongs-to} type) (-> this .-state deref (query-1! datasource)))))
 
 (defmethod clojure.pprint/simple-dispatch RelationAtom [o]
   ((get-method clojure.pprint/simple-dispatch clojure.lang.IPersistentMap) o))
@@ -64,43 +64,46 @@
 (defmethod print-method RelationAtom [_ ^java.io.Writer w]
   (.write w "<relation-atom>"))
 
-(defn- has-one-atom [t1 t2 primary-key]
+(defn- has-one-atom [t1 t2 primary-key datasource]
   (RelationAtom.
    :has-one
    (atom {:select (list :*)
           :from (list t2)
-          :where [:= (gungnir.model/belongs-to-relation-table t1 t2) primary-key]})))
+          :where [:= (gungnir.model/belongs-to-relation-table t1 t2) primary-key]})
+   datasource))
 
-(defn- add-has-one [{:keys [table primary-key]} record [k v]]
-  (assoc record v (has-one-atom table k primary-key)))
+(defn- add-has-one [datasource {:keys [table primary-key]} record [k v]]
+  (assoc record v (has-one-atom table k primary-key datasource)))
 
-(defn- has-many-atom [t1 t2 primary-key]
+(defn- has-many-atom [t1 t2 primary-key datasource]
   (RelationAtom.
    :has-many
    (atom {:select (list :*)
           :from (list t2)
-          :where [:= (gungnir.model/belongs-to-relation-table t1 t2) primary-key]})))
+          :where [:= (gungnir.model/belongs-to-relation-table t1 t2) primary-key]})
+   datasource))
 
-(defn- add-has-many [{:keys [table primary-key]} record [k v]]
-  (assoc record v (has-many-atom table k primary-key)))
+(defn- add-has-many [datasource {:keys [table primary-key]} record [k v]]
+  (assoc record v (has-many-atom table k primary-key datasource)))
 
-(defn- belongs-to-atom [t2 foreign-key]
+(defn- belongs-to-atom [t2 foreign-key datasource]
   (RelationAtom.
    :belongs-to
    (atom {:select (list :*)
           :from (list (gungnir.model/table t2))
-          :where [:= (gungnir.model/primary-key t2) foreign-key]})))
+          :where [:= (gungnir.model/primary-key t2) foreign-key]})
+   datasource))
 
-(defn- add-belongs-to [{:keys [table]} record [k v]]
-  (assoc record (keyword (name table) (name k)) (belongs-to-atom k (get record v))))
+(defn- add-belongs-to [datasource {:keys [table]} record [k v]]
+  (assoc record (keyword (name table) (name k)) (belongs-to-atom k (get record v) datasource)))
 
 (defn- apply-relations
-  [record {:keys [has-one has-many belongs-to primary-key] :as relation-data}]
+  [record {:keys [has-one has-many belongs-to primary-key] :as relation-data} datasource]
   (let [relation-data (assoc relation-data :primary-key (get record primary-key))]
     (as-> record $
-      (reduce (partial add-has-one relation-data) $ has-one)
-      (reduce (partial add-has-many relation-data) $ has-many)
-      (reduce (partial add-belongs-to relation-data) $ belongs-to))))
+      (reduce (partial add-has-one datasource relation-data) $ has-one)
+      (reduce (partial add-has-many datasource relation-data) $ has-many)
+      (reduce (partial add-belongs-to datasource relation-data) $ belongs-to))))
 
 (defn- get-relation [^clojure.lang.PersistentHashSet select
                     ^clojure.lang.PersistentArrayMap properties
@@ -120,14 +123,14 @@
      :table table
      :primary-key primary-key}))
 
-(defn process-query-row [form row]
+(defn process-query-row [form datasource row]
   (let [table (gungnir.record/table row)
         {:keys [has-one has-many belongs-to] :as relation-data}
         (record->relation-data form table)]
     (if (or (seq has-one)
             (seq has-many)
             (seq belongs-to))
-      (apply-relations row relation-data)
+      (apply-relations row relation-data datasource)
       row)))
 
 (extend-protocol result-set/ReadableColumn
@@ -180,10 +183,10 @@
   {:unknown [(.getSQLState e)]})
 
 (defn- execute-one!
-  ([form changeset] (execute-one! form changeset {}))
-  ([form changeset opts]
+  ([form changeset datasource] (execute-one! form changeset datasource {}))
+  ([form changeset datasource opts]
    (try
-     (jdbc/execute-one! *database* (honey->sql form opts)
+     (jdbc/execute-one! datasource (honey->sql form opts)
                         {:return-keys true
                          :builder-fn gungnir.database.builder/column-builder})
      (catch Exception e
@@ -235,7 +238,10 @@
     ?uuid))
 
 (s/fdef insert!
-  :args (s/cat :changeset :gungnir/changeset)
+  :args (s/alt
+         :arity-1 (s/cat :changeset :gungnir/changeset)
+         :arity-2 (s/cat :changeset :gungnir/changeset
+                         :datasource :sql/datasource))
   :ret (s/or :changeset :gungnir/changeset
         :record map?))
 (defn insert!
@@ -243,18 +249,22 @@
   that the `:changeset/result` key does not have a primary-key with a
   values. Returns the inserted row on succes. On failure return the
   `changeset` with an updated `:changeset/errors` key."
-  [{:changeset/keys [model errors result] :as changeset}]
-  (if errors
-    changeset
-    (let [result (-> (q/insert-into (gungnir.model/table model))
-                     (q/values [(record->insert-values result)])
-                     (execute-one! changeset))]
-      (if (:changeset/errors result)
-        result
-        (process-query-row {:select '(:*)} result)))))
+  ([changeset] (insert! changeset *database*))
+  ([{:changeset/keys [model errors result] :as changeset} datasource]
+   (if errors
+     changeset
+     (let [result (-> (q/insert-into (gungnir.model/table model))
+                      (q/values [(record->insert-values result)])
+                      (execute-one! changeset datasource))]
+       (if (:changeset/errors result)
+         result
+         (process-query-row {:select '(:*)} datasource result))))))
 
 (s/fdef update!
-  :args (s/cat :changeset :gungnir/changeset)
+  :args (s/alt
+         :arity-1 (s/cat :changeset :gungnir/changeset)
+         :arity-2 (s/cat :changeset :gungnir/changeset
+                         :datasource :sql/datasource))
   :ret (s/or :changeset :gungnir/changeset
              :record map?))
 (defn update!
@@ -262,60 +272,70 @@
   that the `:changeset/result` key has a primary-key with a
   values. Returns the updated row on succes. On failure return the
   `changeset` with an updated `:changeset/errors` key."
-  [{:changeset/keys [model errors diff origin transformed-origin] :as changeset}]
-  (cond
-    errors changeset
-    (empty? diff) origin
-    :else
-    (let [primary-key (gungnir.model/primary-key model)]
-      (-> (q/update (gungnir.model/table model))
-          (q/sset (record->insert-values diff))
-          (q/where [:= primary-key (get transformed-origin primary-key)])
-          (execute-one! changeset {:namespace-as-table? false})))))
+  ([changeset] (update! changeset *database*))
+  ([{:changeset/keys [model errors diff origin transformed-origin] :as changeset} datasource]
+   (cond
+     errors changeset
+     (empty? diff) origin
+     :else
+     (let [primary-key (gungnir.model/primary-key model)]
+       (-> (q/update (gungnir.model/table model))
+           (q/sset (record->insert-values diff))
+           (q/where [:= primary-key (get transformed-origin primary-key)])
+           (execute-one! changeset datasource {:namespace-as-table? false}))))))
 
 (s/fdef delete!
-  :args (s/cat :record map?)
+  :args (s/alt
+         :arity-1 (s/cat :form map?)
+         :arity-2 (s/cat :form map? :datasource :sql/datasource))
   :ret boolean?)
 (defn delete!
   "Delete a row from the database based on `record` which can either be
   a namespaced map or relational atom. The row will be deleted based
   on it's `primary-key`. Return `true` on deletion. If no match is
   found return `false`."
-  [record]
-  (when-let [record (maybe-deref record)]
-    (let [table (gungnir.record/table record)
-          primary-key (gungnir.record/primary-key record)
-          primary-key-value (gungnir.record/primary-key-value record)]
-      (-> (q/delete-from table)
-          (q/where [:= primary-key (try-uuid primary-key-value)])
-          (honey->sql)
-          (as-> sql (jdbc/execute-one! *database* sql {:builder-fn gungnir.database.builder/kebab-map-builder}))
-          :next.jdbc/update-count
-          (= 1)))))
+  ([record] (delete! record *database*))
+  ([record datasource]
+   (when-let [record (maybe-deref record)]
+     (let [table (gungnir.record/table record)
+           primary-key (gungnir.record/primary-key record)
+           primary-key-value (gungnir.record/primary-key-value record)]
+       (-> (q/delete-from table)
+           (q/where [:= primary-key (try-uuid primary-key-value)])
+           (honey->sql)
+           (as-> sql (jdbc/execute-one! datasource sql {:builder-fn gungnir.database.builder/kebab-map-builder}))
+           :next.jdbc/update-count
+           (= 1))))))
 
 (s/fdef query!
-  :args (s/cat :form map?)
+  :args (s/alt
+         :arity-1 (s/cat :form map?)
+         :arity-2 (s/cat :form map? :datasource :sql/datasource))
   :ret (s/coll-of map?))
 (defn query!
   "Execute a query based on the HoneySQL `form` and return a collection
   of maps. If no result is found return an empty vector."
-  [form]
-  (reduce (fn [acc row]
-            (->> (next.jdbc.result-set/datafiable-row row *database* query-opts)
-                 (process-query-row form)
-                 (conj acc)))
-          []
-          (jdbc/plan *database* (honey->sql form) query-opts)))
+  ([form] (query! form *database*))
+  ([form datasource]
+   (reduce (fn [acc row]
+             (->> (next.jdbc.result-set/datafiable-row row datasource query-opts)
+                  (process-query-row form datasource)
+                  (conj acc)))
+           []
+           (jdbc/plan datasource (honey->sql form) query-opts))))
 
 (s/fdef query-1!
-  :args (s/cat :form map?)
+  :args (s/alt
+         :arity-1 (s/cat :form map?)
+         :arity-2 (s/cat :form map? :datasource :sql/datasource))
   :ret (s/nilable map?))
 (defn query-1!
   "Execute a query based on the HoneySQL `form` and return a map. If no
   result is found return `nil`."
-  [form]
-  (when-let [row (jdbc/execute-one! *database* (honey->sql form) query-opts)]
-    (process-query-row form row)))
+  ([form] (query-1! form *database*))
+  ([form datasource]
+   (when-let [row (jdbc/execute-one! datasource (honey->sql form) query-opts)]
+     (process-query-row form datasource row))))
 
 (s/fdef set-datasource!
   :args (s/cat :datasource :sql/datasource)
@@ -328,6 +348,33 @@
   (alter-var-root #'gungnir.database/*database* (fn [_] datasource))
   nil)
 
+(s/fdef build-datasource!
+  :args
+  (s/alt :arity-1
+         (s/cat :?options (s/or :url string?
+                                :options map?))
+         :arity-2
+         (s/cat :url string?
+                :options map?))
+  :ret :sql/datasource)
+(defn build-datasource!
+  "The following options are supported for `?options`
+  * DATABASE_URL - The universal database url used by services such as Heroku / Render
+  * JDBC_DATABASE_URL - The standard Java Database Connectivity URL
+  * HikariCP configuration map - https://github.com/tomekw/hikari-cp#configuration-options
+  When both `url` and `options` are supplied:
+  `url` - DATABSE_URL or JDBC_DATABASE_URL
+  `options` - HikariCP options
+  "
+  ([?options]
+   (cond
+     (map? ?options)
+     (hikari-cp/make-datasource ?options)
+     (string? ?options)
+     (build-datasource! ?options {})))
+  ([url options]
+   (hikari-cp/make-datasource
+    (merge options {:jdbc-url (clj-database-url.core/jdbc-database-url url)}))))
 (s/fdef make-datasource!
   :args
   (s/alt :arity-1
@@ -338,23 +385,8 @@
                 :options map?))
   :ret nil?)
 (defn make-datasource!
-  "The following options are supported for `?options`
-  * DATABASE_URL - The universal database url used by services such as Heroku / Render
-  * JDBC_DATABASE_URL - The standard Java Database Connectivity URL
-  * HikariCP configuration map - https://github.com/tomekw/hikari-cp#configuration-options
-
-  When both `url` and `options` are supplied:
-
-  `url` - DATABSE_URL or JDBC_DATABASE_URL
-  `options` - HikariCP options
-  "
+  "Same as `build-datasource!` but also sets the created datasource globally."
   ([?options]
-   (cond
-     (map? ?options)
-     (set-datasource! (hikari-cp/make-datasource ?options))
-     (string? ?options)
-     (make-datasource! ?options {})))
+   (set-datasource! (build-datasource! ?options)))
   ([url options]
-   (set-datasource!
-    (hikari-cp/make-datasource
-     (merge options {:jdbc-url (clj-database-url.core/jdbc-database-url url)})))))
+   (set-datasource! (build-datasource! url options))))
