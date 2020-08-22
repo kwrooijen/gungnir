@@ -81,6 +81,41 @@ implementation, it will return `{:unknown [sql-exception-code]}`. The next step
 is to open an issue or create a pull request to Gungnir. You can implement the
 `exception->map` clause yourself as well.
 
+## Multiple datasources
+
+By default Gungnir has a global datasource. If you need to access multiple
+datasources we can use the `gungnir.factory` namespace. A local datasource will
+be bound to a specific namespace that you create. Inside of this namespace we
+will call `gungnir.factory/make-datasource-map!` and bind the resulting
+functions that are returned.
+
+```clojure
+(ns my.datasource
+  (:require
+   [gungnir.factory]))
+
+(def datasource-opts
+  {:adapter       "postgresql"
+   :username      "postgres"
+   :password      "postgres"
+   :database-name "postgres"
+   :server-name   "localhost"
+   :port-number   5432})
+
+(let [datasource-map (gungnir.factory/make-datasource-map! datasource-opts)]
+  (def close      (:close!-fn datasource-map))
+  (def datasource (:datasource datasource-map))
+  (def find!      (:find!-fn datasource-map))
+  (def find-by!   (:find-by!-fn datasource-map))
+  (def all!       (:all!-fn datasource-map))
+  (def delete!    (:delete!-fn datasource-map))
+  (def save!      (:save!-fn datasource-map)))
+```
+
+Now when you call `my.datasource/find!` which will query it's local datasource
+instead of the global datasource with `q/find!`.
+
+
 ---
 
 <div class="footer-navigation">
