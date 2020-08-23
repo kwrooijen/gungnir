@@ -16,13 +16,6 @@
    [honeysql-postgres.helpers :as psqlh]))
 
 
-
-;; (defmethod fmt/format-modifiers :uuid [[_ x] _]
-;;   ""
-;;   )
-
-;; (sql/format (sql/call :uuid ))
-
 (def migrations-path
   (.getCanonicalPath (clojure.java.io/file "./gungnir/migrations")))
 
@@ -81,10 +74,6 @@
     (concat [(symbol column-name)] (process-column-options options))
     ))
 
-(def modification-vector [:table/modify "user"
-                          [:table.remove/column "password"]
-                          [:table.add/column {:type :text} "email"]])
-
 (defmethod process-migration :table.add/column [column-vector]
   (let [[_ options column-name] column-vector]
     (psqlh/add-column (symbol column-name) (:type options))))
@@ -115,12 +104,6 @@
 (defn sql-migrations []
   (mapv (comp file->sql-migration io/file) (migrations)))
 
-(def n (nth (sql-migrations) 2))
-
-(sql-migrations)
-
-(gungnir.database/make-datasource! "postgres://risk@localhost:5432/postgres")
-
 (defn migrate-all []
   (rc/migrate-all
    (rj/sql-database
@@ -131,11 +114,19 @@
     :reporter ragtime.reporter/print}))
 
 
-(migrate-all)
-
-
 (comment
 
+  (def modification-vector [:table/modify "user"
+                            [:table.remove/column "password"]
+                            [:table.add/column {:type :text} "email"]])
+
+  (gungnir.database/make-datasource! "postgres://risk@localhost:5432/postgres")
+
+  (migrate-all)
+
+  (sql-migrations)
+
+  (def n (nth (sql-migrations) 2))
 
   ; NOTE postgres does not like making a table user unless you put it in quotations because it's also a function (I think)
   (sql/format (psqlh/alter-table "user"))
@@ -184,10 +175,6 @@
                    )
 
   (current-timestamp)
-
-  (def x 2)
-
-  (def e (+ 2 1))
 
   (s/valid? even? e)
 
