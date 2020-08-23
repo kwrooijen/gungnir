@@ -1,0 +1,6 @@
+{:up
+ [:table/create "users"
+  [:table/column {:primary-key true :type :uuid} "id"]
+  [:table/column {:type :text} "email"]]
+ :down
+ [:table/drop "users"]}

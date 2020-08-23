@@ -1,0 +1,2 @@
+{:up [:raw ""]
+ :down [:raw "DROP EXTENSION \"uuid-ossp\";"]}
