@@ -19,10 +19,12 @@
    [next.jdbc :as jdbc]
    [next.jdbc.result-set :as result-set])
   (:import (java.sql SQLException)
-           (org.postgresql.jdbc PgArray)))
+           (org.postgresql.jdbc PgArray)
+           (clojure.lang IDeref)))
 
-(s/def :sql/datasource
-  (partial instance? javax.sql.DataSource))
+(s/def :sql/connection (partial instance? java.sql.Connection))
+(s/def :sql/datasource (partial instance? javax.sql.DataSource))
+(s/def :sql/conn-or-datasource (s/or :sql/datasource :sql/datasource :sql/connection :sql/connection))
 
 (defonce ^:dynamic *database* nil)
 
@@ -241,7 +243,7 @@
   :args (s/alt
          :arity-1 (s/cat :changeset :gungnir/changeset)
          :arity-2 (s/cat :changeset :gungnir/changeset
-                         :datasource :sql/datasource))
+                         :datasource :sql/conn-or-datasource))
   :ret (s/or :changeset :gungnir/changeset
         :record map?))
 (defn insert!
@@ -264,7 +266,7 @@
   :args (s/alt
          :arity-1 (s/cat :changeset :gungnir/changeset)
          :arity-2 (s/cat :changeset :gungnir/changeset
-                         :datasource :sql/datasource))
+                         :datasource :sql/conn-or-datasource))
   :ret (s/or :changeset :gungnir/changeset
              :record map?))
 (defn update!
@@ -287,7 +289,7 @@
 (s/fdef delete!
   :args (s/alt
          :arity-1 (s/cat :form map?)
-         :arity-2 (s/cat :form map? :datasource :sql/datasource))
+         :arity-2 (s/cat :form map? :datasource :sql/conn-or-datasource))
   :ret boolean?)
 (defn delete!
   "Delete a row from the database based on `record` which can either be
@@ -310,7 +312,7 @@
 (s/fdef query!
   :args (s/alt
          :arity-1 (s/cat :form map?)
-         :arity-2 (s/cat :form map? :datasource :sql/datasource))
+         :arity-2 (s/cat :form map? :datasource :sql/conn-or-datasource))
   :ret (s/coll-of map?))
 (defn query!
   "Execute a query based on the HoneySQL `form` and return a collection
@@ -327,7 +329,7 @@
 (s/fdef query-1!
   :args (s/alt
          :arity-1 (s/cat :form map?)
-         :arity-2 (s/cat :form map? :datasource :sql/datasource))
+         :arity-2 (s/cat :form map? :datasource :sql/conn-or-datasource))
   :ret (s/nilable map?))
 (defn query-1!
   "Execute a query based on the HoneySQL `form` and return a map. If no
@@ -390,3 +392,15 @@
    (set-datasource! (build-datasource! ?options)))
   ([url options]
    (set-datasource! (build-datasource! url options))))
+
+(defmacro with-transaction
+  "Runs body in a transaction where tx is the transaction connection or datasource.
+  Additional options are available, see next.jdbc/transact for more details."
+  [[dbsym & opts] & body]
+  `(if (instance? IDeref ~dbsym)
+     (next.jdbc/with-transaction [tx# (deref ~dbsym) ~@opts]
+       (binding [~dbsym (delay tx#)]
+         ~@body))
+     (next.jdbc/with-transaction [tx# ~dbsym ~@opts]
+       (binding [~dbsym tx#]
+         ~@body))))

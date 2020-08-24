@@ -4,6 +4,7 @@
    [clojure.test :refer :all]
    [gungnir.changeset :refer [changeset]]
    [gungnir.query :as q]
+   [gungnir.database :as d]
    [gungnir.test.util :as util]))
 
 (use-fixtures :once util/once-fixture)
@@ -471,3 +472,27 @@
                  (->> (mapv #(or (:post/id %)
                                  (:comment/id %))))
                  (set)))))))
+
+(deftest test-with-transaction
+  (testing "using with-transaction"
+     (is
+       ;; since the test fixtures clear the db after every test
+       ;; we need to do all this one one `is`
+       (and (d/with-transaction [d/*database* {:rollback-only true}]
+              (let [new-user (-> user-2 changeset q/save!)
+                    round-trip (q/find! :user (:user/id new-user))]
+                (and
+                  (nil? (:changeset/errors new-user))
+                  (uuid? (:user/id new-user))
+                  (some? round-trip))))
+            (empty? (q/all! :user))))))
+
+(deftest transaction-options
+  (d/with-transaction
+    [d/*database* {:isolation :serializable}]
+    (is (= java.sql.Connection/TRANSACTION_SERIALIZABLE
+           (.getTransactionIsolation d/*database*))))
+  (d/with-transaction
+    [d/*database* {:isolation :read-uncommitted}]
+    (is (= java.sql.Connection/TRANSACTION_READ_UNCOMMITTED
+           (.getTransactionIsolation d/*database*)))))

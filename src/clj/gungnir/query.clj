@@ -86,7 +86,7 @@
   :args (s/alt
         :arity-1 (s/cat :changeset :gungnir/changeset)
         :arity-2 (s/cat :changeset :gungnir/changeset
-                        :datasource :sql/datasource))
+                        :datasource :sql/conn-or-datasource))
   :ret (s/or :changeset :gungnir/changeset
              :record map?))
 (defn save!
