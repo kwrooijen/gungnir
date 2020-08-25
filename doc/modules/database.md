@@ -115,6 +115,15 @@ functions that are returned.
 Now when you call `my.datasource/find!` which will query it's local datasource
 instead of the global datasource with `q/find!`.
 
+## Logging
+
+Gungnir uses [clojure/tools.logging](https://github.com/clojure/tools.logging)
+to log errors and debug information. You can plug in your own logging backend,
+whether that be timbre, slf4j, log4j, apache commons logging, etc.
+
+In some error cases Gungnir might print out SQL or HoneySQL forms. These are
+always logged under the `gungnir.sql` ns at `:debug` level. To enable or disable
+these, see your logging backend configuration documentation.
 
 ---
 
