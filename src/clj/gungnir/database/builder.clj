@@ -20,8 +20,13 @@
                 after-read)
         (result-set/read-column-by-index value (:rsmeta builder) i)))))
 
+(defn- qualifier-builder [v]
+  (-> @gungnir.model/table->model
+      (get (keyword v))
+      (name)))
+
 (defn kebab-map-builder [rs opts]
-  (let [opts (assoc opts :qualifier-fn ->kebab :label-fn ->kebab)]
+  (let [opts (assoc opts :qualifier-fn qualifier-builder :label-fn ->kebab)]
     (result-set/as-modified-maps rs opts)))
 
 (def column-builder

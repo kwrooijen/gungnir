@@ -9,9 +9,17 @@
    [gungnir.spec]
    [clojure.spec.alpha :as s]))
 
+;; TODO Might want to turn these into dynamic vars for performance benefits
 (defonce models (atom {}))
+(defonce table->model (atom {}))
+(defonce model->table (atom {}))
+(defonce field->column (atom {}))
+(defonce column->field (atom {}))
 
 (def ^:private optional-keys #{:virtual :primary-key :auto})
+
+(defn- ->snake-keyword [s]
+  (keyword (string/replace (name s) #"-" "_")))
 
 (defn- model? [?model]
   (or (vector? ?model)
@@ -31,15 +39,33 @@
   [k (util.malli/update-children (partial util.malli/update-child-properties add-optional) v)])
 
 (defn- update-table [[k v]]
-  (if-not (:table (m/properties v))
-    [k (mu/update-properties v assoc :table k)]
-    [k v]))
+  (if (:table (m/properties v))
+    [k (mu/update-properties v update :table ->snake-keyword)]
+    [k (mu/update-properties v assoc :table (->snake-keyword k))]))
 
 (defn- add-primary-key [[k v]]
   (let [primary-key (->> (m/children v)
                          (filter (comp :primary-key util.malli/child-properties))
                          (ffirst))]
     [k (mu/update-properties v assoc :primary-key primary-key)]))
+
+(defn- register-table-names! []
+  (doseq [[model opts] @models]
+    (swap! table->model assoc (-> opts m/properties :table) model)
+    (swap! model->table assoc model (-> opts m/properties :table))))
+
+(defn- register-field-column-mappers! []
+  (doseq [[table model fields] (map (juxt (comp :table m/properties second)
+                                          first
+                                          (comp m/children second))
+                                    @models)
+          [field] fields]
+    (let [column (keyword (name table) (name field))]
+      (swap! field->column assoc
+             (keyword (name model) "*")
+             (keyword (name table) "*"))
+      (swap! field->column assoc field column)
+      (swap! column->field assoc column field))))
 
 (defmulti validator (fn [validator] validator))
 (defmethod validator :default [k]
@@ -59,7 +85,7 @@
     (mapv edn/read-string v)
     (edn/read-string v)))
 
-(defmulti before-read (fn [k _v] k))
+(defmulti before-read (fn [k _v] (get @column->field k k)))
 
 (defmethod before-read :string/lower-case [_ v]
   (string/lower-case v))
@@ -81,32 +107,6 @@
   (-> (name k)
       (string/replace #"-" " ")
       (string/capitalize)))
-
-(s/fdef register!
-  :args (s/cat :model-map (s/map-of simple-keyword? :gungnir/model))
-  :ret nil?)
-(defn register!
-  "Adds the `model-map` to the current available models for Gungnir. You
-  can add multiple models at once, or add new ones over time.
-
-  The following format is accepted. Keys are the name of model, and
-  the value should be a Malli `:map`
-
-  ```clojure
-  (gungnir.model/register!
-   {:user [:map ,,,]
-    :post [:map ,,,]
-    :comment [:map ,,,]})
-  ```
-  "
-  [model-map]
-  (->> model-map
-       (mapv update-table)
-       (mapv update-children-add-optional)
-       (mapv add-primary-key)
-       (into {})
-       (swap! models merge))
-  nil)
 
 (s/fdef find
   :args (s/cat :k simple-keyword?)
@@ -166,12 +166,29 @@
   [?model]
   (m/properties (?model->model ?model)))
 
-(s/fdef belongs-to-relation-table
-  :args (s/cat :model-1-key simple-keyword?
-               :model-2 :gungnir/model-or-key)
-  :ret (s/nilable qualified-keyword?))
-(defn belongs-to-relation-table
-  "Get the foreign-key of `model-2`, where the foreign-key points to
-  `model-1-key`. Return `nil` of not found."
-  [model-1-key model-2]
-  (-> model-2 properties :belongs-to (get model-1-key)))
+(s/fdef register!
+  :args (s/cat :model-map (s/map-of simple-keyword? :gungnir/model))
+  :ret nil?)
+(defn register!
+  "Adds the `model-map` to the current available models for Gungnir. You
+  can add multiple models at once, or add new ones over time.
+
+  The following format is accepted. Keys are the name of model, and
+  the value should be a Malli `:map`
+
+  ```clojure
+  (gungnir.model/register!
+   {:user [:map ,,,]
+    :post [:map ,,,]
+    :comment [:map ,,,]})
+  ```
+  "
+  [model-map]
+  (->> model-map
+       (mapv update-table)
+       (mapv update-children-add-optional)
+       (mapv add-primary-key)
+       (into {})
+       (swap! models merge))
+  (register-table-names!)
+  (register-field-column-mappers!))

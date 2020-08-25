@@ -62,6 +62,14 @@
    [:document/created-at {:auto true} inst?]
    [:document/updated-at {:auto true} inst?]])
 
+(def model-product
+  [:map
+   {:table "products"}
+   [:product/id {:primary-key true} uuid?]
+   [:product/title string?]
+   [:product/created-at {:auto true} inst?]
+   [:product/updated-at {:auto true} inst?]])
+
 (defn- password-match? [m]
   (= (:user/password m)
      (:user/password-confirmation m)))
@@ -82,4 +90,5 @@
     :post model-post
     :comment model-comment
     :token model-token
-    :document model-document}))
+    :document model-document
+    :product model-product}))

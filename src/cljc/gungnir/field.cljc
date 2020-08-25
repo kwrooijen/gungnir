@@ -7,8 +7,8 @@
 
 (defn- ?field->key [?field]
   (if (coll? ?field)
-    (first ?field)
-    ?field))
+    (get @gungnir.model/column->field (first ?field) (first ?field))
+    (get @gungnir.model/column->field ?field ?field)))
 
 (s/fdef model
   :args (s/cat :field :gungnir.model/field-or-key)

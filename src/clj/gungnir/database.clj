@@ -3,21 +3,22 @@
    ;; NOTE [next.jdbc.date-time] Must be included to prevent date errors
    ;; https://cljdoc.org/d/seancorfield/next.jdbc/1.0.13/api/next.jdbc.date-time
    [clojure.spec.alpha :as s]
-   [clojure.tools.logging :as log]
-   [gungnir.database.builder]
    [clj-database-url.core]
-   [gungnir.record]
-   [gungnir.field]
-   [next.jdbc.date-time]
    [clojure.pprint]
    [clojure.string :as string]
+   [clojure.tools.logging :as log]
+   [clojure.walk :as walk]
+   [gungnir.database.builder]
+   [gungnir.field]
    [gungnir.model]
+   [gungnir.record]
    [hikari-cp.core :as hikari-cp]
    [honeysql.core :as sql]
    [honeysql.helpers :as q]
    [honeysql.types]
    [malli.core :as m]
    [next.jdbc :as jdbc]
+   [next.jdbc.date-time]
    [next.jdbc.result-set :as result-set])
   (:import (java.sql SQLException)
            (org.postgresql.jdbc PgArray)))
@@ -99,18 +100,17 @@
     (get properties type {})))
 
 (defn- record->relation-data [form table]
-  (let [model (gungnir.model/find table)
+  (let [model (get @gungnir.model/models (get @gungnir.model/table->model table))
         primary-key (gungnir.model/primary-key model)
         properties (m/properties model)
-        select (set (:select form))
-        table (:table properties)]
+        select (set (:select form))]
     {:has-one (get-relation select properties :has-one)
      :has-many (get-relation select properties :has-many)
      :belongs-to (get-relation select properties :belongs-to)
      :table table
      :primary-key primary-key}))
 
-(defn process-query-row [form datasource row]
+(defn- process-query-row [form datasource row]
   (let [table (gungnir.record/table row)
         {:keys [has-one has-many belongs-to] :as relation-data}
         (record->relation-data form table)]
@@ -130,12 +130,22 @@
 (defn- map-kv [f m]
   (into {} (map f m)))
 
+(defn- transform-model-alias [?field]
+  (cond
+    (qualified-keyword? ?field)
+    (get @gungnir.model/field->column ?field ?field)
+    (simple-keyword? ?field)
+    (get @gungnir.model/model->table ?field ?field)
+    :else
+    ?field))
+
 (defn- honey->sql
   ([m] (honey->sql m {}))
   ([m opts]
-   (sql/format m
-               :namespace-as-table? (:namespace-as-table? opts true)
-               :quoting :ansi)))
+   (sql/format
+    (walk/postwalk transform-model-alias m)
+    :namespace-as-table? (:namespace-as-table? opts true)
+    :quoting :ansi)))
 
 (defn- remove-quotes [s]
   (string/replace s #"\"" ""))
