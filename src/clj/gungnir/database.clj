@@ -3,6 +3,7 @@
    ;; NOTE [next.jdbc.date-time] Must be included to prevent date errors
    ;; https://cljdoc.org/d/seancorfield/next.jdbc/1.0.13/api/next.jdbc.date-time
    [clojure.spec.alpha :as s]
+   [clojure.tools.logging :as log]
    [gungnir.database.builder]
    [clj-database-url.core]
    [gungnir.record]
@@ -177,9 +178,9 @@
     {table-key [(gungnir.model/format-error table-key :undefined-table)]}))
 
 (defmethod exception->map :default [^SQLException e]
-  (println "Unhandled SQL execption "
-           (.getSQLState e) "\n "
-           (.getMessage e))
+  (log/warn e (str "Unhandled SQL execption "
+                (.getSQLState e) "\n "
+                (.getMessage e)))
   {:unknown [(.getSQLState e)]})
 
 (defn- execute-one!
@@ -190,7 +191,7 @@
                         {:return-keys true
                          :builder-fn gungnir.database.builder/column-builder})
      (catch SQLException e
-       (println (honey->sql form))
+       (log/log "gungnir.sql" :debug nil (honey->sql form))
        (update changeset :changeset/errors merge (exception->map e))))))
 
 (defn- apply-before-save [field-k field-v]
