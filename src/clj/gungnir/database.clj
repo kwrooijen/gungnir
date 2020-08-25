@@ -189,7 +189,7 @@
      (jdbc/execute-one! datasource (honey->sql form opts)
                         {:return-keys true
                          :builder-fn gungnir.database.builder/column-builder})
-     (catch Exception e
+     (catch SQLException e
        (println (honey->sql form))
        (update changeset :changeset/errors merge (exception->map e))))))
 
