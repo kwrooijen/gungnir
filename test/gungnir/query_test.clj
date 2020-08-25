@@ -86,6 +86,12 @@
 (def token-2
   {:token/type :token/reset})
 
+(def document-1-title "document-1 title")
+(def document-1-content "document-1 content")
+
+(def document-1
+  {:document/content document-1-content})
+
 (deftest test-find!
   (let [{:user/keys [id]} (-> user-1 changeset q/save!)]
     (testing "Find user by primary key"
@@ -328,6 +334,28 @@
                  (deref)
                  (first)
                  :comment/id))))))
+
+(deftest test-relation-belongs-to-multiple
+  (let [user-1 (-> user-1 changeset q/save!)
+        user-2 (-> user-2 changeset q/save!)
+        document (-> document-1
+                     (assoc :document/author-id (:user/id user-1)
+                            :document/reviewer-id (:user/id user-2))
+                     changeset
+                     q/save!)]
+    (testing "different users"
+      (is (not= (-> document
+                    :document/author
+                    (deref))
+                (-> document
+                    :document/reviewer
+                    (deref))))
+      (is (some? (-> document
+                     :document/author
+                     (deref))))
+      (is (some? (-> document
+                     :document/reviewer
+                     (deref)))))))
 
 (deftest test-before-save
   (let [_user (-> user-1 (update :user/email string/upper-case) changeset q/save!)]
