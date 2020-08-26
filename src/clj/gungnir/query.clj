@@ -101,7 +101,8 @@
   If during insert / update an error occurs, the changeset will be
   returned with the errors inserted in the `:changeset/errors` key.
   "
-  ([changeset] (save! changeset gungnir.database/*datasource*))
+  ([changeset]
+   (save! changeset gungnir.database/*datasource*))
   ([{:changeset/keys [result] :as changeset} datasource]
    (if (some? (gungnir.record/primary-key-value result))
      (gungnir.database/update! changeset datasource)

@@ -27,6 +27,7 @@
   (partial instance? javax.sql.DataSource))
 
 (defonce ^:dynamic *datasource* nil)
+(defonce ^:dynamic *tx-datasource* nil)
 
 (declare query!)
 (declare query-1!)
@@ -183,7 +184,7 @@
   ([form changeset datasource] (execute-one! form changeset datasource {}))
   ([form changeset datasource opts]
    (try
-     (jdbc/execute-one! datasource (honey->sql form opts)
+     (jdbc/execute-one! (or *tx-datasource* datasource) (honey->sql form opts)
                         {:return-keys true
                          :builder-fn gungnir.database.builder/column-builder})
      (catch SQLException e
@@ -300,7 +301,8 @@
        (-> (q/delete-from table)
            (q/where [:= primary-key (try-uuid primary-key-value)])
            (honey->sql)
-           (as-> sql (jdbc/execute-one! datasource sql {:builder-fn gungnir.database.builder/kebab-map-builder}))
+           (as-> sql (jdbc/execute-one! (or *tx-datasource* datasource) sql
+                                        {:builder-fn gungnir.database.builder/kebab-map-builder}))
            :next.jdbc/update-count
            (= 1))))))
 
@@ -319,7 +321,7 @@
                   (process-query-row form datasource)
                   (conj acc)))
            []
-           (jdbc/plan datasource (honey->sql form) query-opts))))
+           (jdbc/plan (or *tx-datasource* datasource) (honey->sql form) query-opts))))
 
 (s/fdef query-1!
   :args (s/alt
@@ -331,7 +333,7 @@
   result is found return `nil`."
   ([form] (query-1! form *datasource*))
   ([form datasource]
-   (when-let [row (jdbc/execute-one! datasource (honey->sql form) query-opts)]
+   (when-let [row (jdbc/execute-one! (or *tx-datasource* datasource) (honey->sql form) query-opts)]
      (process-query-row form datasource row))))
 
 (s/fdef set-datasource!
