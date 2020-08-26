@@ -65,46 +65,32 @@
 (defmethod print-method RelationAtom [_ ^java.io.Writer w]
   (.write w "<relation-atom>"))
 
-(defn- has-one-atom [t1 t2 primary-key datasource]
+(defn- relation-atom [type {:keys [model through]} primary-key datasource]
   (RelationAtom.
-   :has-one
+   type
    (atom {:select (list :*)
-          :from (list t2)
-          :where [:= (gungnir.model/belongs-to-relation-table t1 t2) primary-key]})
+          :from (list (keyword model))
+          :where [:= through primary-key]})
    datasource))
 
-(defn- add-has-one [datasource {:keys [table primary-key]} record [k v]]
-  (assoc record v (has-one-atom table k primary-key datasource)))
+(defn- add-has-one [datasource primary-key record [k v]]
+  (assoc record k (relation-atom :has-one v (get record primary-key) datasource)))
 
-(defn- has-many-atom [t1 t2 primary-key datasource]
-  (RelationAtom.
-   :has-many
-   (atom {:select (list :*)
-          :from (list t2)
-          :where [:= (gungnir.model/belongs-to-relation-table t1 t2) primary-key]})
-   datasource))
+(defn- add-has-many [datasource primary-key record [k v]]
+  (assoc record k (relation-atom :has-many v (get record primary-key) datasource)))
 
-(defn- add-has-many [datasource {:keys [table primary-key]} record [k v]]
-  (assoc record v (has-many-atom table k primary-key datasource)))
-
-(defn- belongs-to-atom [t2 foreign-key datasource]
-  (RelationAtom.
-   :belongs-to
-   (atom {:select (list :*)
-          :from (list (gungnir.model/table t2))
-          :where [:= (gungnir.model/primary-key t2) foreign-key]})
-   datasource))
-
-(defn- add-belongs-to [datasource {:keys [table]} record [k v]]
-  (assoc record (keyword (name table) (name k)) (belongs-to-atom k (get record v) datasource)))
+(defn- add-belongs-to [datasource _ record [k v]]
+  (assoc record k (relation-atom
+                   :belongs-to
+                   (assoc v :through (gungnir.model/primary-key (:model v)))
+                   (get record (:through v)) datasource)))
 
 (defn- apply-relations
-  [record {:keys [has-one has-many belongs-to primary-key] :as relation-data} datasource]
-  (let [relation-data (assoc relation-data :primary-key (get record primary-key))]
-    (as-> record $
-      (reduce (partial add-has-one datasource relation-data) $ has-one)
-      (reduce (partial add-has-many datasource relation-data) $ has-many)
-      (reduce (partial add-belongs-to datasource relation-data) $ belongs-to))))
+  [record {:keys [has-one has-many belongs-to primary-key]} datasource]
+  (as-> record $
+    (reduce (partial add-has-one datasource primary-key) $ has-one)
+    (reduce (partial add-has-many datasource primary-key) $ has-many)
+    (reduce (partial add-belongs-to datasource primary-key) $ belongs-to)))
 
 (defn- get-relation [^clojure.lang.PersistentHashSet select
                     ^clojure.lang.PersistentArrayMap properties
