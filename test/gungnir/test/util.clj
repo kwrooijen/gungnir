@@ -16,7 +16,6 @@
   ([datasource]
    (st/instrument)
    (migrations/init! datasource)
-   (database/clear! datasource)
    (model/init!)))
 
 (defn database-setup-each
