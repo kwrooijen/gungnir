@@ -6,11 +6,21 @@
    [gungnir.database :refer [*database*]]
    [gungnir.factory]
    [gungnir.test.util :as util]
-   [gungnir.changeset :refer [changeset]]
-   [gungnir.test.util.migrations :as migrations]))
+   [gungnir.changeset :refer [changeset]]))
 
-(use-fixtures :once util/once-fixture)
-(use-fixtures :each util/each-fixture)
+(use-fixtures :once (fn [tests]
+                      (let [datasource (:datasource (gungnir.factory/make-datasource-map! datasource-opts-2))]
+                        (util/database-setup-once)
+                        (util/database-setup-once datasource)
+                        (.close datasource)
+                        (tests))))
+
+(use-fixtures :each (fn [tests]
+                      (let [datasource (:datasource (gungnir.factory/make-datasource-map! datasource-opts-2))]
+                        (util/database-setup-each)
+                        (util/database-setup-each datasource)
+                        (.close datasource)
+                        (tests))))
 
 (def user-1-email "user@test.com")
 
@@ -30,8 +40,6 @@
 
 (deftest local-datasource
   (let [{:keys [datasource all!-fn find!-fn save!-fn delete!-fn find-by!-fn]} (gungnir.factory/make-datasource-map! datasource-opts-2)]
-    (migrations/init! datasource)
-    (database/clear! datasource)
     (testing "creating datasource map"
       (is (not= datasource *database*) )
       (is (instance? javax.sql.DataSource datasource))
