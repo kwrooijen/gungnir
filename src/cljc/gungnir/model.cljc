@@ -186,6 +186,7 @@
   [model-map]
   (->> model-map
        (mapv update-table)
+       (mapv (fn [[k v]] [k (mu/closed-schema v)]))
        (mapv update-children-add-optional)
        (mapv add-primary-key)
        (into {})
