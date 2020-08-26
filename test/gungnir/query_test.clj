@@ -499,3 +499,17 @@
                  (->> (mapv #(or (:post/id %)
                                  (:comment/id %))))
                  (set)))))))
+
+(deftest test-custom-table
+  (let [{:product/keys [id]} (-> {:product/title "Orange"} changeset q/save!)]
+    (testing "querying product"
+      (is (some? (q/find! :product id)))
+      (is (seq (-> (q/select :*)
+                   (q/from :product)
+                   (q/all!))))
+      (is (seq (-> (q/select :product/*)
+                   (q/from :product)
+                   (q/all!))))
+      (is (some? (q/find-by! :product/id id)))
+      (is (seq (q/all! :product/id id)))
+      (is (seq (q/all! :product))))))

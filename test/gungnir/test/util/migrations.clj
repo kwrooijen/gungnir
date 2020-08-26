@@ -104,6 +104,16 @@
    " , updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL "
    " );"))
 
+(def product-table-migration
+  "Create a `product` table."
+  (str
+   "CREATE TABLE IF NOT EXISTS products "
+   " ( id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY "
+   " , title TEXT NOT NULL"
+   " , created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL "
+   " , updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL "
+   " );"))
+
 (defn init!
   "Run migrations to create all tables. The migrations are idempotent,
   so they can be run multiple times."
@@ -115,4 +125,5 @@
    (next.jdbc/execute-one! datasource [post-table-migration])
    (next.jdbc/execute-one! datasource [comment-table-migration])
    (next.jdbc/execute-one! datasource [token-table-migration])
-   (next.jdbc/execute-one! datasource [document-table-migration])))
+   (next.jdbc/execute-one! datasource [document-table-migration])
+   (next.jdbc/execute-one! datasource [product-table-migration])))
