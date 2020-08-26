@@ -12,7 +12,7 @@
 </ul>
 <pre><code class="clojure">(gungnir.database/make-datasource!
   "jdbc:postgresql://localhost:5432/postgres?user=postgres&amp;password=postgres")
-  
+
 (gungnir.database/make-datasource!
   "postgres://postgres:postgres@localhost:5432/postgres")
 
@@ -24,7 +24,7 @@
    :server-name   "localhost"
    :port-number   5432})
 </code></pre>
-<p>Once established, the datasource will be stored in <code>gungnir.database/*database*</code>. If you’re using the Gungnir <a href="https://kwrooijen.github.io/gungnir/query.html">query</a> API you won’t have to access this yourself. Currently Gungnir only supports creating a single datasource.</p>
+<p>Once established, the datasource will be stored in <code>gungnir.database/*datasource*</code>. If you’re using the Gungnir <a href="https://kwrooijen.github.io/gungnir/query.html">query</a> API you won’t have to access this yourself. Currently Gungnir only supports creating a single datasource.</p>
 <h2><a href="#setting-a-custom-connection-pool" name="setting-a-custom-connection-pool"></a>Setting a custom connection pool</h2>
 <p>A custom connection pool can also be set using the <code>gungnir.database/set-datasource!</code> function.</p>
 <h2><a href="#exception-handling" name="exception-handling"></a>Exception handling</h2>

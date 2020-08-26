@@ -2,7 +2,7 @@
   "This namespace is used to setup a testing environment. This namespace
   should be included in all test namespaces. "
   (:require
-   [gungnir.database :refer [*database*]]
+   [gungnir.database :refer [*datasource*]]
    [orchestra.spec.test :as st]
    [gungnir.test.util.database :as database]
    [gungnir.test.util.migrations :as migrations]
@@ -12,14 +12,14 @@
 (defn database-setup-once
   ([]
    (database/init!)
-   (database-setup-once *database*))
+   (database-setup-once *datasource*))
   ([datasource]
    (st/instrument)
    (migrations/init! datasource)
    (model/init!)))
 
 (defn database-setup-each
-  ([] (database-setup-each *database*))
+  ([] (database-setup-each *datasource*))
   ([datasource]
    (database/clear! datasource)))
 

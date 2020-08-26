@@ -78,7 +78,7 @@
   be a namespaced map or relational atom. The row will be deleted based on it's
   `primary-key`. Return `true` on deletion. If no match is found return
   `false`."
-  ([form] (delete! form gungnir.database/*database*))
+  ([form] (delete! form gungnir.database/*datasource*))
   ([form datasource]
    (gungnir.database/delete! form datasource)))
 
@@ -101,7 +101,7 @@
   If during insert / update an error occurs, the changeset will be
   returned with the errors inserted in the `:changeset/errors` key.
   "
-  ([changeset] (save! changeset gungnir.database/*database*))
+  ([changeset] (save! changeset gungnir.database/*datasource*))
   ([{:changeset/keys [result] :as changeset} datasource]
    (if (some? (gungnir.record/primary-key-value result))
      (gungnir.database/update! changeset datasource)

@@ -89,7 +89,7 @@ will allow you to access it whenever you enter the REPL in the user namespace.
     [gungnir.database]))
 
 (def config
-  {:datastore (ragtime.jdbc/sql-database {:datasource gungnir.database/*database*})
+  {:datastore (ragtime.jdbc/sql-database {:datasource gungnir.database/*datasource*})
    :migrations (jdbc/load-resources "migrations")})
 ```
 

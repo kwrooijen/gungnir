@@ -1,6 +1,6 @@
 (ns gungnir.test.util.migrations
   (:require
-   [gungnir.database :refer [*database*]]
+   [gungnir.database :refer [*datasource*]]
    [next.jdbc]))
 
 (def uuid-extension-migration
@@ -132,7 +132,7 @@
 (defn init!
   "Run migrations to create all tables. The migrations are idempotent,
   so they can be run multiple times."
-  ([] (init! *database*))
+  ([] (init! *datasource*))
   ([datasource]
    (next.jdbc/execute-one! datasource [uuid-extension-migration])
    (next.jdbc/execute-one! datasource [trigger-updated-at-migration])

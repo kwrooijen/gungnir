@@ -55,7 +55,7 @@
     [gungnir.database]))
 
 (def config
-  {:datastore (ragtime.jdbc/sql-database {:datasource gungnir.database/*database*})
+  {:datastore (ragtime.jdbc/sql-database {:datasource gungnir.database/*datasource*})
    :migrations (jdbc/load-resources "migrations")})
 </code></pre>
 <p>Enter the REPL (e.g. <code>lein repl</code>). Require the <code>ragtime.repl</code> namespace and run the migrations using the <code>ragtime.repl/migrate</code> function. All pending migrations will be executed.</p>
