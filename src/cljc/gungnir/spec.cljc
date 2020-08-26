@@ -7,6 +7,9 @@
   (s/or :schema
         m/schema?
 
+        :field-key
+        qualified-keyword?
+
         :gungnir.model.field/without-props
         (s/cat :key qualified-keyword?
                :spec any?)

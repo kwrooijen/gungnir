@@ -70,6 +70,23 @@
    [:product/created-at {:auto true} inst?]
    [:product/updated-at {:auto true} inst?]])
 
+(def snippet-registry
+  {:snippet/id uuid?
+   :snippet/user-id uuid?
+   :snippet/content string?
+   :snippet/created-at inst?
+   :snippet/updated-at inst?})
+
+(def model-snippet
+  [:map
+   {:registry snippet-registry
+    :belongs-to {:snippet/user {:model :user :through :snippet/user-id}}}
+   [:snippet/id {:auto true :primary-key true}]
+   :snippet/user-id
+   :snippet/content
+   [:snippet/created-at {:auto true}]
+   [:snippet/updated-at {:auto true}]])
+
 (defn- password-match? [m]
   (= (:user/password m)
      (:user/password-confirmation m)))
@@ -91,4 +108,5 @@
     :comment model-comment
     :token model-token
     :document model-document
-    :product model-product}))
+    :product model-product
+    :snippet model-snippet}))

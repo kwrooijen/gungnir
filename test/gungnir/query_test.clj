@@ -513,3 +513,22 @@
       (is (some? (q/find-by! :product/id id)))
       (is (seq (q/all! :product/id id)))
       (is (seq (q/all! :product))))))
+
+(deftest test-with-registry
+  (let [{user-id :user/id} (-> user-1 changeset q/save!)
+        {:snippet/keys [id] :as s}
+        (-> {:snippet/content "code"
+             :snippet/user-id user-id}
+            changeset
+            q/save!)]
+    (testing "querying snippet with registry"
+      (is (some? (q/find! :snippet id)))
+      (is (seq (-> (q/select :*)
+                   (q/from :snippet)
+                   (q/all!))))
+      (is (seq (-> (q/select :snippet/*)
+                   (q/from :snippet)
+                   (q/all!))))
+      (is (some? (q/find-by! :snippet/id id)))
+      (is (seq (q/all! :snippet/id id)))
+      (is (seq (q/all! :snippet))))))
