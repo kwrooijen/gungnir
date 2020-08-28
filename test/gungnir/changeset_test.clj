@@ -120,27 +120,61 @@
               :changeset/errors
               some?)))))
 
+(deftest assoc-changeset
+  (testing "add a new email to existing user"
+    (let [new-email "bar@baz.bar"
+          changeset
+          (-> {:user/email "foo"
+               :user/password "123456"}
+              (changeset/assoc
+               :user/email new-email))]
+      (is (nil? (:changeset/errors changeset)))
+      (is (= new-email (-> changeset :changeset/params :user/email)))
+      (is (= new-email (-> changeset :changeset/result :user/email)))))
+
+  (testing "add a new email to changeset"
+    (let [new-email "bar@baz.bar"
+          changeset (-> {:user/email "foo" :user/password "123456"}
+                        (changeset/create)
+                        (changeset/assoc :user/email new-email))]
+      (is (nil? (:changeset/errors changeset)))
+      (is (= new-email (-> changeset :changeset/params :user/email)))
+      (is (= new-email (-> changeset :changeset/result :user/email))))))
+
 (deftest update-changeset
-  (testing "password confirmation validator"
-    (let [user {:user/email "user@test.com"
-                :user/password "123456"
-                :user/password-confirmation "123456"}]
-      (is (-> user
-              (changeset/create [:user/password-match?])
-              :changeset/errors
-              nil?))
+  (let [comment
+        {:comment/id (java.util.UUID/randomUUID)
+         :comment/content ""
+         :comment/user-id (java.util.UUID/randomUUID)
+         :comment/post-id (java.util.UUID/randomUUID)
+         :comment/rating 999}]
+    (testing "incrementing rating on comment"
+      (let [changeset (changeset/update comment :comment/rating inc)]
+        (is (nil? (:changeset/errors changeset)))
+        (is (= 1000 (-> changeset :changeset/params :comment/rating)))
+        (is (= 1000 (-> changeset :changeset/result :comment/rating)))))
 
-      (is (-> (assoc user :user/password-confirmation "123456+7")
-              (changeset/create [:user/password-match?])
-              :changeset/errors
-              :user/password-confirmation
-              some?))))
+    (testing "incrementing rating on comment"
+      (let [changeset (changeset/update (changeset/create comment) :comment/rating inc)]
+        (is (nil? (:changeset/errors changeset)))
+        (is (= 1000 (-> changeset :changeset/params :comment/rating)))
+        (is (= 1000 (-> changeset :changeset/result :comment/rating)))))))
 
-  (testing "password confirmation validator with invalid fields"
-    (let [user {:user/email "user@test.com"
-                :user/password "1234"
-                :user/password-confirmation "1234"}]
-      (is (-> user
-              (changeset/create [:user/password-match?])
-              :changeset/errors
-              some?)))))
+(deftest merge-changeset
+  (let [comment
+        {:comment/id (java.util.UUID/randomUUID)
+         :comment/content ""
+         :comment/user-id (java.util.UUID/randomUUID)
+         :comment/post-id (java.util.UUID/randomUUID)
+         :comment/rating 999}]
+    (testing "merge rating on comment"
+      (let [changeset (changeset/merge comment {:comment/rating 1000})]
+        (is (nil? (:changeset/errors changeset)))
+        (is (= 1000 (-> changeset :changeset/params :comment/rating)))
+        (is (= 1000 (-> changeset :changeset/result :comment/rating)))))
+
+    (testing "merge rating on comment"
+      (let [changeset (changeset/merge (changeset/create comment) {:comment/rating 1000})]
+        (is (nil? (:changeset/errors changeset)))
+        (is (= 1000 (-> changeset :changeset/params :comment/rating)))
+        (is (= 1000 (-> changeset :changeset/result :comment/rating)))))))

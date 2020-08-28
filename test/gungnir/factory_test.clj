@@ -39,7 +39,8 @@
    :user/password user-2-password})
 
 (deftest local-datasource
-  (let [{:keys [datasource all!-fn find!-fn save!-fn delete!-fn find-by!-fn]} (gungnir.factory/make-datasource-map! datasource-opts-2)]
+  (let [{:keys [datasource all!-fn find!-fn save!-fn delete!-fn find-by!-fn]}
+        (gungnir.factory/make-datasource-map! datasource-opts-2)]
     (testing "creating datasource map"
       (is (not= datasource *database*) )
       (is (instance? javax.sql.DataSource datasource))
