@@ -1,5 +1,5 @@
 (ns gungnir.changeset
-  (:refer-clojure :exclude [cast])
+  (:refer-clojure :exclude [cast assoc update merge])
   (:require
    [clojure.spec.alpha :as s]
    [clojure.string :as string]
@@ -105,7 +105,7 @@
          diff (-> (differ/diff transformed-origin (gungnir.decode/advanced-decode model params))
                   (first)
                   (remove-auto-keys model))
-         validated (validate (merge transformed-origin diff) model validators)
+         validated (validate (clojure.core/merge transformed-origin diff) model validators)
          result (remove-virtual-keys (or (:value validated) validated) model)]
      {:changeset/model model-k
       :changeset/validators validators
