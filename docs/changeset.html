@@ -48,7 +48,7 @@
 ([origin, params, validators])
 </code></pre>
 <h2><a href="#creating-a-changeset" name="creating-a-changeset"></a>Creating a changeset</h2>
-<p>Creating a changeset is easy. Simply run the <code>gungnir.changeset/changeset</code> function, assuming we have a user <a href="https://kwrooijen.github.io/gungnir/model.html">model</a>.</p>
+<p>Creating a changeset is easy. Simply run the <code>gungnir.changeset/create</code> function, assuming we have a user <a href="https://kwrooijen.github.io/gungnir/model.html">model</a>.</p>
 <pre><code class="clojure">;; New user
 
 (gungnir.changeset/create {:user/email "user@test.com", :user/password "123456"})

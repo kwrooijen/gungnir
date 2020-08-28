@@ -75,7 +75,7 @@ gungnir.changeset/create
 
 ## Creating a changeset
 
-Creating a changeset is easy. Simply run the `gungnir.changeset/changeset`
+Creating a changeset is easy. Simply run the `gungnir.changeset/create`
 function, assuming we have a user
 [model](https://kwrooijen.github.io/gungnir/model.html).
 
