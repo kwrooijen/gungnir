@@ -1,7 +1,7 @@
 (ns gungnir.changeset-test
   (:require
    [clojure.test :refer :all]
-   [gungnir.changeset :as gungnir :refer [changeset]]
+   [gungnir.changeset :as changeset]
    [gungnir.test.util :as util]))
 
 (use-fixtures :once util/once-fixture)
@@ -15,10 +15,10 @@
    :user/updated-at (java.util.Date. 1495636054438)})
 
 (defn- cast+errors [params model]
-  (-> params (gungnir/cast model) changeset :changeset/errors))
+  (-> params (changeset/cast model) changeset/create :changeset/errors))
 
 (defn- changeset+errors [params]
-  (-> params changeset :changeset/errors))
+  (-> params changeset/create :changeset/errors))
 
 (deftest valid-user-tests
   (testing "valid changesets"
@@ -58,17 +58,17 @@
 (deftest test-diffing-changeset
   (testing "updating email"
     (is (-> existing-user
-            (changeset {:user/email "foo@bar.baz"})
+            (changeset/create {:user/email "foo@bar.baz"})
             :changeset/errors
             nil?))
     (is (= "foo@bar.baz"
          (-> existing-user
-             (changeset {:user/email "foo@bar.baz"})
+             (changeset/create {:user/email "foo@bar.baz"})
              :changeset/result
              :user/email)))
     (is (= "123456"
          (-> existing-user
-             (changeset {:user/email "foo@bar.baz"})
+             (changeset/create {:user/email "foo@bar.baz"})
              :changeset/result
              :user/password)))))
 
@@ -76,21 +76,21 @@
   (testing "auto should not be in result"
     (is (= (java.util.Date. 1495636054438)
          (-> existing-user
-             (changeset {:user/created-at (java.util.Date. 123)})
+             (changeset/create {:user/created-at (java.util.Date. 123)})
              :changeset/result
              :user/created-at)))))
 
 (deftest test-virtual-property
   (testing "virtual should not be in result"
     (is (-> existing-user
-               (changeset {:user/password-confirmation "987654"})
+               (changeset/create {:user/password-confirmation "987654"})
                :changeset/result
                :user/password-confirmation
                nil?))
     (is (-> {:user/email "test@user.com"
              :user/password "987654"
              :user/password-confirmation "987654"}
-            (changeset)
+            (changeset/create)
             :changeset/result
             :user/password-confirmation
             nil?))))
@@ -101,12 +101,12 @@
                 :user/password "123456"
                 :user/password-confirmation "123456"}]
       (is (-> user
-              (changeset [:user/password-match?])
+              (changeset/create [:user/password-match?])
               :changeset/errors
               nil?))
 
       (is (-> (assoc user :user/password-confirmation "123456+7")
-              (changeset [:user/password-match?])
+              (changeset/create [:user/password-match?])
               :changeset/errors
               :user/password-confirmation
               some?))))
@@ -116,6 +116,31 @@
                 :user/password "1234"
                 :user/password-confirmation "1234"}]
       (is (-> user
-              (changeset [:user/password-match?])
+              (changeset/create [:user/password-match?])
+              :changeset/errors
+              some?)))))
+
+(deftest update-changeset
+  (testing "password confirmation validator"
+    (let [user {:user/email "user@test.com"
+                :user/password "123456"
+                :user/password-confirmation "123456"}]
+      (is (-> user
+              (changeset/create [:user/password-match?])
+              :changeset/errors
+              nil?))
+
+      (is (-> (assoc user :user/password-confirmation "123456+7")
+              (changeset/create [:user/password-match?])
+              :changeset/errors
+              :user/password-confirmation
+              some?))))
+
+  (testing "password confirmation validator with invalid fields"
+    (let [user {:user/email "user@test.com"
+                :user/password "1234"
+                :user/password-confirmation "1234"}]
+      (is (-> user
+              (changeset/create [:user/password-match?])
               :changeset/errors
               some?)))))

@@ -48,7 +48,9 @@
   (-> (into {} (mapv f m))
       (select-keys (gungnir.model/keys model))))
 
-(s/fdef changeset
+
+
+(s/fdef create
   :args (s/alt :arity-1 (s/cat :params map?)
                :arity-2 (s/cat :?origin map?
                                :?params (s/or :origin map?
@@ -57,7 +59,7 @@
                                :params map?
                                :validators (s/coll-of qualified-keyword?)))
   :ret :gungnir/changeset)
-(defn changeset
+(defn create
   "Create a changeset to be inserted into the database.
   Changesets can either be used to create or update a row.
 
