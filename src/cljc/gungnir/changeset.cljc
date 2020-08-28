@@ -129,8 +129,16 @@
         ->key (fn [k] (keyword table (-> (name k) (string/replace #"_" "-"))))]
     (map-select-keys ?model (fn [[k v]] [(->key k) v]) m)))
 
+(s/fdef assoc
+  :args (s/cat :?changeset
+               (s/or :changeset :gungnir/changeset
+                     :record map?)
+               :kvs (s/+ any?))
+  :ret :gungnir/changeset)
 (defn assoc
-  "TODO"
+  "Add key value pairs to `?changeset`. If `?changeset` is a model
+  record then create a new changeset. Key value pairs will be added to
+  `:changeset/params`."
   [?changeset & kvs]
   {:pre (map? ?changeset)}
   (if-not (changeset? ?changeset)
@@ -146,8 +154,18 @@
           params
           (partition 2 kvs)))
 
+(s/fdef update
+  :args (s/cat :?changeset
+               (s/or :changeset :gungnir/changeset
+                     :record map?)
+               :kvs (s/+ any?))
+  :ret :gungnir/changeset)
 (defn update
-  "TODO"
+  "Update `?changeset` with key value pairs. If `?changeset` is a model
+  record then create a new changeset. Key value pairs will be update
+  in `:changeset/params`. If a key is not found in
+  `:changeset/params`, the key will be taken from `:changeset/origin`,
+  updated, and added to `:changeset/params`."
   [?changeset & kvs]
   {:pre (map? ?changeset)}
   (if-not (changeset? ?changeset)
@@ -159,8 +177,16 @@
               kvs)
      (:changeset/validators ?changeset))))
 
+(s/fdef merge
+  :args (s/cat :?changeset
+               (s/or :changeset :gungnir/changeset
+                     :record map?)
+               :kvs (s/+ map?))
+  :ret :gungnir/changeset)
 (defn merge
-  "TODO"
+  "Merge maps into `?changeset`. If `?changeset` is a model record then
+  create a new changeset. All maps in `m` will be merged into
+  `:changeset/params`."
   [?changeset & m]
   {:pre (map? ?changeset)}
   (if-not (changeset? ?changeset)
