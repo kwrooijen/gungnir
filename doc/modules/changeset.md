@@ -65,7 +65,7 @@ Changesets accept 3 different types of arguments.
 The order of arguments:
 
 ```clojure
-gungnir.changeset/changeset
+gungnir.changeset/create
 
 ([params])
 ([origin, params])
@@ -82,7 +82,7 @@ function, assuming we have a user
 ```clojure
 ;; New user
 
-(changeset {:user/email "user@test.com", :user/password "123456"})
+(gungnir.changeset/create {:user/email "user@test.com", :user/password "123456"})
 ;; => {:changeset/model :user
 ;; =>  :changeset/params {:user/email "user@test.com", :user/password "123456"}
 ;; =>  :changeset/errors nil
@@ -90,16 +90,16 @@ function, assuming we have a user
 
 ;; Updating email of existing user
 
-(changeset existing-user {:user/email "user@test.com"})
+(gungnir.changeset/create existing-user {:user/email "user@test.com"})
 ;; => {:changeset/diff {:user/email "user@test.com"}
 ;; =>  ,,,}
 
 ;; Updating password of an existing user with extra validators
 
-(changeset existing-user 
-           {:user/password "123456", 
-            :user/password-confirmation "12345"}
-           [:user/password-match?])
+(gungnir.changeset/create existing-user 
+                          {:user/password "123456",
+                           :user/password-confirmation "12345"}
+                          [:user/password-match?])
 ;; => {:changeset/errors {:user/password-confirmation ["Passwords don't match"]}
 ;; =>  ,,,}
 ```
@@ -146,7 +146,7 @@ Here's a real-world example on how this might look like using a Ring handler.
 (defn attempt-register-user [request]
   (-> (:form-params request)
       (gungnir.changeset/cast :user)
-      (gungnir.changeset/changeset [:user/password-match?])
+      (gungnir.changeset/create [:user/password-match?])
       (gungnir.query/save!)))
 
 (defn handler-user-registration [request]
@@ -157,9 +157,21 @@ Here's a real-world example on how this might look like using a Ring handler.
         (assoc-in [:flash :success] "Successfully logged in."))))
 ```
 
+## Helpers
+
+Gungnir's also provide a few helper functions for manipulating / creating
+changesets. These helpers can either be used on changesets or model
+records. Every time one of these functions are applied, all validators are
+re-evaluated.
+
+* gungnir.changeset/assoc
+* gungnir.changeset/update
+* gungnir.changeset/merge
+
 ---
 
 <div class="footer-navigation">
 <span>Previous: <a href="https://kwrooijen.github.io/gungnir/model.html">model</a></span>
 <span>Next: <a href="https://kwrooijen.github.io/gungnir/query.html">query</a></span>
 </div>
+

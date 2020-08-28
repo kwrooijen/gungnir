@@ -40,7 +40,7 @@
   <p><code>validators</code> - A vector of  <a href="https://kwrooijen.github.io/gungnir/model.html#model-validators">validators</a>  which will perform extra checks on the <code>:changeset/result</code> record.</p></li>
 </ul>
 <p>The order of arguments:</p>
-<pre><code class="clojure">gungnir.changeset/changeset
+<pre><code class="clojure">gungnir.changeset/create
 
 ([params])
 ([origin, params])
@@ -51,7 +51,7 @@
 <p>Creating a changeset is easy. Simply run the <code>gungnir.changeset/changeset</code> function, assuming we have a user <a href="https://kwrooijen.github.io/gungnir/model.html">model</a>.</p>
 <pre><code class="clojure">;; New user
 
-(changeset {:user/email "user@test.com", :user/password "123456"})
+(gungnir.changeset/create {:user/email "user@test.com", :user/password "123456"})
 ;; =&gt; {:changeset/model :user
 ;; =&gt;  :changeset/params {:user/email "user@test.com", :user/password "123456"}
 ;; =&gt;  :changeset/errors nil
@@ -59,16 +59,16 @@
 
 ;; Updating email of existing user
 
-(changeset existing-user {:user/email "user@test.com"})
+(gungnir.changeset/create existing-user {:user/email "user@test.com"})
 ;; =&gt; {:changeset/diff {:user/email "user@test.com"}
 ;; =&gt;  ,,,}
 
 ;; Updating password of an existing user with extra validators
 
-(changeset existing-user 
-           {:user/password "123456", 
-            :user/password-confirmation "12345"}
-           [:user/password-match?])
+(gungnir.changeset/create existing-user 
+                          {:user/password "123456",
+                           :user/password-confirmation "12345"}
+                          [:user/password-match?])
 ;; =&gt; {:changeset/errors {:user/password-confirmation ["Passwords don't match"]}
 ;; =&gt;  ,,,}
 </code></pre>
@@ -92,7 +92,7 @@ CONSTRAINT</code> error). When this happens the changeset will be returned with 
 <pre><code class="clojure">(defn attempt-register-user [request]
   (-&gt; (:form-params request)
       (gungnir.changeset/cast :user)
-      (gungnir.changeset/changeset [:user/password-match?])
+      (gungnir.changeset/create [:user/password-match?])
       (gungnir.query/save!)))
 
 (defn handler-user-registration [request]
@@ -102,6 +102,13 @@ CONSTRAINT</code> error). When this happens the changeset will be returned with 
     (-&gt; (ring/redirect "/")
         (assoc-in [:flash :success] "Successfully logged in."))))
 </code></pre>
+<h2><a href="#helpers" name="helpers"></a>Helpers</h2>
+<p>Gungnir’s also provide a few helper functions for manipulating / creating changesets. These helpers can either be used on changesets or model records. Every time one of these functions are applied, all validators are re-evaluated.</p>
+<ul>
+  <li>gungnir.changeset/assoc</li>
+  <li>gungnir.changeset/update</li>
+  <li>gungnir.changeset/merge</li>
+</ul>
 <hr />
 <div class="footer-navigation">
 <span>Previous: <a href="https://kwrooijen.github.io/gungnir/model.html">model</a></span>
