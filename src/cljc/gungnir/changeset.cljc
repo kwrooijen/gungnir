@@ -11,6 +11,22 @@
    [malli.core :as m]
    [malli.error :as me]))
 
+(def ^:private changeset-keys
+  #{:changeset/model
+    :changeset/validators
+    :changeset/diff
+    :changeset/origin
+    :changeset/transformed-origin
+    :changeset/params
+    :changeset/result
+    :changeset/errors})
+
+(defn ^boolean ^:private changeset? [?changeset]
+  (boolean
+   (and (map? ?changeset)
+        (= (set (keys ?changeset))
+           changeset-keys))))
+
 (defn- validator->malli-fn [{:validator/keys [key message fn]}]
   [:fn {:error/message message
         :error/path [key]}
@@ -76,26 +92,28 @@
   entire resulting record.
   "
   ([params]
-   (changeset {} params []))
+   (create {} params []))
   ([?origin ?params]
    (cond
-     (map? ?params) (changeset ?origin ?params [])
-     (vector? ?params) (changeset {} ?origin ?params)))
+     (map? ?params) (create ?origin ?params [])
+     (vector? ?params) (create {} ?origin ?params)))
   ([origin params validators]
-   (let [model-k (-> params clojure.core/keys first namespace keyword)
+   (let [model-k (or (some-> params clojure.core/keys first namespace keyword)
+                     (some-> origin clojure.core/keys first namespace keyword))
          model (gungnir.model/find model-k)
          transformed-origin (gungnir.decode/advanced-decode-with-defaults model (select-keys origin (gungnir.model/keys model)))
          diff (-> (differ/diff transformed-origin (gungnir.decode/advanced-decode model params))
                   (first)
                   (remove-auto-keys model))
-         validated (validate (merge transformed-origin diff) model validators)]
+         validated (validate (merge transformed-origin diff) model validators)
+         result (remove-virtual-keys (or (:value validated) validated) model)]
      {:changeset/model model-k
       :changeset/validators validators
       :changeset/diff diff
       :changeset/origin origin
       :changeset/transformed-origin transformed-origin
       :changeset/params params
-      :changeset/result (remove-virtual-keys (or (:value validated) validated) model)
+      :changeset/result result
       :changeset/errors (me/humanize validated)})))
 
 (s/fdef cast
@@ -110,3 +128,44 @@
         table (name (gungnir.model/table ?model))
         ->key (fn [k] (keyword table (-> (name k) (string/replace #"_" "-"))))]
     (map-select-keys ?model (fn [[k v]] [(->key k) v]) m)))
+
+(defn assoc
+  "TODO"
+  [?changeset & kvs]
+  {:pre (map? ?changeset)}
+  (if-not (changeset? ?changeset)
+    (recur (create ?changeset {} []) kvs)
+    (create
+     (:changeset/origin ?changeset)
+     (apply (partial clojure.core/assoc (:changeset/params ?changeset)) kvs)
+     (:changeset/validators ?changeset))))
+
+(defn- update* [origin params kvs]
+  (reduce (fn [acc [k f]]
+            (clojure.core/assoc acc k (f (get acc k (get origin k)))))
+          params
+          (partition 2 kvs)))
+
+(defn update
+  "TODO"
+  [?changeset & kvs]
+  {:pre (map? ?changeset)}
+  (if-not (changeset? ?changeset)
+    (recur (create ?changeset {} []) kvs)
+    (create
+     (:changeset/origin ?changeset)
+     (update* (:changeset/origin ?changeset)
+              (:changeset/params ?changeset)
+              kvs)
+     (:changeset/validators ?changeset))))
+
+(defn merge
+  "TODO"
+  [?changeset & m]
+  {:pre (map? ?changeset)}
+  (if-not (changeset? ?changeset)
+    (recur (create ?changeset {} []) m)
+    (create
+     (:changeset/origin ?changeset)
+     (apply clojure.core/merge (:changeset/params ?changeset) m)
+     (:changeset/validators ?changeset))))
