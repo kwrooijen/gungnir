@@ -51,7 +51,7 @@
 <pre><code class="clojure">(defmethod gungnir.ui.form/handle-validation :register [_ params]
   (-&gt; params
       (gungnir.changeset/cast :user)
-      (gungnir.changeset/changeset [:register/password-match?])))
+      (gungnir.changeset/create [:register/password-match?])))
 </code></pre>
 <p>After the page has loaded, you will need to initialize Gungnir’s form validation.</p>
 <pre><code class="clojure">(gungnir.ui.form/init)
