@@ -48,5 +48,13 @@
 <p><a href="https://kwrooijen.github.io/gungnir/guide.html">Read the guide</a> for a full overview of all the features and how to use them.</p>
 <h3><a href="#code-playground" name="code-playground"></a>Code Playground</h3>
 <p>The <a href="https://github.com/kwrooijen/gungnir-playground">Gungnir code playground</a> is a repository with an “interactive tutorial”. Clone the repository and execute the code in the core namespace step by step.</p>
+<h2><a href="#developing" name="developing"></a>Developing</h2>
+<h3><a href="#testing" name="testing"></a>Testing</h3>
+<p>In order to run the tests you’ll need <a href="https://docs.docker.com/compose/compose-file/">docker-compose</a>. Make sure this is an up to date version. Inside of the root directory you can setup the testing databases with the following command.</p>
+<pre><code class="sh">docker-compose up -d
+</code></pre>
+<p>Then run the tests with <code>lein</code></p>
+<pre><code class="sh">lein test
+</code></pre>
 <h2><a href="#author-license" name="author-license"></a>Author / License</h2>
 <p>Released under the <a href="https://github.com/kwrooijen/gungnir/blob/master/LICENSE">MIT License</a> by <a href="https://twitter.com/kwrooijen">Kevin William van Rooijen</a>.</p></div></div></div></body></html>

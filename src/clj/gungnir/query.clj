@@ -278,7 +278,7 @@
   ([form model-key primary-key-value]
    (cond-> form
      (not (:select form)) (q/select :*)
-     true (q/from (gungnir.model/table model-key))
+     true (q/from model-key)
      true (q/merge-where [:= (gungnir.model/primary-key model-key)
                           (gungnir.database/try-uuid primary-key-value)]))))
 

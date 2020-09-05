@@ -150,7 +150,7 @@ A very simple example would be to find a user by their email. If in the `:user` 
 has a `has-many` posts definition:
 
 ```clojure
-{:has-many :post :user/posts}
+{:has-many {:user/posts {model :post :through :post/user-id}}}
 ```
 
 You'll be able to query a user's posts:

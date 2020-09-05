@@ -15,8 +15,8 @@ your database.
 
 (def user-model
  [:map
-  {:has-many {:post :user/posts
-              :comment :user/comments}}
+  {:has-many {:user/posts {:model :post :through :post/user-id}
+              :user/comments {:model :comment :through :comment/user-id}}}
   [:user/id {:primary-key true} uuid?]
   [:user/email {:before-save [:string/lower-case]
                 :before-read [:string/lower-case]}
@@ -40,7 +40,55 @@ Mount.
   :comment comment-model})
 ```
 
-## Model Field Properties
+## Model properties
+
+### `:table`
+
+Specify the table you'd like to use for this model. By default the model name
+will be used as the table. For example you might have a `:user` model, but you
+want to target the "users" table.
+
+```clojure
+{:user
+ [:map
+  {:table :users}
+  [:user/email string?]}
+```
+
+### `:has-many`
+
+Describe a `:has-many` relation which can be queried through the current
+model. This relational query will return a vector of maps.
+
+```clojure
+[:map
+ {:has-many {:user/posts {:model :post :through :post/user-id}}}
+ ,,,]
+```
+
+### `:has-one`
+
+Describe a `:has-one` relation which can be queried through the current
+model. This relational query will return a single map or `nil`.
+
+```clojure
+[:map
+ {:has-one {:user/reset-token {:model :reset-token :through :reset-token/user-id}}}
+ ,,,]
+```
+
+### `:belongs-to`
+
+Describe a `:belongs-to` relation which can be queried through the current
+model. This relational query will return a single map or `nil`.
+
+```clojure
+[:map
+ {:belongs-to {:post/user {:model :user :through :post/user-id}}}
+ ,,,]
+```
+
+## Model Field properties
 
 Malli schemas support adding properties. Gungnir has a few custom properties
 that can be used.
@@ -166,39 +214,6 @@ definitions to the models properties. For more information regarding querying
 relations visit the [query](https://kwrooijen.github.io/gungnir/query.html)
 page.
 
-### `:has-many`
-
-Describe a `:has-many` relation which can be queried through the current
-model. This relational query will return a vector of maps.
-
-```clojure
-[:map
- {:has-many {:post :user/posts}}
- ,,,]
-```
-
-### `:has-one`
-
-Describe a `:has-one` relation which can be queried through the current
-model. This relational query will return a single map or `nil`.
-
-```clojure
-[:map
- {:has-one {:reset-token :user/reset-token}}
- ,,,]
-```
-
-### `:belongs-to`
-
-Describe a `:belongs-to` relation which can be queried through the current
-model. This relational query will return a single map or `nil`.
-
-```clojure
-[:map
- {:belongs-to {:user :post/user-id}}
- ,,,]
-```
-
 ### Example
 
 In the example below we define the following relations:
@@ -213,23 +228,23 @@ In the example below we define the following relations:
 ```clojure
 (def model-user
  [:map
-  {:has-many {:post :user/posts
-              :comment :user/comments}}
+  {:has-many {:user/posts {:model :post :through :post/user-id}
+              :user/comments {:model :comment :through :comment/user-id}}}
   [:user/id {:primary-key true} uuid?]
   ,,,])
 
 (def model-post
  [:map
-  {:belongs-to {:user :post/user-id}
-   :has-many {:comment :post/comments}}
+  {:belongs-to {:post/user {:model :user :through :post/user-id}}
+   :has-many {:post/comments {:model :comment :through :comment/post-id}}}
   [:post/id {:primary-key true} uuid?]
   [:post/user-id uuid?]
   ,,,])
 
 (def model-comment
  [:map
-  {:belongs-to {:user :comment/user-id
-                :post :comment/post-id}}
+  {:belongs-to {:comment/user {:model :user :through :comment/user-id}
+                :comment/post {:model :post :through :comment/post-id}}}
   [:comment/id {:primary-key true} uuid?]
   [:comment/user-id uuid?]
   [:comment/post-id uuid?]

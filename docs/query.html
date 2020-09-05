@@ -76,7 +76,7 @@
 <p>The way these atoms work is you don’t query the relations immediately. Instead the query will only be executed once you <code>deref</code> the atom. Additionally you can modify the query this atom will execute beforehand by using <code>swap!</code> and any <code>HoneySQL</code> formatting function.</p>
 <h3><a href="#relation-atom-deref" name="relation-atom-deref"></a>Relation atom - deref</h3>
 <p>A very simple example would be to find a user by their email. If in the <code>:user</code> model has a <code>has-many</code> posts definition:</p>
-<pre><code class="clojure">{:has-many :post :user/posts}
+<pre><code class="clojure">{:has-many {:user/posts {model :post :through :post/user-id}}}
 </code></pre>
 <p>You’ll be able to query a user’s posts:</p>
 <pre><code class="clojure">(-&gt; (q/find-by! :user/email "user@test.com")

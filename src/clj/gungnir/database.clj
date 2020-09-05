@@ -3,20 +3,22 @@
    ;; NOTE [next.jdbc.date-time] Must be included to prevent date errors
    ;; https://cljdoc.org/d/seancorfield/next.jdbc/1.0.13/api/next.jdbc.date-time
    [clojure.spec.alpha :as s]
-   [gungnir.database.builder]
    [clj-database-url.core]
-   [gungnir.record]
-   [gungnir.field]
-   [next.jdbc.date-time]
    [clojure.pprint]
    [clojure.string :as string]
+   [clojure.tools.logging :as log]
+   [clojure.walk :as walk]
+   [gungnir.database.builder]
+   [gungnir.field]
    [gungnir.model]
+   [gungnir.record]
    [hikari-cp.core :as hikari-cp]
    [honeysql.core :as sql]
    [honeysql.helpers :as q]
    [honeysql.types]
    [malli.core :as m]
    [next.jdbc :as jdbc]
+   [next.jdbc.date-time]
    [next.jdbc.result-set :as result-set])
   (:import (java.sql SQLException)
            (org.postgresql.jdbc PgArray)))
@@ -64,46 +66,32 @@
 (defmethod print-method RelationAtom [_ ^java.io.Writer w]
   (.write w "<relation-atom>"))
 
-(defn- has-one-atom [t1 t2 primary-key datasource]
+(defn- relation-atom [type {:keys [model through]} primary-key datasource]
   (RelationAtom.
-   :has-one
+   type
    (atom {:select (list :*)
-          :from (list t2)
-          :where [:= (gungnir.model/belongs-to-relation-table t1 t2) primary-key]})
+          :from (list (keyword model))
+          :where [:= through primary-key]})
    datasource))
 
-(defn- add-has-one [datasource {:keys [table primary-key]} record [k v]]
-  (assoc record v (has-one-atom table k primary-key datasource)))
+(defn- add-has-one [datasource primary-key record [k v]]
+  (assoc record k (relation-atom :has-one v (get record primary-key) datasource)))
 
-(defn- has-many-atom [t1 t2 primary-key datasource]
-  (RelationAtom.
-   :has-many
-   (atom {:select (list :*)
-          :from (list t2)
-          :where [:= (gungnir.model/belongs-to-relation-table t1 t2) primary-key]})
-   datasource))
+(defn- add-has-many [datasource primary-key record [k v]]
+  (assoc record k (relation-atom :has-many v (get record primary-key) datasource)))
 
-(defn- add-has-many [datasource {:keys [table primary-key]} record [k v]]
-  (assoc record v (has-many-atom table k primary-key datasource)))
-
-(defn- belongs-to-atom [t2 foreign-key datasource]
-  (RelationAtom.
-   :belongs-to
-   (atom {:select (list :*)
-          :from (list (gungnir.model/table t2))
-          :where [:= (gungnir.model/primary-key t2) foreign-key]})
-   datasource))
-
-(defn- add-belongs-to [datasource {:keys [table]} record [k v]]
-  (assoc record (keyword (name table) (name k)) (belongs-to-atom k (get record v) datasource)))
+(defn- add-belongs-to [datasource _ record [k v]]
+  (assoc record k (relation-atom
+                   :belongs-to
+                   (assoc v :through (gungnir.model/primary-key (:model v)))
+                   (get record (:through v)) datasource)))
 
 (defn- apply-relations
-  [record {:keys [has-one has-many belongs-to primary-key] :as relation-data} datasource]
-  (let [relation-data (assoc relation-data :primary-key (get record primary-key))]
-    (as-> record $
-      (reduce (partial add-has-one datasource relation-data) $ has-one)
-      (reduce (partial add-has-many datasource relation-data) $ has-many)
-      (reduce (partial add-belongs-to datasource relation-data) $ belongs-to))))
+  [record {:keys [has-one has-many belongs-to primary-key]} datasource]
+  (as-> record $
+    (reduce (partial add-has-one datasource primary-key) $ has-one)
+    (reduce (partial add-has-many datasource primary-key) $ has-many)
+    (reduce (partial add-belongs-to datasource primary-key) $ belongs-to)))
 
 (defn- get-relation [^clojure.lang.PersistentHashSet select
                     ^clojure.lang.PersistentArrayMap properties
@@ -112,18 +100,17 @@
     (get properties type {})))
 
 (defn- record->relation-data [form table]
-  (let [model (gungnir.model/find table)
+  (let [model (get @gungnir.model/models (get @gungnir.model/table->model table))
         primary-key (gungnir.model/primary-key model)
         properties (m/properties model)
-        select (set (:select form))
-        table (:table properties)]
+        select (set (:select form))]
     {:has-one (get-relation select properties :has-one)
      :has-many (get-relation select properties :has-many)
      :belongs-to (get-relation select properties :belongs-to)
      :table table
      :primary-key primary-key}))
 
-(defn process-query-row [form datasource row]
+(defn- process-query-row [form datasource row]
   (let [table (gungnir.record/table row)
         {:keys [has-one has-many belongs-to] :as relation-data}
         (record->relation-data form table)]
@@ -143,12 +130,22 @@
 (defn- map-kv [f m]
   (into {} (map f m)))
 
+(defn- transform-model-alias [?field]
+  (cond
+    (qualified-keyword? ?field)
+    (get @gungnir.model/field->column ?field ?field)
+    (simple-keyword? ?field)
+    (get @gungnir.model/model->table ?field ?field)
+    :else
+    ?field))
+
 (defn- honey->sql
   ([m] (honey->sql m {}))
   ([m opts]
-   (sql/format m
-               :namespace-as-table? (:namespace-as-table? opts true)
-               :quoting :ansi)))
+   (sql/format
+    (walk/postwalk transform-model-alias m)
+    :namespace-as-table? (:namespace-as-table? opts true)
+    :quoting :ansi)))
 
 (defn- remove-quotes [s]
   (string/replace s #"\"" ""))
@@ -177,9 +174,9 @@
     {table-key [(gungnir.model/format-error table-key :undefined-table)]}))
 
 (defmethod exception->map :default [^SQLException e]
-  (println "Unhandled SQL execption "
-           (.getSQLState e) "\n "
-           (.getMessage e))
+  (log/warn e (str "Unhandled SQL execption "
+                (.getSQLState e) "\n "
+                (.getMessage e)))
   {:unknown [(.getSQLState e)]})
 
 (defn- execute-one!
@@ -189,8 +186,8 @@
      (jdbc/execute-one! datasource (honey->sql form opts)
                         {:return-keys true
                          :builder-fn gungnir.database.builder/column-builder})
-     (catch Exception e
-       (println (honey->sql form))
+     (catch SQLException e
+       (log/log "gungnir.sql" :debug nil (honey->sql form))
        (update changeset :changeset/errors merge (exception->map e))))))
 
 (defn- apply-before-save [field-k field-v]

@@ -31,6 +31,9 @@
    (next.jdbc/execute!
     datasource
     [(str
+      "DELETE from \"snippet\";"
+      "DELETE from \"products\";"
+      "DELETE from \"document\";"
       "DELETE from \"token\";"
       "DELETE from \"comment\";"
       "DELETE from \"post\";"
@@ -43,6 +46,9 @@
    (next.jdbc/execute!
     datasource
     [(str
+      "DROP TABLE \"snippet\";"
+      "DROP TABLE \"products\";"
+      "DROP TABLE \"document\";"
       "DROP TABLE \"token\";"
       "DROP TABLE \"comment\";"
       "DROP TABLE \"post\";"

@@ -22,25 +22,26 @@
 
 (def formatter (java.time.format.DateTimeFormatter/ofPattern "yyyyMMddHHmmss") )
 
-(defn current-timestamp [] (str (.format (java.time.LocalDateTime/now) formatter)))
+(def read-file (comp edn/read-string slurp))
 
+(defn- process-column-options [options]
+  (remove nil?
+          [(:type options) ;NOTE this should be (apply sql/call (:type options)) if it's an seq, for data types like varchar that need a parameter (varchar(5))
+           (if (:primary-key options) (sql/call :primary-key))
+            ; More options here later
+           ]))
 
-(defn create-migration
-  ([name]
-   (create-migration name ""))
-  ([name contents]
-   (let [file-name (str (current-timestamp) "-" name ".edn")
-         file-path (str migrations-path "/" file-name )]
+(defn- current-timestamp [] (str (.format (java.time.LocalDateTime/now) formatter)))
 
-     (println (str "Creating migration " file-name " at " file-path))
-     (io/make-parents file-path)
-     (spit file-path contents))))
-
-(defn migrations []
+(defn- migrations []
   (sort
    (filter
     #(= "edn" (last (str/split %  #"\.")))
     (map #(.getCanonicalPath %) (.listFiles(io/file migrations-path))))))
+
+(defn- sql-migrations []
+  (mapv (comp file->sql-migration io/file) (migrations)))
+
 
 (defmulti process-migration first )
 
@@ -54,16 +55,6 @@
         (psqlh/with-columns (mapv process-migration columns))
         (sql/format))))
 
-(defn process-column-options [options]
-  (remove nil?
-          [
-
-           (:type options) ;NOTE this should be (apply sql/call (:type options)) if it's an seq, for data types like varchar that need a parameter (varchar(5))
-           (if (:primary-key options) (sql/call :primary-key))
-           ; More options here later
-           ]
-          ))
-;  Still need to process arguments for type better for example varchar(12)
 
 (defmethod process-migration :table/drop [drop-vector]
   (sql/format (apply psqlh/drop-table (map symbol (drop 1 drop-vector)))))
@@ -86,23 +77,33 @@
   (let [[_ table-name & modifications] modification-vector]
     [(str/join " "
                (concat (sql/format (psqlh/alter-table (symbol table-name)))
-                       [(str/join ", " (mapcat (comp sql/format process-migration) modifications ))]))]
+                       [(str/join ", " (mapcat
+                                        (comp sql/format process-migration)
+                                        modifications ))]))]
     ))
 
-(def read-file (comp edn/read-string slurp))
+
+(defn create-migration
+  ([name]
+   (create-migration name ""))
+  ([name contents]
+   (let [file-name (str (current-timestamp) "-" name ".edn")
+         file-path (str migrations-path "/" file-name )]
+
+     (println (str "Creating migration " file-name " at " file-path))
+     (io/make-parents file-path)
+     (spit file-path contents))))
+
+
 
 (defn file->sql-migration [file]
   (let [name (.getName file)
-
         id (last (re-find #"^(\d*)-" name))
         content (read-file (.getCanonicalPath file))]
     (rj/sql-migration {:id id
-                      :up (process-migration (:up content) )
-                      :down (process-migration (:down content) )})))
-
-
-(defn sql-migrations []
-  (mapv (comp file->sql-migration io/file) (migrations)))
+                       :up (process-migration (:up content) )
+                       :down (process-migration (:down content))
+                       })))
 
 (defn migrate-all []
   (rc/migrate-all
@@ -140,18 +141,9 @@
 
   (file->sql-migration  (io/file (nth (migrations) 2)))
 
-  (defn extract-sql [edn]
-    (sql/format (process-migration edn)))
-
-
   (process-migration (:up (edn/read-string(slurp (first (migrations))))))
 
   (map (comp edn/read-string slurp) (migrations))
-
-  (defmethod r/load-files ".clj" [files]
-    (for [file files]
-      ;; Create an `SqlMigration` record for each file
-      ))
 
   (def migrations
     [(r/sql-migration
@@ -169,19 +161,7 @@
        :down
        ["DROP TABLE comment;"]})])
 
-  (sql/format )
-
-  (create-migration "remove-user-email-add-password"
-                   )
+  (create-migration "remove-user-email-add-password"  )
 
   (current-timestamp)
-
-  (s/valid? even? e)
-
-  (s/valid? nil? nil)
-
-  (s/def ::greater_than_3 #(> % 3))
-  (s/valid? ::greater_than_3 2)
-
-
-  )
+)

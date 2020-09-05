@@ -116,6 +116,25 @@ The [Gungnir code playground](https://github.com/kwrooijen/gungnir-playground)
 is a repository with an "interactive tutorial". Clone the repository and execute
 the code in the core namespace step by step.
 
+## Developing
+
+### Testing
+
+In order to run the tests you'll need
+[docker-compose](https://docs.docker.com/compose/compose-file/). Make sure this
+is an up to date version. Inside of the root directory you can setup the testing
+databases with the following command.
+
+```sh
+docker-compose up -d
+```
+
+Then run the tests with `lein`
+
+```sh
+lein test
+```
+
 ## Author / License
 
 Released under the [MIT License] by [Kevin William van Rooijen].

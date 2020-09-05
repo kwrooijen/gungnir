@@ -4,9 +4,10 @@
 
 (def model-user
   [:map
-   {:has-many {:post :user/posts
-               :comment :user/comments}
-    :has-one {:token :user/token}}
+   {:has-many
+    {:user/posts {:model :post :through :post/user-id}
+     :user/comments {:model :comment :through :comment/user-id}}
+    :has-one {:user/token {:model :token :through :token/user-id}}}
    [:user/id {:primary-key true} uuid?]
    [:user/username {:optional true} [:maybe string?]]
    [:user/email {:before-save [:string/lower-case]
@@ -19,8 +20,8 @@
 
 (def model-post
   [:map
-   {:belongs-to {:user :post/user-id}
-    :has-many {:comment :post/comments}}
+   {:belongs-to {:post/user {:model :user :through :post/user-id}}
+    :has-many {:post/comments {:model :comment :through :comment/post-id}}}
    [:post/id {:primary-key true} uuid?]
    [:post/title string?]
    [:post/content string?]
@@ -30,8 +31,9 @@
 
 (def model-comment
   [:map
-   {:belongs-to {:user :comment/user-id
-                 :post :comment/post-id}}
+   {:belongs-to
+    {:comment/user {:model :user :through :comment/user-id}
+     :comment/post {:model :post :through :comment/post-id}}}
    [:comment/id {:primary-key true} uuid?]
    [:comment/content string?]
    [:comment/user-id uuid?]
@@ -42,12 +44,48 @@
 
 (def model-token
   [:map
-   {:belongs-to {:user :token/user-id}}
+   {:belongs-to {:token/user {:model :user :through :token/user-id}}}
    [:token/id {:primary-key true} uuid?]
    [:token/type {:after-read [:edn/read-string]} [:enum :token/reset :token/verify]]
    [:token/user-id uuid?]
    [:token/created-at {:auto true} inst?]
    [:token/updated-at {:auto true} inst?]])
+
+(def model-document
+  [:map
+   {:belongs-to {:document/author {:model :user :through :document/author-id}
+                 :document/reviewer {:model :user :through :document/reviewer-id}}}
+   [:document/id {:primary-key true} uuid?]
+   [:document/author-id uuid?]
+   [:document/reviewer-id uuid?]
+   [:document/content string?]
+   [:document/created-at {:auto true} inst?]
+   [:document/updated-at {:auto true} inst?]])
+
+(def model-product
+  [:map
+   {:table "products"}
+   [:product/id {:primary-key true} uuid?]
+   [:product/title string?]
+   [:product/created-at {:auto true} inst?]
+   [:product/updated-at {:auto true} inst?]])
+
+(def snippet-registry
+  {:snippet/id uuid?
+   :snippet/user-id uuid?
+   :snippet/content string?
+   :snippet/created-at inst?
+   :snippet/updated-at inst?})
+
+(def model-snippet
+  [:map
+   {:registry snippet-registry
+    :belongs-to {:snippet/user {:model :user :through :snippet/user-id}}}
+   [:snippet/id {:auto true :primary-key true}]
+   :snippet/user-id
+   :snippet/content
+   [:snippet/created-at {:auto true}]
+   [:snippet/updated-at {:auto true}]])
 
 (defn- password-match? [m]
   (= (:user/password m)
@@ -68,4 +106,7 @@
    {:user model-user
     :post model-post
     :comment model-comment
-    :token model-token}))
+    :token model-token
+    :document model-document
+    :product model-product
+    :snippet model-snippet}))
