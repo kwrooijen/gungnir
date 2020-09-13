@@ -53,7 +53,15 @@
     (let [params {"email" "test@user" "password" "123456"}]
       (is (-> params (cast+errors :user) :user/email some?)))
     (let [params {"email" "test@user.com" "password" "..."}]
-      (is (-> params (cast+errors :user) :user/password some?)))))
+      (is (-> params (cast+errors :user) :user/password some?))))
+
+  (testing "casting with dash in name"
+    (let [params {"content" "some content"}]
+      (is (-> params (changeset/cast :with-dash) seq some?))))
+
+  (testing "casting with underscore in name"
+    (let [params {"content" "some content"}]
+      (is (-> params (changeset/cast :with_underscore) seq some?)))))
 
 (deftest test-diffing-changeset
   (testing "updating email"

@@ -64,8 +64,6 @@
   (-> (into {} (mapv f m))
       (select-keys (gungnir.model/keys model))))
 
-
-
 (s/fdef create
   :args (s/alt :arity-1 (s/cat :params map?)
                :arity-2 (s/cat :?origin map?
@@ -125,8 +123,8 @@
   qualified-keywords."
   [m ?model]
   (let [?model (if (keyword? ?model) (gungnir.model/find ?model) ?model)
-        table (name (gungnir.model/table ?model))
-        ->key (fn [k] (keyword table (-> (name k) (string/replace #"_" "-"))))]
+        model-key (:model-key (m/properties ?model))
+        ->key (fn [k] (keyword (name model-key) (-> (name k) (string/replace #"_" "-"))))]
     (map-select-keys ?model (fn [[k v]] [(->key k) v]) m)))
 
 (s/fdef assoc
