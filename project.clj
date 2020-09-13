@@ -3,7 +3,7 @@
   :url "https://github.com/kwrooijen/gungnir"
   :license {:name "MIT"}
   :source-paths ["src/clj" "src/cljc"]
-  :dependencies [[seancorfield/next.jdbc "1.1.582"]
+  :dependencies [[seancorfield/next.jdbc "1.1.588"]
                  [org.postgresql/postgresql "42.2.16"]
                  [honeysql "1.0.444"]
                  ;; For now we use lein-git-down to specifiy malli as a
