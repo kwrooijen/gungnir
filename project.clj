@@ -32,7 +32,7 @@
           :metadata {:doc/format :markdown}
           :themes [:rdash]}
   :profiles {:dev {:dependencies [[org.clojure/clojure "1.10.1"]
-                                  [orchestra "2020.07.12-1"]
+                                  [orchestra "2020.09.18-1"]
                                   [codox-theme-rdash "0.1.2"]]}
-             :test {:dependencies [[orchestra "2020.07.12-1"]]}}
+             :test {:dependencies [[orchestra "2020.09.18-1"]]}}
   :deploy-repositories [["releases" :clojars]])
