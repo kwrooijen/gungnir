@@ -296,7 +296,7 @@
 
 (def ^{:dynamic true
        :private true
-       :doc "Gugnir's `before-save` hook should only be applied to values once.
+       :doc "Gugnir's `before-read` hook should only be applied to values once.
 This dynamic variable keeps track if a conditional check is being recurred. This
 happens when you have more than 1 value to compare to.
 e.g. `[:= :user/age 20 20]`"}
