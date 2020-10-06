@@ -25,10 +25,14 @@ documentation.
 
 Add the following dependencies to your `project.clj`
 
+### Versions
+* [gungnir versions](http://repo.clojars.org/kwrooijen/gungnir/0.0.1-SNAPSHOT/)
+* [gungnir.ui versions](http://repo.clojars.org/kwrooijen/gungnir.ui/0.0.1-SNAPSHOT/)
+
 ```clojure
-:dependencies [[kwrooijen/gungnir "0.0.1-SNAPSHOT"]
+:dependencies [[kwrooijen/gungnir "0.0.1-xxxxxxxx.yyyyyy-z"]
                ;; Optionally for frontend validation
-               [kwrooijen/gungnir.ui "0.0.1-SNAPSHOT"]
+               [kwrooijen/gungnir.ui "0.0.1-xxxxxxxx.yyyyyy-z"]
                ,,,]
 ```
 

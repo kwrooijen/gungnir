@@ -24,13 +24,6 @@
 
 (def read-file (comp edn/read-string slurp))
 
-(defn- process-column-options [options]
-  (remove nil?
-          [(:type options) ;NOTE this should be (apply sql/call (:type options)) if it's an seq, for data types like varchar that need a parameter (varchar(5))
-           (if (:primary-key options) (sql/call :primary-key))
-            ; More options here later
-           ]))
-
 (defn- current-timestamp [] (str (.format (java.time.LocalDateTime/now) formatter)))
 
 (defn- migrations []
@@ -41,6 +34,32 @@
 
 (defn- sql-migrations []
   (mapv (comp file->sql-migration io/file) (migrations)))
+
+(defmulti process-field-add (fn [_m [k opts _column]] [k (:type opts)]))
+(defmulti process-field-modify (fn [_m [k opts _column]] [k (:type opts)]))
+
+;;
+;; TABLE/ADD FIELDS
+;;
+(defmethod process-field-add [:column/add :uuid] [m [_ opts column]]
+  ;; Here we modify `m` to add a UUID column with name `column`
+  )
+
+(defmethod process-field-add [:column/add :text] [m [_ opts column]]
+  ;; Here we modify `m` to add a text column with name `column`,
+  ;; optionally :size in `opts'
+  )
+
+;;
+;; TABLE/MODIFY FIELDS
+;;
+(defmethod process-field-modify [:column/add :uuid] [m [_ opts column]]
+  ;; Here we modify `m` to add a UUID column with name `column`
+  )
+(defmethod process-field-modify [:column/add :text] [m [_ opts column]]
+  ;; Here we modify `m` to add a text column with name `column`,
+  ;; optionally :size in `opts'
+  )
 
 
 (defmulti process-migration first )
