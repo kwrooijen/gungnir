@@ -148,7 +148,7 @@ will be saved in the database.
 
 ```clojure
 (defmethod gungnir.model/before-save :bcrypt [_k v]
-  (hashers/derive v))
+  (buddy.hashers/derive v))
 ```
 
 ### `:before-read`

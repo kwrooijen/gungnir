@@ -17,6 +17,55 @@ A high level, data driven database library for Clojure data mapping.
 
 [Dutch Clojure Meetup - Gungnir](https://www.youtube.com/watch?v=9Sr_-Vk9wBw)
 
+```clojure
+(gungnir.database/make-datasource!
+  {:adapter       "postgresql"
+   :username      "postgres"
+   :password      "postgres"
+   :database-name "postgres"
+   :server-name   "localhost"
+   :port-number   5432})
+
+(def user-model
+  [:map
+   [:user/id {:primary-key true} uuid?]
+   [:user/email {:before-save [:string/lower-case]
+                 :before-read [:string/lower-case]}
+    [:re {:error/message "Invalid email"} #".+@.+\..+"]]
+   [:user/password {:before-save [:bcrypt]} [:string {:min 6}]]
+   [:user/password-confirmation {:virtual true} [:string {:min 6}]]
+   [:user/created-at {:auto true} inst?]
+   [:user/updated-at {:auto true} inst?]])
+
+(gungnir.model/register!
+ {:user user-model})
+
+(defn password-match? [m]
+  (= (:user/password m)
+     (:user/password-confirmation m)))
+
+(defmethod gungnir.model/validator :user/password-match? [_]
+  {:validator/key :user/password-confirmation
+   :validator/fn password-match?
+   :validator/message "Passwords don't match"})
+
+(defmethod gungnir.model/before-save :bcrypt [_k v]
+  (buddy.hashers/derive v))
+
+(defn attempt-register-user [request]
+  (-> (:form-params request)
+      (gungnir.changeset/cast :user)
+      (gungnir.changeset/create [:user/password-match?])
+      (gungnir.query/save!)))
+
+(comment
+  (gungnir.query/find-by! :user/email "some@email.com") ;; => {:user/email "some@email.com",,,}
+  (-> (gungnir.query/limit 5)
+      (gungnir.query/select :user/id :user/email)
+      (gungnir.query/all! :user)) ;; => [{:user/email "..." :user/id "..."},,,]
+  )
+```
+
 ## Installation
 
 Gungnir is still in its design phase and can result in breaking changes while on
