@@ -11,7 +11,7 @@
                  [hikari-cp "2.13.0"]
                  [kwrooijen/clj-database-url "0.0.1"]
                  [org.clojure/tools.logging "1.1.0"]]
-  :plugins [[lein-cloverage "1.1.2"]
+  :plugins [[lein-cloverage "1.2.1"]
             [lein-codox "0.10.7"]
             [lein-ancient "0.6.15"]]
 
