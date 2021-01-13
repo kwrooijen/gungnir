@@ -70,3 +70,24 @@
          :changeset/params
          :changeset/result
          :changeset/errors]))
+
+;; Transaction
+
+(s/def :transaction.error/data any?)
+(s/def :transaction.error/key keyword?)
+
+(s/def :transaction/pipeline vector?)
+(s/def :transaction/results map?)
+(s/def :transaction/state map?)
+(s/def :transaction/error
+  (s/nilable
+   (s/keys
+    :req [:transaction.error/data
+          :transaction.error/key])))
+
+(s/def :gungnir/transaction
+  (s/keys
+   :req [:transaction/pipeline
+         :transaction/results
+         :transaction/state
+         :transaction/error]))

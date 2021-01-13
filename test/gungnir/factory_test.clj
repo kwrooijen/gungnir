@@ -3,7 +3,7 @@
    [gungnir.test.util.database :as database :refer [datasource-opts-2]]
    [clojure.test :refer :all]
    [gungnir.query :as q]
-   [gungnir.database :refer [*database*]]
+   [gungnir.database :refer [*datasource*]]
    [gungnir.factory]
    [gungnir.test.util :as util]
    [gungnir.changeset :as changeset]))
@@ -42,9 +42,9 @@
   (let [{:keys [datasource all!-fn find!-fn save!-fn delete!-fn find-by!-fn]}
         (gungnir.factory/make-datasource-map! datasource-opts-2)]
     (testing "creating datasource map"
-      (is (not= datasource *database*) )
+      (is (not= datasource *datasource*) )
       (is (instance? javax.sql.DataSource datasource))
-      (is (instance? javax.sql.DataSource *database*)))
+      (is (instance? javax.sql.DataSource *datasource*)))
 
     (testing "create user with local datasource map"
       (let [user (-> user-1 changeset/create save!-fn)]

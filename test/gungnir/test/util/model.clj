@@ -81,11 +81,18 @@
   [:map
    {:registry snippet-registry
     :belongs-to {:snippet/user {:model :user :through :snippet/user-id}}}
-   [:snippet/id {:auto true :primary-key true}]
+   [:snippet/id {:primary-key true}]
    :snippet/user-id
    :snippet/content
    [:snippet/created-at {:auto true}]
    [:snippet/updated-at {:auto true}]])
+
+(def model-account
+  [:map
+   [:account/id {:primary-key true} uuid?]
+   [:account/balance {:default 0} int?]
+   [:account/created-at {:auto true} inst?]
+   [:account/updated-at {:auto true} inst?]])
 
 (defn- password-match? [m]
   (= (:user/password m)
@@ -121,4 +128,5 @@
     :product model-product
     :snippet model-snippet
     :with-dash model-with-dash
-    :with_underscore model-with-underscore}))
+    :with_underscore model-with-underscore
+    :account model-account}))

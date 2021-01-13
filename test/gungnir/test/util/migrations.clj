@@ -1,6 +1,6 @@
 (ns gungnir.test.util.migrations
   (:require
-   [gungnir.database :refer [*database*]]
+   [gungnir.database :refer [*datasource*]]
    [next.jdbc]))
 
 (def uuid-extension-migration
@@ -129,10 +129,24 @@
    " , updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL "
    " );"))
 
+(def account-table-migration
+  "Create a `account` table.
+
+  Relations
+  * snippet belongs_to user
+  "
+  (str
+   "CREATE TABLE IF NOT EXISTS account "
+   " ( id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY "
+   " , balance INT "
+   " , created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL "
+   " , updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL "
+   " );"))
+
 (defn init!
   "Run migrations to create all tables. The migrations are idempotent,
   so they can be run multiple times."
-  ([] (init! *database*))
+  ([] (init! *datasource*))
   ([datasource]
    (next.jdbc/execute-one! datasource [uuid-extension-migration])
    (next.jdbc/execute-one! datasource [trigger-updated-at-migration])
@@ -142,4 +156,5 @@
    (next.jdbc/execute-one! datasource [token-table-migration])
    (next.jdbc/execute-one! datasource [document-table-migration])
    (next.jdbc/execute-one! datasource [product-table-migration])
-   (next.jdbc/execute-one! datasource [snippet-table-migration])))
+   (next.jdbc/execute-one! datasource [snippet-table-migration])
+   (next.jdbc/execute-one! datasource [account-table-migration])))

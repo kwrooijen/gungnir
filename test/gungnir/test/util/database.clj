@@ -1,6 +1,6 @@
 (ns gungnir.test.util.database
   (:require
-   [gungnir.database :refer [*database* make-datasource!]]
+   [gungnir.database :refer [*datasource* make-datasource!]]
    [next.jdbc]))
 
 (def ^:private datasource-opts-1
@@ -26,11 +26,12 @@
 
 (defn clear!
   "Clear the database from any rows in the database."
-  ([] (clear! *database*))
+  ([] (clear! *datasource*))
   ([datasource]
    (next.jdbc/execute!
     datasource
     [(str
+      "DELETE from \"account\";"
       "DELETE from \"snippet\";"
       "DELETE from \"products\";"
       "DELETE from \"document\";"
@@ -41,11 +42,12 @@
 
 (defn drop!
   "Clear the database from any rows in the database."
-  ([] (drop! *database*))
+  ([] (drop! *datasource*))
   ([datasource]
    (next.jdbc/execute!
     datasource
     [(str
+      "DROP TABLE \"account\";"
       "DROP TABLE \"snippet\";"
       "DROP TABLE \"products\";"
       "DROP TABLE \"document\";"

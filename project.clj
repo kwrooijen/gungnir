@@ -25,6 +25,7 @@
                       "doc/modules/model.md"
                       "doc/modules/changeset.md"
                       "doc/modules/query.md"
+                      "doc/modules/transactions.md"
                       "doc/ui.md"
                       "doc/ui/form.md"]
           :output-path "docs/"

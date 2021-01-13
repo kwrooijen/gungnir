@@ -24,6 +24,9 @@ this purpose.
   API to read from the database and is based on
   [HoneySQL](https://github.com/seancorfield/honeysql).
 
+* [transaction](https://kwrooijen.github.io/gungnir/transactions.html) - Write transactions
+  to batch multiple queries.
+
 ---
 
 <div class="footer-navigation">

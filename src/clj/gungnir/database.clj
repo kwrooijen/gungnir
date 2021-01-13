@@ -26,7 +26,8 @@
 (s/def :sql/datasource
   (partial instance? javax.sql.DataSource))
 
-(defonce ^:dynamic *database* nil)
+(defonce ^:dynamic *datasource* nil)
+(defonce ^:dynamic *tx-datasource* nil)
 
 (declare query!)
 (declare query-1!)
@@ -183,7 +184,7 @@
   ([form changeset datasource] (execute-one! form changeset datasource {}))
   ([form changeset datasource opts]
    (try
-     (jdbc/execute-one! datasource (honey->sql form opts)
+     (jdbc/execute-one! (or *tx-datasource* datasource) (honey->sql form opts)
                         {:return-keys true
                          :builder-fn gungnir.database.builder/column-builder})
      (catch SQLException e
@@ -246,7 +247,7 @@
   that the `:changeset/result` key does not have a primary-key with a
   values. Returns the inserted row on succes. On failure return the
   `changeset` with an updated `:changeset/errors` key."
-  ([changeset] (insert! changeset *database*))
+  ([changeset] (insert! changeset *datasource*))
   ([{:changeset/keys [model errors result] :as changeset} datasource]
    (if errors
      changeset
@@ -269,7 +270,7 @@
   that the `:changeset/result` key has a primary-key with a
   values. Returns the updated row on succes. On failure return the
   `changeset` with an updated `:changeset/errors` key."
-  ([changeset] (update! changeset *database*))
+  ([changeset] (update! changeset *datasource*))
   ([{:changeset/keys [model errors diff origin transformed-origin] :as changeset} datasource]
    (cond
      errors changeset
@@ -291,7 +292,7 @@
   a namespaced map or relational atom. The row will be deleted based
   on it's `primary-key`. Return `true` on deletion. If no match is
   found return `false`."
-  ([record] (delete! record *database*))
+  ([record] (delete! record *datasource*))
   ([record datasource]
    (when-let [record (maybe-deref record)]
      (let [table (gungnir.record/table record)
@@ -300,7 +301,8 @@
        (-> (q/delete-from table)
            (q/where [:= primary-key (try-uuid primary-key-value)])
            (honey->sql)
-           (as-> sql (jdbc/execute-one! datasource sql {:builder-fn gungnir.database.builder/kebab-map-builder}))
+           (as-> sql (jdbc/execute-one! (or *tx-datasource* datasource) sql
+                                        {:builder-fn gungnir.database.builder/kebab-map-builder}))
            :next.jdbc/update-count
            (= 1))))))
 
@@ -312,14 +314,14 @@
 (defn query!
   "Execute a query based on the HoneySQL `form` and return a collection
   of maps. If no result is found return an empty vector."
-  ([form] (query! form *database*))
+  ([form] (query! form *datasource*))
   ([form datasource]
    (reduce (fn [acc row]
              (->> (next.jdbc.result-set/datafiable-row row datasource query-opts)
                   (process-query-row form datasource)
                   (conj acc)))
            []
-           (jdbc/plan datasource (honey->sql form) query-opts))))
+           (jdbc/plan (or *tx-datasource* datasource) (honey->sql form) query-opts))))
 
 (s/fdef query-1!
   :args (s/alt
@@ -329,9 +331,9 @@
 (defn query-1!
   "Execute a query based on the HoneySQL `form` and return a map. If no
   result is found return `nil`."
-  ([form] (query-1! form *database*))
+  ([form] (query-1! form *datasource*))
   ([form datasource]
-   (when-let [row (jdbc/execute-one! datasource (honey->sql form) query-opts)]
+   (when-let [row (jdbc/execute-one! (or *tx-datasource* datasource) (honey->sql form) query-opts)]
      (process-query-row form datasource row))))
 
 (s/fdef set-datasource!
@@ -340,9 +342,9 @@
 (defn set-datasource!
   "Set the `datasource` to be used by Gungnir."
   [datasource]
-  (when *database*
-    (hikari-cp/close-datasource *database*))
-  (alter-var-root #'gungnir.database/*database* (fn [_] datasource))
+  (when *datasource*
+    (hikari-cp/close-datasource *datasource*))
+  (alter-var-root #'gungnir.database/*datasource* (fn [_] datasource))
   nil)
 
 (s/fdef build-datasource!
