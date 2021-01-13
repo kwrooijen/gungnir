@@ -32,18 +32,29 @@
   (when-let [error (:changeset/error ?changeset)]
     {:transaction/error error}))
 
+(defn- transaction-error [acc k data]
+  (-> acc
+      (assoc-in [:transaction/error :transaction.error/key] k)
+      (assoc-in [:transaction/error :transaction.error/data] data)))
+
+(defn- transaction-step [acc k result]
+  (-> acc
+      (update :transaction/pipeline conj [k result])
+      (update :transaction/results assoc k result)
+      (assoc :transaction/state result)))
+
 (defn- apply-pipeline [pipeline]
   (reduce
    (fn [{:transaction/keys [state] :as acc} [k f]]
-     (let [result (f state)]
-       (if (error? result)
-         (reduced (-> acc
-                      (assoc-in [:transaction/error :transaction.error/key] k)
-                      (assoc-in [:transaction/error :transaction.error/data] (:transaction/error result))))
-         (-> acc
-             (update :transaction/pipeline conj [k result])
-             (update :transaction/results assoc k result)
-             (assoc :transaction/state result)))))
+     (try
+       (let [result (f state)]
+         (if (error? result)
+           (reduced (transaction-error acc k (:transaction/error result)))
+           (transaction-step acc k result)))
+       (catch Exception e
+         (reduced (transaction-error acc k e)))
+       (catch AssertionError e
+         (reduced (transaction-error acc k e)))))
    {:transaction/state {}
     :transaction/error nil}
    pipeline))

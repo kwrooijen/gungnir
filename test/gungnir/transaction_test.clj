@@ -10,15 +10,15 @@
 (use-fixtures :each util/each-fixture)
 
 (defn retrieve-accounts [sender-id recipient-id]
-  (fn [state]
+  (fn [_state]
     (let [sender (q/find-by! :account/id sender-id)
           recipient (q/find-by! :account/id recipient-id)
           ids #{(:account/id sender) (:account/id recipient)}]
       (if (and sender recipient)
-        (assoc state
-               :sender sender
-               :recipient recipient)
-        (transaction/error {:account-not-found (remove ids [sender-id recipient-id])})))))
+        {:sender sender
+         :recipient recipient}
+        (transaction/error
+         {:account-not-found (remove ids [sender-id recipient-id])})))))
 
 (defn verify-balance [amount]
   (fn [{:keys [sender] :as state}]
@@ -28,16 +28,14 @@
 
 (defn subtract-from-sender [amount]
   (fn [{:keys [sender] :as state}]
-    (-> sender
-        (changeset/create {:account/balance (- (:account/balance sender) amount)})
+    (-> (changeset/update sender :account/balance #(- % amount))
         (q/save!)
         (transaction/changeset->error)
         (or state))))
 
 (defn add-to-recipient [amount]
   (fn [{:keys [recipient] :as state}]
-    (-> (update recipient :account/balance - amount)
-        (changeset/create {:account/balance (+ (:account/balance recipient) amount)})
+    (-> (changeset/update recipient :account/balance #(+ % amount))
         (q/save!)
         (transaction/changeset->error)
         (or state))))
@@ -69,6 +67,7 @@
         id2 (-> {:account/balance 100} changeset/create q/save! :account/id)]
     (testing "pipeline - Balance transaction"
       (run-pipeline id1 id2 20)
+      (->> id1 (q/find! :account) :account/balance println)
       (is (->> id1 (q/find! :account) :account/balance (= 80)))
       (is (->> id2 (q/find! :account) :account/balance (= 120))))
 
@@ -88,7 +87,14 @@
                                       :account-not-found)]
         (is (some? balance-too-low-error))
         (is (->> id1 (q/find! :account) :account/balance (= 80)))
-        (is (->> id2 (q/find! :account) :account/balance (= 120)))))))
+        (is (->> id2 (q/find! :account) :account/balance (= 120)))))
+
+    (testing "pipeline - Exception testing"
+      (is (-> [[:do-something (fn [_] (assert false "WRONG"))]]
+              (transaction/execute-pipeline!)
+              :transaction/error
+              :transaction.error/key
+              (= :do-something))))))
 
 (deftest test-transaction!
   (let [id1 (-> {:account/balance 100} changeset/create q/save! :account/id)
