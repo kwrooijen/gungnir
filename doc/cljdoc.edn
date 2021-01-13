@@ -8,4 +8,5 @@
    ["Database" {:file "doc/modules/database.md"}]
    ["Changeset" {:file "doc/modules/changeset.md"}]
    ["Query" {:file "doc/modules/query.md"}]
-   ["Migrations" {:file "doc/modules/migrations.md"}]]]}
+   ["Migrations" {:file "doc/modules/migrations.md"}]
+   ["Transaction" {:file "doc/modules/transactions.md"}]]]}
