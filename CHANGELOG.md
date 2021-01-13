@@ -4,3 +4,4 @@
 
 * 2021.01.13
 RENAME `gungnir.database/*database*` -> `gungnir.database/*datasource*`
+RENAME `:through` -> `:foreign-key`

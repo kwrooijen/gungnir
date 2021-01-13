@@ -5,9 +5,9 @@
 (def model-user
   [:map
    {:has-many
-    {:user/posts {:model :post :through :post/user-id}
-     :user/comments {:model :comment :through :comment/user-id}}
-    :has-one {:user/token {:model :token :through :token/user-id}}}
+    {:user/posts {:model :post}
+     :user/comments {:model :comment}}
+    :has-one {:user/token {:model :token}}}
    [:user/id {:primary-key true} uuid?]
    [:user/username {:optional true} [:maybe string?]]
    [:user/email {:before-save [:string/lower-case]
@@ -20,8 +20,8 @@
 
 (def model-post
   [:map
-   {:belongs-to {:post/user {:model :user :through :post/user-id}}
-    :has-many {:post/comments {:model :comment :through :comment/post-id}}}
+   {:belongs-to {:post/user {:model :user}}
+    :has-many {:post/comments {:model :comment}}}
    [:post/id {:primary-key true} uuid?]
    [:post/title string?]
    [:post/content string?]
@@ -32,8 +32,8 @@
 (def model-comment
   [:map
    {:belongs-to
-    {:comment/user {:model :user :through :comment/user-id}
-     :comment/post {:model :post :through :comment/post-id}}}
+    {:comment/user {:model :user}
+     :comment/post {:model :post}}}
    [:comment/id {:primary-key true} uuid?]
    [:comment/content string?]
    [:comment/user-id uuid?]
@@ -44,7 +44,7 @@
 
 (def model-token
   [:map
-   {:belongs-to {:token/user {:model :user :through :token/user-id}}}
+   {:belongs-to {:token/user {:model :user}}}
    [:token/id {:primary-key true} uuid?]
    [:token/type {:after-read [:edn/read-string]} [:enum :token/reset :token/verify]]
    [:token/user-id uuid?]
@@ -53,8 +53,8 @@
 
 (def model-document
   [:map
-   {:belongs-to {:document/author {:model :user :through :document/author-id}
-                 :document/reviewer {:model :user :through :document/reviewer-id}}}
+   {:belongs-to {:document/author {:model :user :foreign-key :document/author-id}
+                 :document/reviewer {:model :user :foreign-key :document/reviewer-id}}}
    [:document/id {:primary-key true} uuid?]
    [:document/author-id uuid?]
    [:document/reviewer-id uuid?]
@@ -80,7 +80,7 @@
 (def model-snippet
   [:map
    {:registry snippet-registry
-    :belongs-to {:snippet/user {:model :user :through :snippet/user-id}}}
+    :belongs-to {:snippet/user {:model :user}}}
    [:snippet/id {:primary-key true}]
    :snippet/user-id
    :snippet/content

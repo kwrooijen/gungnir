@@ -67,12 +67,12 @@
 (defmethod print-method RelationAtom [_ ^java.io.Writer w]
   (.write w "<relation-atom>"))
 
-(defn- relation-atom [type {:keys [model through]} primary-key datasource]
+(defn- relation-atom [type {:keys [model foreign-key]} primary-key datasource]
   (RelationAtom.
    type
    (atom {:select (list :*)
           :from (list (keyword model))
-          :where [:= through primary-key]})
+          :where [:= foreign-key primary-key]})
    datasource))
 
 (defn- add-has-one [datasource primary-key record [k v]]
@@ -84,8 +84,8 @@
 (defn- add-belongs-to [datasource _ record [k v]]
   (assoc record k (relation-atom
                    :belongs-to
-                   (assoc v :through (gungnir.model/primary-key (:model v)))
-                   (get record (:through v)) datasource)))
+                   (assoc v :foreign-key (gungnir.model/primary-key (:model v)))
+                   (get record (:foreign-key v)) datasource)))
 
 (defn- apply-relations
   [record {:keys [has-one has-many belongs-to primary-key]} datasource]

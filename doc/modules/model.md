@@ -15,8 +15,8 @@ your database.
 
 (def user-model
  [:map
-  {:has-many {:user/posts {:model :post :through :post/user-id}
-              :user/comments {:model :comment :through :comment/user-id}}}
+  {:has-many {:user/posts {:model :post :foreign-key :post/user-id}
+              :user/comments {:model :comment :foreign-key :comment/user-id}}}
   [:user/id {:primary-key true} uuid?]
   [:user/email {:before-save [:string/lower-case]
                 :before-read [:string/lower-case]}
@@ -62,7 +62,7 @@ model. This relational query will return a vector of maps.
 
 ```clojure
 [:map
- {:has-many {:user/posts {:model :post :through :post/user-id}}}
+ {:has-many {:user/posts {:model :post :foreign-key :post/user-id}}}
  ,,,]
 ```
 
@@ -73,7 +73,7 @@ model. This relational query will return a single map or `nil`.
 
 ```clojure
 [:map
- {:has-one {:user/reset-token {:model :reset-token :through :reset-token/user-id}}}
+ {:has-one {:user/reset-token {:model :reset-token :foreign-key :reset-token/user-id}}}
  ,,,]
 ```
 
@@ -84,7 +84,7 @@ model. This relational query will return a single map or `nil`.
 
 ```clojure
 [:map
- {:belongs-to {:post/user {:model :user :through :post/user-id}}}
+ {:belongs-to {:post/user {:model :user :foreign-key :post/user-id}}}
  ,,,]
 ```
 
@@ -228,23 +228,23 @@ In the example below we define the following relations:
 ```clojure
 (def model-user
  [:map
-  {:has-many {:user/posts {:model :post :through :post/user-id}
-              :user/comments {:model :comment :through :comment/user-id}}}
+  {:has-many {:user/posts {:model :post :foreign-key :post/user-id}
+              :user/comments {:model :comment :foreign-key :comment/user-id}}}
   [:user/id {:primary-key true} uuid?]
   ,,,])
 
 (def model-post
  [:map
-  {:belongs-to {:post/user {:model :user :through :post/user-id}}
-   :has-many {:post/comments {:model :comment :through :comment/post-id}}}
+  {:belongs-to {:post/user {:model :user :foreign-key :post/user-id}}
+   :has-many {:post/comments {:model :comment :foreign-key :comment/post-id}}}
   [:post/id {:primary-key true} uuid?]
   [:post/user-id uuid?]
   ,,,])
 
 (def model-comment
  [:map
-  {:belongs-to {:comment/user {:model :user :through :comment/user-id}
-                :comment/post {:model :post :through :comment/post-id}}}
+  {:belongs-to {:comment/user {:model :user :foreign-key :comment/user-id}
+                :comment/post {:model :post :foreign-key :comment/post-id}}}
   [:comment/id {:primary-key true} uuid?]
   [:comment/user-id uuid?]
   [:comment/post-id uuid?]

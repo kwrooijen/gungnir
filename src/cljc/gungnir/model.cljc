@@ -52,6 +52,40 @@
                          (ffirst))]
     [k (mu/update-properties v assoc :primary-key primary-key)]))
 
+(defn- map-kv [f m]
+  (into {} (map f m)))
+
+(defn- set-default-foreign-key [v n k]
+  (assoc v :foreign-key (keyword (name n) (str (name k) "-id"))))
+
+(defn- add-default-foreign-key* [p field kf]
+  (update p field
+          (partial map-kv
+                   (fn [[k v]]
+                     (if (:foreign-key v)
+                       [k v]
+                       [k (kf v)])))))
+
+(defn- add-default-belongs-to
+  [kk p]
+  (add-default-foreign-key* p :belongs-to #(set-default-foreign-key % kk (:model %))))
+
+(defn- add-default-has-many
+  [kk p]
+  (add-default-foreign-key* p :has-many #(set-default-foreign-key % (:model %) kk)))
+
+(defn- add-default-has-one
+  [kk p]
+  (add-default-foreign-key* p :has-one #(set-default-foreign-key % (:model %) kk)))
+
+(defn- add-foreign-keys [[k v]]
+  (let [{:keys [belongs-to has-one has-many]} (m/properties v)]
+    [k
+     (cond-> v
+       belongs-to (mu/update-properties (partial add-default-belongs-to k))
+       has-one (mu/update-properties (partial add-default-has-one k))
+       has-many (mu/update-properties (partial add-default-has-many k)))]))
+
 (defn- register-table-names! []
   (doseq [[model opts] @models]
     (swap! table->model assoc (-> opts m/properties :table) model)
@@ -193,6 +227,7 @@
        (mapv (fn [[k v]] [k (mu/closed-schema v)]))
        (mapv update-children-add-optional)
        (mapv add-primary-key)
+       (mapv add-foreign-keys)
        (into {})
        (swap! models merge))
   (register-table-names!)

@@ -150,7 +150,14 @@ A very simple example would be to find a user by their email. If in the `:user` 
 has a `has-many` posts definition:
 
 ```clojure
-{:has-many {:user/posts {model :post :through :post/user-id}}}
+{:has-many {:user/posts {model :post :foreign-key :post/user-id}}}
+
+;; NOTE: If no `:foreign-key` is provided, Gungnir will fill it in. As long as
+;; the column has the form `{model}-id` it will work. When the column name is
+;; not the same as the model name (e.g. `author-id` for the user model) you'll
+;; have to specify it yourself.
+
+{:has-many {:user/posts {model :post}}}
 ```
 
 You'll be able to query a user's posts:
