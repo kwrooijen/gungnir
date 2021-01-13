@@ -66,7 +66,7 @@
       (binding [*tx-datasource* connection]
         (apply-pipeline pipeline))))))
 
-(s/fdef execute
+(s/fdef execute!
   :args
   (s/alt :arity-1 (s/cat :f fn?)
          :arity-2 (s/cat :f fn?

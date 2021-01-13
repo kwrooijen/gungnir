@@ -234,5 +234,5 @@ before loading.
 
 <div class="footer-navigation">
 <span>Previous: <a href="https://kwrooijen.github.io/gungnir/changeset.html">changeset</a></span>
-<span>Next: <a href="https://kwrooijen.github.io/gungnir/ui.html">UI</a></span>
+<span>Next: <a href="https://kwrooijen.github.io/gungnir/transaction.html">transaction</a></span>
 </div>
