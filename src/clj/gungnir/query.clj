@@ -99,7 +99,7 @@
   If during insertion an error occurs, the changeset will be
   returned with the errors inserted in the `:changeset/errors` key.
   "
-  ([changeset] (insert! changeset gungnir.database/*database*))
+  ([changeset] (insert! changeset gungnir.database/*datasource*))
   ([changeset datasource]
    (gungnir.database/insert! changeset datasource)))
 
@@ -119,7 +119,7 @@
   If during the update an error occurs, the changeset will be
   returned with the errors updated in the `:changeset/errors` key.
   "
-  ([changeset] (update! changeset gungnir.database/*database*))
+  ([changeset] (update! changeset gungnir.database/*datasource*))
   ([changeset datasource]
    (gungnir.database/update! changeset datasource)))
 
