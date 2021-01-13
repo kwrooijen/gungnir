@@ -1,7 +1,7 @@
 (ns gungnir.transaction-test
   (:require
    [clojure.test :refer :all]
-   [gungnir.changeset :refer [changeset]]
+   [gungnir.changeset :as changeset]
    [gungnir.transaction :as transaction]
    [gungnir.query :as q]
    [gungnir.test.util :as util]))
@@ -29,7 +29,7 @@
 (defn subtract-from-sender [amount]
   (fn [{:keys [sender] :as state}]
     (-> sender
-        (changeset {:account/balance (- (:account/balance sender) amount)})
+        (changeset/create {:account/balance (- (:account/balance sender) amount)})
         (q/save!)
         (transaction/changeset->error)
         (or state))))
@@ -37,7 +37,7 @@
 (defn add-to-recipient [amount]
   (fn [{:keys [recipient] :as state}]
     (-> (update recipient :account/balance - amount)
-        (changeset {:account/balance (+ (:account/balance recipient) amount)})
+        (changeset/create {:account/balance (+ (:account/balance recipient) amount)})
         (q/save!)
         (transaction/changeset->error)
         (or state))))
@@ -59,14 +59,14 @@
 
     (assert account1 :account-not-found)
     (assert (> (:account/balance account1) amount) :balance-too-low)
-    (-> (changeset account1 {:account/balance (- (:account/balance account1) amount)}) q/save!)
+    (-> (changeset/create account1 {:account/balance (- (:account/balance account1) amount)}) q/save!)
 
     (assert account2 :account-not-found)
-    (-> (changeset account2 {:account/balance (+ (:account/balance account1) amount)}) q/save!)))
+    (-> (changeset/create account2 {:account/balance (+ (:account/balance account1) amount)}) q/save!)))
 
 (deftest test-transaction-pipeline!
-  (let [id1 (-> {:account/balance 100} changeset q/save! :account/id)
-        id2 (-> {:account/balance 100} changeset q/save! :account/id)]
+  (let [id1 (-> {:account/balance 100} changeset/create q/save! :account/id)
+        id2 (-> {:account/balance 100} changeset/create q/save! :account/id)]
     (testing "pipeline - Balance transaction"
       (run-pipeline id1 id2 20)
       (is (->> id1 (q/find! :account) :account/balance (= 80)))
@@ -91,8 +91,8 @@
         (is (->> id2 (q/find! :account) :account/balance (= 120)))))))
 
 (deftest test-transaction!
-  (let [id1 (-> {:account/balance 100} changeset q/save! :account/id)
-        id2 (-> {:account/balance 100} changeset q/save! :account/id)]
+  (let [id1 (-> {:account/balance 100} changeset/create q/save! :account/id)
+        id2 (-> {:account/balance 100} changeset/create q/save! :account/id)]
     (testing "transaction - Balance transaction"
       (transaction/execute! (fn [] (transfer-balance-fn id1 id2 20)))
       (is (->> (q/find! :account id1) :account/balance (= 80)))

@@ -68,7 +68,7 @@ messages in the proper labels.
 (defmethod gungnir.ui.form/handle-validation :register [_ params]
   (-> params
       (gungnir.changeset/cast :user)
-      (gungnir.changeset/changeset [:register/password-match?])))
+      (gungnir.changeset/create [:register/password-match?])))
 ```
 
 After the page has loaded, you will need to initialize Gungnir's form validation.

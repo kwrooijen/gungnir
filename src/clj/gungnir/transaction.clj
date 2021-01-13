@@ -21,7 +21,6 @@
   [e]
   {:transaction/error e})
 
-
 (s/fdef changeset->error
   :args (s/cat :?changeset (s/or :changeset :gungnir/changeset
                                  :any any?))

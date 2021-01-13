@@ -21,7 +21,7 @@ your database.
   [:user/email {:before-save [:string/lower-case]
                 :before-read [:string/lower-case]}
    [:re {:error/message "Invalid email"} #".+@.+\..+"]]
-  [:user/password {:on-save [:bcrypt]} [:string {:min 6}]]
+  [:user/password {:before-save [:bcrypt]} [:string {:min 6}]]
   [:user/password-confirmation {:virtual true} [:string {:min 6}]]
   [:user/created-at {:auto true} inst?]
   [:user/updated-at {:auto true} inst?]])
@@ -148,7 +148,7 @@ will be saved in the database.
 
 ```clojure
 (defmethod gungnir.model/before-save :bcrypt [_k v]
-  (hashers/derive v))
+  (buddy.hashers/derive v))
 ```
 
 ### `:before-read`

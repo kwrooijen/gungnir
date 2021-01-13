@@ -33,4 +33,6 @@
      :all!-fn      (fn [& args] (-> (apply gungnir.query/all args)
                                     (gungnir.database/query! datasource)))
      :delete!-fn   (fn [record]    (gungnir.query/delete! record datasource))
+     :insert!-fn   (fn [changeset] (gungnir.query/insert! changeset datasource))
+     :update!-fn   (fn [changeset] (gungnir.query/update! changeset datasource))
      :save!-fn     (fn [changeset] (gungnir.query/save! changeset datasource))}))

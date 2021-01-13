@@ -43,6 +43,9 @@
     [k (mu/update-properties v update :table ->snake-keyword)]
     [k (mu/update-properties v assoc :table (->snake-keyword k))]))
 
+(defn- add-model-key [[k v]]
+  [k (mu/update-properties v assoc :model-key k)])
+
 (defn- add-primary-key [[k v]]
   (let [primary-key (->> (m/children v)
                          (filter (comp :primary-key util.malli/child-properties))
@@ -185,6 +188,7 @@
   "
   [model-map]
   (->> model-map
+       (mapv add-model-key)
        (mapv update-table)
        (mapv (fn [[k v]] [k (mu/closed-schema v)]))
        (mapv update-children-add-optional)

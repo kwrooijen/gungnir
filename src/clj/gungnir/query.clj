@@ -82,11 +82,52 @@
   ([form datasource]
    (gungnir.database/delete! form datasource)))
 
+
+(s/fdef insert!
+  :args (s/alt
+         :arity-1 (s/cat :changeset :gungnir/changeset)
+         :arity-2 (s/cat :changeset :gungnir/changeset
+                         :datasource :sql/datasource))
+  :ret (s/or :changeset :gungnir/changeset
+             :record map?))
+(defn insert!
+  "Insert the value of `:changeset/result` in `changeset`.
+
+  If `:changeset/errors` is not `nil` this function will have **no**
+  side effects. Instead it will return the changeset as is.
+
+  If during insertion an error occurs, the changeset will be
+  returned with the errors inserted in the `:changeset/errors` key.
+  "
+  ([changeset] (insert! changeset gungnir.database/*database*))
+  ([changeset datasource]
+   (gungnir.database/insert! changeset datasource)))
+
+(s/fdef update!
+  :args (s/alt
+         :arity-1 (s/cat :changeset :gungnir/changeset)
+         :arity-2 (s/cat :changeset :gungnir/changeset
+                         :datasource :sql/datasource))
+  :ret (s/or :changeset :gungnir/changeset
+             :record map?))
+(defn update!
+  "Insert the value of `:changeset/result` in `changeset`.
+
+  If `:changeset/errors` is not `nil` this function will have **no**
+  side effects. Instead it will return the changeset as is.
+
+  If during the update an error occurs, the changeset will be
+  returned with the errors updated in the `:changeset/errors` key.
+  "
+  ([changeset] (update! changeset gungnir.database/*database*))
+  ([changeset datasource]
+   (gungnir.database/update! changeset datasource)))
+
 (s/fdef save!
   :args (s/alt
-        :arity-1 (s/cat :changeset :gungnir/changeset)
-        :arity-2 (s/cat :changeset :gungnir/changeset
-                        :datasource :sql/datasource))
+         :arity-1 (s/cat :changeset :gungnir/changeset)
+         :arity-2 (s/cat :changeset :gungnir/changeset
+                         :datasource :sql/datasource))
   :ret (s/or :changeset :gungnir/changeset
              :record map?))
 (defn save!
@@ -297,7 +338,7 @@
 
 (def ^{:dynamic true
        :private true
-       :doc "Gugnir's `before-save` hook should only be applied to values once.
+       :doc "Gugnir's `before-read` hook should only be applied to values once.
 This dynamic variable keeps track if a conditional check is being recurred. This
 happens when you have more than 1 value to compare to.
 e.g. `[:= :user/age 20 20]`"}

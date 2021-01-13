@@ -106,6 +106,16 @@
 (defmethod gungnir.model/format-error [:user/username :duplicate-key] [_ _]
   "username taken")
 
+(def model-with-dash
+  [:map
+   [:with-dash/id {:auto true :primary-key true} uuid?]
+   [:with-dash/content string?]])
+
+(def model-with-underscore
+  [:map
+   [:with_underscore/id {:auto true :primary-key true} uuid?]
+   [:with_underscore/content string?]])
+
 (defn init!
   "Initializes the models and saves them to Gungnir."
   []
@@ -117,4 +127,6 @@
     :document model-document
     :product model-product
     :snippet model-snippet
+    :with-dash model-with-dash
+    :with_underscore model-with-underscore
     :account model-account}))
