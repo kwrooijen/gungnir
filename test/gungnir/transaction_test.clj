@@ -67,7 +67,6 @@
         id2 (-> {:account/balance 100} changeset/create q/save! :account/id)]
     (testing "pipeline - Balance transaction"
       (run-pipeline id1 id2 20)
-      (->> id1 (q/find! :account) :account/balance println)
       (is (->> id1 (q/find! :account) :account/balance (= 80)))
       (is (->> id2 (q/find! :account) :account/balance (= 120))))
 

@@ -56,7 +56,9 @@
        (catch AssertionError e
          (reduced (transaction-error acc k e)))))
    {:transaction/state {}
-    :transaction/error nil}
+    :transaction/pipeline []
+    :transaction/error nil
+    :transaction/results {}}
    pipeline))
 
 (s/fdef execute-pipeline!
@@ -64,7 +66,7 @@
   (s/alt :arity-1 (s/cat :pipeline :transaction/pipeline)
          :arity-2 (s/cat :pipeline :transaction/pipeline
                          :datasource :sql/datasource))
-  :ret any?)
+  :ret :gungnir/transaction)
 (defn execute-pipeline!
   "Executes `pipeline` as arguments within a jdbc
   transaction using `datasource`. If no `datasource` is supplied then
