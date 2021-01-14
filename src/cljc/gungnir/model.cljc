@@ -136,14 +136,7 @@
 
 (defmulti format-error (fn [k e] [k e]))
 
-(defmethod format-error :default [k e] e)
-
-(defmulti format-key (fn [k] k))
-
-(defmethod format-key :default [k]
-  (-> (name k)
-      (string/replace #"-" " ")
-      (string/capitalize)))
+(defmethod format-error :default [_k e] e)
 
 (s/fdef find
   :args (s/cat :k simple-keyword?)
