@@ -77,7 +77,7 @@
 <p>Add a <code>:bcrypt</code> key to the <code>:before-save</code> vector for <code>:user/password</code>.</p>
 <pre><code class="clojure">[:user/password {:before-save [:bcrypt]} string?]
 </code></pre>
-<p>And define the <code>:bycrypt</code> <code>:before-save</code> handler. Handlers take the key and value of field in question. The resulting value of <code>gungnir.model/before-save</code> will be saved in the database.</p>
+<p>And define the <code>:bcrypt</code> <code>:before-save</code> handler. Handlers take the key and value of field in question. The resulting value of <code>gungnir.model/before-save</code> will be saved in the database.</p>
 <pre><code class="clojure">(defmethod gungnir.model/before-save :bcrypt [_k v]
   (buddy.hashers/derive v))
 </code></pre>

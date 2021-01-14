@@ -142,7 +142,7 @@ Add a `:bcrypt` key to the `:before-save` vector for `:user/password`.
 [:user/password {:before-save [:bcrypt]} string?]
 ```
 
-And define the `:bycrypt` `:before-save` handler. Handlers take the key and
+And define the `:bcrypt` `:before-save` handler. Handlers take the key and
 value of field in question. The resulting value of `gungnir.model/before-save`
 will be saved in the database.
 
