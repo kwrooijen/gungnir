@@ -146,6 +146,14 @@
   [key]
   (get @models key))
 
+(s/fdef properties
+  :args (s/cat :?model :gungnir/model-or-key)
+  :ret map?)
+(defn properties
+  "Get the properties of model `?model`."
+  [?model]
+  (m/properties (?model->model ?model)))
+
 (s/fdef primary-key
   :args (s/cat :?model :gungnir/model-or-key)
   :ret qualified-keyword?)
@@ -153,8 +161,7 @@
   "Get the primary-key of `?model`. `?model` can either be a keyword or
   a model."
   [?model]
-  (let [model (?model->model ?model)]
-    (:primary-key (m/properties model))))
+  (:primary-key (properties ?model)))
 
 (s/fdef table
   :args (s/cat :?model :gungnir/model-or-key)
@@ -163,8 +170,7 @@
   "Get the table of `?model`. `?model` can either be a keyword or
   a model."
   [?model]
-  (let [model (?model->model ?model)]
-    (:table (m/properties model))))
+  (:table (properties ?model)))
 
 (s/fdef keys
   :args (s/cat :?model :gungnir/model-or-key)
@@ -187,14 +193,6 @@
        (reduce (fn [_ child] (when (#{k} (first child))
                                (reduced child)))
                nil)))
-
-(s/fdef properties
-  :args (s/cat :?model :gungnir/model-or-key)
-  :ret map?)
-(defn properties
-  "Get the properties of model `?model`."
-  [?model]
-  (m/properties (?model->model ?model)))
 
 (s/fdef register!
   :args (s/cat :model-map (s/map-of simple-keyword? :gungnir/model))
