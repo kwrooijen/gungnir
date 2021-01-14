@@ -26,8 +26,15 @@
 (s/def :sql/datasource
   (partial instance? javax.sql.DataSource))
 
-(defonce ^:dynamic *datasource* nil)
-(defonce ^:dynamic *tx-datasource* nil)
+(defonce ^{:dynamic true :doc "The global Gungnir datasource. This var is set
+using either using the `gungnir.database/set-datasource!` or
+`gungnir.database/make-datasource!` function."}
+
+  *datasource* nil)
+
+(defonce ^{:dynamic true :doc "This variable is only set during transactions. It
+  allows the Gungnir internals know that a transaction is taking place."}
+  *tx-datasource* nil)
 
 (declare query!)
 (declare query-1!)
@@ -374,6 +381,7 @@
   ([url options]
    (hikari-cp/make-datasource
     (merge options {:jdbc-url (clj-database-url.core/jdbc-database-url url)}))))
+
 (s/fdef make-datasource!
   :args
   (s/alt :arity-1
@@ -389,3 +397,19 @@
    (set-datasource! (build-datasource! ?options)))
   ([url options]
    (set-datasource! (build-datasource! url options))))
+
+(s/fdef close!
+  :args
+  (s/alt :arity-0
+         (s/cat)
+         :arity-1
+         (s/cat :datasource :sql/datasource))
+  :ret nil?)
+(defn close!
+  "Close the Hikari `datasource`. If no `datasource` is supplied it
+  defaults to `gungnir.database/*datasource*`."
+  ([]
+   (.close *datasource*)
+   (alter-var-root #'gungnir.database/*datasource* (fn [_] nil)))
+  ([datasource]
+   (.close datasource)))

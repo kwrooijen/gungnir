@@ -24,7 +24,7 @@
   "
   [?options]
   (let [datasource (gungnir.database/build-datasource! ?options)]
-    {:close!-fn    identity ;; TODO
+    {:close!-fn    (fn [] (gungnir.database/close! datasource))
      :datasource   datasource
      :find!-fn     (fn [& args] (-> (apply gungnir.query/find args)
                                     (gungnir.database/query-1! datasource)))

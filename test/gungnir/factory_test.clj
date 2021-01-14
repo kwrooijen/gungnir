@@ -39,7 +39,7 @@
    :user/password user-2-password})
 
 (deftest local-datasource
-  (let [{:keys [datasource all!-fn find!-fn save!-fn delete!-fn find-by!-fn]}
+  (let [{:keys [datasource all!-fn find!-fn save!-fn delete!-fn find-by!-fn close!-fn]}
         (gungnir.factory/make-datasource-map! datasource-opts-2)]
     (testing "creating datasource map"
       (is (not= datasource *datasource*) )
@@ -72,4 +72,7 @@
       (let [{:user/keys [email]} (-> user-2 (assoc :user/email "foo@bar2.baz") changeset/create save!-fn)]
         (is (some? (find-by!-fn :user/email email)))
         (is (nil? (q/find-by! :user/email email)))))
-    (.close datasource)))
+
+    (testing "close datasource"
+      (close!-fn)
+      (is (.isClosed datasource)))))
