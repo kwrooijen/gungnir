@@ -91,3 +91,21 @@
          :transaction/results
          :transaction/state
          :transaction/error]))
+;; Migration
+
+(s/def :gungnir.migration.action/name qualified-keyword?)
+(s/def :gungnir.migration.action/opts map?)
+(s/def :gungnir.migration.action/arg any?)
+
+(s/def :gungnir.migration/up
+  (s/or :raw string?
+        :action-2 (s/tuple :gungnir.migration.action/name
+                           (s/or :opts :gungnir.migration.action/opts
+                                 :args (s/* :gungnir.migration.action/arg)))
+        :action-3 (s/tuple :gungnir.migration.action/name
+                           :gungnir.migration.action/opts
+                           (s/* :gungnir.migration.action/arg))))
+
+(s/def :gungnir/migration
+  (s/keys :req-un [:gungnir.migration/up
+                   :gungnir.migration/down]))
