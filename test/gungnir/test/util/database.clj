@@ -1,8 +1,7 @@
 (ns gungnir.test.util.database
   (:require
-   [gungnir.test.util.migrations :refer [migrations]]
    [gungnir.migration]
-   [gungnir.database :refer [*datasource* make-datasource!]]
+   [gungnir.database :refer [make-datasource!]]
    [next.jdbc]))
 
 (def ^:private datasource-opts-1

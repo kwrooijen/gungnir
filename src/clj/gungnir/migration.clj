@@ -1,5 +1,6 @@
 (ns gungnir.migration
   (:require
+   [clojure.spec.alpha :as s]
    [honeysql.format :as sqlf]
    [gungnir.migration.honeysql-postgres :refer [create-extension drop-extension]]
    [clojure.string :as string]
@@ -233,6 +234,9 @@
     action
     (process-action action)))
 
+(s/fdef ->migration
+  :args (s/cat :migration :gungnir/migration)
+  :ret (comp #{ragtime.jdbc.SqlMigration} type))
 (defn ->migration [migration]
   (-> migration
       (update :up (partial mapv process-action-pre))
@@ -240,18 +244,36 @@
       (update :id str)
       ragtime.jdbc/sql-migration))
 
+(s/fdef migrate-all
+  :args (s/alt
+         :arity-1 (s/cat :migrations (s/coll-of :gungnir/migration))
+         :arity-2 (s/cat :migrations (s/coll-of :gungnir/migration)
+                         :opts map?)
+         :arity-3 (s/cat :migrations (s/coll-of :gungnir/migration)
+                         :opts map?
+                         :datasource :sql/datasource))
+  :ret nil?)
 (defn migrate-all
   "TODO"
-  ([migrations] (migrate-all migrations *datasource*))
-  ([migrations datasource]
+  ([migrations] (migrate-all migrations {} *datasource*))
+  ([migrations opts] (migrate-all migrations opts *datasource*))
+  ([migrations opts datasource]
    (let [migrations (mapv ->migration migrations)]
      (ragtime.core/migrate-all
       (ragtime.jdbc/sql-database {:datasource datasource})
       (ragtime.core/into-index {} migrations)
       migrations
-      {:strategy ragtime.strategy/raise-error
-       :reporter ragtime.reporter/print}))))
+      (merge
+       {:strategy ragtime.strategy/raise-error
+        :reporter ragtime.reporter/print}
+       opts)))))
 
+(s/fdef rollback
+  :args (s/alt
+         :arity-1 (s/cat :migrations (s/coll-of :gungnir/migration))
+         :arity-2 (s/cat :migrations (s/coll-of :gungnir/migration)
+                         :datasource :sql/datasource))
+  :ret nil?)
 (defn rollback
   "TODO"
   ([migrations] (rollback migrations *datasource*))
@@ -260,67 +282,3 @@
      (ragtime.core/rollback-last
       (ragtime.jdbc/sql-database {:datasource datasource})
       (ragtime.core/into-index {} migrations)))))
-
-(comment
-  (def ^:private datasource-opts-1
-    {:adapter       "postgresql"
-     :username      "postgres"
-     :password      "postgres"
-     :database-name "postgres"
-     :server-name   "localhost"
-     :port-number   5432})
-
-  (gungnir.database/make-datasource! datasource-opts-1)
-
-  (gungnir.database/close!)
-
-  (def uuid-m
-    {:id "uuid"
-     :up [[:extension/create {:if-not-exists true} :uuid-ossp]]
-     :down [[:extension/drop :uuid-ossp]]})
-
-  (def users-1
-    {:id "users-1"
-     :up
-     [[:table/create {:table :users}
-       [:column/add [:email :text]]
-       [:column/add [:ragnar/timestamps]]]]
-     :down [[:table/drop :users]]})
-
-  (def users-2
-    {:id "users-2"
-     :up
-     [[:table/alter {:table :users}
-       [:column/add [:plan {:default ":plan/free"} :text]]]]
-     :down
-     [[:table/alter {:table :users}
-       [:column/drop :plan]]]})
-
-  (def users-1+2
-    {:id "users-1+2"
-     :up
-     [[:table/create {:table :users}
-       [:column/add [:email :text]]
-       [:column/add [:ragnar/timestamps]]]
-      [:table/alter {:table :users}
-       [:column/add [:plan {:default ":plan/free"} :text]]]]
-     :down [[:table/drop :users]
-            [:table/alter {:table :users}
-             [:column/drop :plan]]]})
-
-  (comment
-    (mapv process-action (:up users-1))
-    (process-action (:down users-1))
-    (process-action (:up users-2))
-    (process-action (:down users-2))
-    (process-action (:up uuid-m))
-    (->migration users-1)
-    ;;
-    )
-
-  (migrate-all [uuid-m users-1 users-2])
-
-  (migrate-all [uuid-m users-1+2])
-  (rollback [uuid-m users-1 users-2])
-  ;;
-  )
