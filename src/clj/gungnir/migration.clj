@@ -12,13 +12,13 @@
    [ragtime.reporter]
    [ragtime.strategy]))
 
-(defn- special-format [expr]
+(defn special-format [expr]
   (-> expr
       (sql/format :namespace-as-table? true
                   :quoting :ansi
                   :allow-dashed-names? sqlf/*allow-dashed-names?*)
       (update 0 #(string/replace % "?" "%s"))
-      (->> (apply format) (merge []))))
+      (->> (apply format))))
 
 (defn- has-primary-key? [fields]
   (some (comp :primary-key second) fields))
@@ -30,6 +30,10 @@
 (defn- optional-caller [opts]
   (when-not (:optional opts)
     (sql/call :not nil)))
+
+(defn- default-caller [opts]
+  (when-let [default (:default opts)]
+    (sql/call :default default)))
 
 (defn- add-default-pk [fields]
   (if (has-primary-key? fields)
@@ -78,7 +82,10 @@
 
 (defn- column-uuid [column opts]
   [column :uuid
-   (sql/call :default "uuid_generate_v4()")
+   (when-let [default (:default opts)]
+     (if (true? default)
+       (sql/call :default "uuid_generate_v4()")
+       (sql/call :default default)))
    (pk-caller opts)
    (optional-caller opts)])
 
@@ -90,8 +97,7 @@
   [_ acc [_ [column opts _]]]
   (add-column acc (column-uuid column opts)))
 
-(defn- column-text
-  [column opts]
+(defn- column-text [column opts]
   [column :text
    (when-let [default (:default opts)]
      (sql/call :default (format "'%s'" (string/escape default {\' "\\'"}))))
@@ -105,6 +111,34 @@
 (defmethod process-table-column [:table/alter :column/add :text]
   [_ acc [_ [column opts _]]]
   (add-column acc (column-text column opts)))
+
+(defn- column-integer [column opts]
+  [column :integer
+   (default-caller opts)
+   (pk-caller opts)
+   (optional-caller opts)])
+
+(defmethod process-table-column [:table/create :column/add :integer]
+  [_ acc [_ [column opts _]]]
+  (add-create-column acc (column-integer column opts)))
+
+(defmethod process-table-column [:table/alter :column/add :integer]
+  [_ acc [_ [column opts _]]]
+  (add-column acc (column-integer column opts)))
+
+(defn- column-boolean [column opts]
+  [column :boolean
+   (default-caller opts)
+   (pk-caller opts)
+   (optional-caller opts)])
+
+(defmethod process-table-column [:table/create :column/add :boolean]
+  [_ acc [_ [column opts _]]]
+  (add-create-column acc (column-boolean column opts)))
+
+(defmethod process-table-column [:table/alter :column/add :boolean]
+  [_ acc [_ [column opts _]]]
+  (add-column acc (column-boolean column opts)))
 
 (defn- column-timestamp [column opts]
   (let [defaults {:current-timestamp "CURRENT_TIMESTAMP"}]
@@ -153,7 +187,8 @@
 (defmethod process-action :table/drop [[_ & tables]]
   (->> (flatten tables)
        (apply psqlh/drop-table)
-       (sql/format)))
+       (sql/format)
+       (first)))
 
 (defmethod process-action :extension/create [[_ {:keys [if-not-exists]} extension]]
   (binding [sqlf/*allow-dashed-names?* true]
@@ -168,7 +203,7 @@
         (special-format))))
 
 (defn- raw-action? [action]
-  (string? (first action)))
+  (string? action))
 
 (defn- process-action-pre [action]
   (if (raw-action? action)
@@ -177,28 +212,30 @@
 
 (defn ->migration [migration]
   (-> migration
-      (update :up process-action-pre)
-      (update :down process-action-pre)
+      (update :up   (partial mapv process-action-pre))
+      (update :down (partial mapv process-action-pre))
       ragtime.jdbc/sql-migration))
 
 (defn migrate-all
   "TODO"
-  [migrations]
-  (let [migrations (mapv ->migration migrations)]
-    (ragtime.core/migrate-all
-     (ragtime.jdbc/sql-database {:datasource *datasource*})
-     (ragtime.core/into-index {} migrations)
-     migrations
-     {:strategy ragtime.strategy/raise-error
-      :reporter ragtime.reporter/print})))
+  ([migrations] (migrate-all migrations *datasource*))
+  ([migrations datasource]
+   (let [migrations (mapv ->migration migrations)]
+     (ragtime.core/migrate-all
+      (ragtime.jdbc/sql-database {:datasource datasource})
+      (ragtime.core/into-index {} migrations)
+      migrations
+      {:strategy ragtime.strategy/raise-error
+       :reporter ragtime.reporter/print}))))
 
 (defn rollback
   "TODO"
-  [migrations]
-  (let [migrations (mapv ->migration migrations)]
-    (ragtime.core/rollback-last
-     (ragtime.jdbc/sql-database {:datasource *datasource*})
-     (ragtime.core/into-index {} migrations))))
+  ([migrations] (rollback migrations *datasource*))
+  ([migrations datasource]
+   (let [migrations (mapv ->migration migrations)]
+     (ragtime.core/rollback-last
+      (ragtime.jdbc/sql-database {:datasource datasource})
+      (ragtime.core/into-index {} migrations)))))
 
 (comment
   (def ^:private datasource-opts-1
@@ -215,28 +252,40 @@
 
   (def uuid-m
     {:id "uuid"
-     :up [:extension/create {:if-not-exists true} :uuid-ossp]
-     :down [:extension/drop :uuid-ossp]})
+     :up [[:extension/create {:if-not-exists true} :uuid-ossp]]
+     :down [[:extension/drop :uuid-ossp]]})
 
   (def users-1
     {:id "users-1"
      :up
-     [:table/create {:table :users}
-      [:column/add [:email :text]]
-      [:column/add [:ragnar/timestamps]]]
-     :down [:table/drop :users]})
+     [[:table/create {:table :users}
+       [:column/add [:email :text]]
+       [:column/add [:ragnar/timestamps]]]]
+     :down [[:table/drop :users]]})
 
   (def users-2
     {:id "users-2"
      :up
-     [:table/alter {:table :users}
-      [:column/add [:plan {:default ":plan/free"} :text]]]
+     [[:table/alter {:table :users}
+       [:column/add [:plan {:default ":plan/free"} :text]]]]
      :down
-     [:table/alter {:table :users}
-      [:column/drop :plan]]})
+     [[:table/alter {:table :users}
+       [:column/drop :plan]]]})
+
+  (def users-1+2
+    {:id "users-1+2"
+     :up
+     [[:table/create {:table :users}
+       [:column/add [:email :text]]
+       [:column/add [:ragnar/timestamps]]]
+      [:table/alter {:table :users}
+       [:column/add [:plan {:default ":plan/free"} :text]]]]
+     :down [[:table/drop :users]
+            [:table/alter {:table :users}
+             [:column/drop :plan]]]})
 
   (comment
-    (process-action (:up users-1))
+    (mapv process-action (:up users-1))
     (process-action (:down users-1))
     (process-action (:up users-2))
     (process-action (:down users-2))
@@ -246,6 +295,8 @@
     )
 
   (migrate-all [uuid-m users-1 users-2])
+
+  (migrate-all [uuid-m users-1+2])
   (rollback [uuid-m users-1 users-2])
   ;;
   )
