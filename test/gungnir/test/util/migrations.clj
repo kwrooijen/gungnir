@@ -40,7 +40,7 @@
      [:column/add [:username {:unique true :optional true} :text]]
      [:column/add [:password :text]]
      [:column/add [:ragnar/timestamps]]]]
-   :down []})
+   :down [[:table/drop :user]]})
 
 (def post-table-migration
   "Create a `post` table.
@@ -57,7 +57,7 @@
      [:column/add [:content {:required false} :text]]
      [:column/add [:user-id {:references :user/id} :uuid]]
      [:column/add [:ragnar/timestamps]]]]
-   :down []})
+   :down [[:table/drop :post]]})
 
 (def comment-table-migration
   "Create a `comment` table.
@@ -75,7 +75,7 @@
      [:column/add [:post-id {:references :post/id} :uuid]]
      [:column/add [:rating {:default 0} :integer]]
      [:column/add [:ragnar/timestamps]]]]
-   :down []})
+   :down [[:table/drop :comment]]})
 
 (def token-table-migration
   "Create a `token` table.
@@ -90,7 +90,7 @@
      [:column/add [:user-id {:references :user/id} :uuid]]
      [:column/add [:type :text]]
      [:column/add [:ragnar/timestamps]]]]
-   :down []})
+   :down [[:table/drop :token]]})
 
 (def document-table-migration
   "Create a `document` table.
@@ -107,17 +107,17 @@
      [:column/add [:reviewer-id {:references :user/id} :uuid]]
      [:column/add [:content :text]]
      [:column/add [:ragnar/timestamps]]]]
-   :down []})
+   :down [[:table/drop :document]]})
 
-(def product-table-migration
-  "Create a `product` table."
-  {:id :product
+(def products-table-migration
+  "Create a `products` table."
+  {:id :products
    :up
    [[:table/create {:table :products :if-not-exists true}
      [:column/add [:id {:default true :primary-key true} :uuid]]
      [:column/add [:title :text]]
      [:column/add [:ragnar/timestamps]]]]
-   :down []})
+   :down [[:table/drop :products]]})
 
 (def snippet-table-migration
   "Create a `snippet` table.
@@ -132,7 +132,7 @@
      [:column/add [:user-id {:references :user/id} :uuid]]
      [:column/add [:content :text]]
      [:column/add [:ragnar/timestamps]]]]
-   :down []})
+   :down [[:table/drop :snippet]]})
 
 (def account-table-migration
   "Create a `account` table.
@@ -146,7 +146,7 @@
      [:column/add [:id {:default true :primary-key true} :uuid]]
      [:column/add [:balance :integer]]
      [:column/add [:ragnar/timestamps]]]]
-   :down []})
+   :down [[:table/drop :account]]})
 
 (def migrations
   [uuid-extension-migration
@@ -156,14 +156,21 @@
    comment-table-migration
    token-table-migration
    document-table-migration
-   product-table-migration
+   products-table-migration
    snippet-table-migration
    account-table-migration])
 
-(defn init!
+(defn migrate!
   "Run migrations to create all tables. The migrations are idempotent,
   so they can be run multiple times."
-  ([] (init! *datasource*))
+  ([] (migrate! *datasource*))
   ([datasource]
    (with-out-str
      (gungnir.migration/migrate-all migrations datasource))))
+
+(defn rollback!
+  "Clear the database from any rows in the database."
+  ([] (rollback! *datasource*))
+  ([datasource]
+   (doseq [_ migrations]
+     (gungnir.migration/rollback migrations datasource))))

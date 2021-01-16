@@ -211,8 +211,7 @@
 (defmethod process-action :table/drop [[_ & tables]]
   (->> (flatten tables)
        (apply psqlh/drop-table)
-       (sql/format)
-       (first)))
+       (special-format)))
 
 (defmethod process-action :extension/create [[_ {:keys [if-not-exists]} extension]]
   (binding [sqlf/*allow-dashed-names?* true]

@@ -15,14 +15,14 @@
    (database-setup-once *datasource*))
   ([datasource]
    (st/instrument)
-   (migrations/init! datasource)
+   (migrations/migrate! datasource)
    (model/init!)))
 
 (defn database-setup-each
   ([] (database-setup-each *datasource*))
   ([datasource]
-   (database/drop! datasource)
-   (migrations/init! datasource)))
+   (migrations/rollback! datasource)
+   (migrations/migrate! datasource)))
 
 (defn once-fixture [tests]
   (database-setup-once)
