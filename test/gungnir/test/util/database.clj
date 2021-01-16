@@ -24,23 +24,6 @@
   []
   (make-datasource! datasource-opts-1))
 
-(defn clear!
-  "Clear the database from any rows in the database."
-  ([] (clear! *datasource*))
-  ([datasource]
-   (next.jdbc/execute!
-    datasource
-    [(str
-      "DELETE from \"ragtime_migrations\";"
-      "DELETE from \"account\";"
-      "DELETE from \"snippet\";"
-      "DELETE from \"products\";"
-      "DELETE from \"document\";"
-      "DELETE from \"token\";"
-      "DELETE from \"comment\";"
-      "DELETE from \"post\";"
-      "DELETE from \"user\";")])))
-
 (defn drop!
   "Clear the database from any rows in the database."
   ([] (drop! *datasource*))
@@ -48,12 +31,12 @@
    (next.jdbc/execute!
     datasource
     [(str
-      "DROP TABLE \"ragtime_migrations\";"
-      "DROP TABLE \"account\";"
-      "DROP TABLE \"snippet\";"
-      "DROP TABLE \"products\";"
-      "DROP TABLE \"document\";"
-      "DROP TABLE \"token\";"
-      "DROP TABLE \"comment\";"
-      "DROP TABLE \"post\";"
-      "DROP TABLE \"user\";")])))
+      "DROP TABLE IF EXISTS \"ragtime_migrations\";"
+      "DROP TABLE IF EXISTS \"account\";"
+      "DROP TABLE IF EXISTS \"snippet\";"
+      "DROP TABLE IF EXISTS \"products\";"
+      "DROP TABLE IF EXISTS \"document\";"
+      "DROP TABLE IF EXISTS \"token\";"
+      "DROP TABLE IF EXISTS \"comment\";"
+      "DROP TABLE IF EXISTS \"post\";"
+      "DROP TABLE IF EXISTS \"user\";")])))

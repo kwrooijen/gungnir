@@ -21,7 +21,8 @@
 (defn database-setup-each
   ([] (database-setup-each *datasource*))
   ([datasource]
-   (database/clear! datasource)))
+   (database/drop! datasource)
+   (migrations/init! datasource)))
 
 (defn once-fixture [tests]
   (database-setup-once)

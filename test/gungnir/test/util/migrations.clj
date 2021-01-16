@@ -14,7 +14,7 @@
   "Add trigger for the `updated_at` field to set its value to `NOW()`
   whenever this row changes. This is so you don't have to do it
   manually, and can be useful information."
-  {:id "trigger_set_updated_at"
+  {:id :trigger_set_updated_at
    :up [(str
           "CREATE OR REPLACE FUNCTION trigger_set_updated_at() "
           "RETURNS TRIGGER AS $$ "
@@ -32,18 +32,14 @@
   * user has_many post
   * user has_many comment
   "
-
-  {:id "user"
+  {:id :user
    :up
-   [(str
-     "CREATE TABLE IF NOT EXISTS \"user\" "
-     " ( id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY "
-     " , email TEXT NOT NULL UNIQUE "
-     " , username TEXT UNIQUE "
-     " , password TEXT NOT NULL "
-     " , created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL "
-     " , updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL "
-     " );")]
+   [[:table/create {:table :user :if-not-exists true}
+     [:column/add [:id {:primary-key true :default true} :uuid]]
+     [:column/add [:email {:unique true} :text]]
+     [:column/add [:username {:unique true :optional true} :text]]
+     [:column/add [:password :text]]
+     [:column/add [:ragnar/timestamps]]]]
    :down []})
 
 (def post-table-migration
@@ -53,17 +49,14 @@
   * post has_many comment
   * post belongs_to user
   "
-  {:id "post"
+  {:id :post
    :up
-   [(str
-     "CREATE TABLE IF NOT EXISTS post "
-     " ( id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY "
-     " , title TEXT "
-     " , content TEXT "
-     " , user_id uuid references \"user\"(id)"
-     " , created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL "
-     " , updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL "
-     " );")]
+   [[:table/create {:table :post :if-not-exists true}
+     [:column/add [:id {:default true :primary-key true} :uuid]]
+     [:column/add [:title {:required false} :text]]
+     [:column/add [:content {:required false} :text]]
+     [:column/add [:user-id {:references :user/id} :uuid]]
+     [:column/add [:ragnar/timestamps]]]]
    :down []})
 
 (def comment-table-migration
@@ -73,18 +66,15 @@
   * comment belongs_to post
   * comment belongs_to user
   "
-  {:id "comment"
+  {:id :comment
    :up
-   [(str
-     "CREATE TABLE IF NOT EXISTS comment "
-     " ( id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY "
-     " , content TEXT "
-     " , user_id uuid references \"user\"(id)"
-     " , post_id uuid references post(id)"
-     " , rating INT DEFAULT 0"
-     " , created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL "
-     " , updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL "
-     " );")]
+   [[:table/create {:table :comment :if-not-exists true}
+     [:column/add [:id {:default true :primary-key true} :uuid]]
+     [:column/add [:content :text]]
+     [:column/add [:user-id {:references :user/id} :uuid]]
+     [:column/add [:post-id {:references :post/id} :uuid]]
+     [:column/add [:rating {:default 0} :integer]]
+     [:column/add [:ragnar/timestamps]]]]
    :down []})
 
 (def token-table-migration
@@ -93,16 +83,13 @@
   Relations
   * comment belongs_to user
   "
-  {:id "token"
+  {:id :token
    :up
-   [(str
-     "CREATE TABLE IF NOT EXISTS token "
-     " ( id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY "
-     " , user_id uuid references \"user\"(id)"
-     " , type TEXT"
-     " , created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL "
-     " , updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL "
-     " );")]
+   [[:table/create {:table :token :if-not-exists true}
+     [:column/add [:id {:default true :primary-key true} :uuid]]
+     [:column/add [:user-id {:references :user/id} :uuid]]
+     [:column/add [:type :text]]
+     [:column/add [:ragnar/timestamps]]]]
    :down []})
 
 (def document-table-migration
@@ -112,30 +99,24 @@
   * author-id belongs_to user
   * reviewer-id belongs_to user
   "
-  {:id "document"
+  {:id :document
    :up
-   [(str
-     "CREATE TABLE IF NOT EXISTS document "
-     " ( id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY "
-     " , author_id uuid references \"user\"(id)"
-     " , reviewer_id uuid references \"user\"(id)"
-     " , content TEXT"
-     " , created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL "
-     " , updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL "
-     " );")]
+   [[:table/create {:table :document :if-not-exists true}
+     [:column/add [:id {:default true :primary-key true} :uuid]]
+     [:column/add [:author-id {:references :user/id} :uuid]]
+     [:column/add [:reviewer-id {:references :user/id} :uuid]]
+     [:column/add [:content :text]]
+     [:column/add [:ragnar/timestamps]]]]
    :down []})
 
 (def product-table-migration
   "Create a `product` table."
-  {:id "product"
+  {:id :product
    :up
-   [(str
-     "CREATE TABLE IF NOT EXISTS products "
-     " ( id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY "
-     " , title TEXT NOT NULL"
-     " , created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL "
-     " , updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL "
-     " );")]
+   [[:table/create {:table :products :if-not-exists true}
+     [:column/add [:id {:default true :primary-key true} :uuid]]
+     [:column/add [:title :text]]
+     [:column/add [:ragnar/timestamps]]]]
    :down []})
 
 (def snippet-table-migration
@@ -144,16 +125,13 @@
   Relations
   * snippet belongs_to user
   "
-  {:id "snippet"
+  {:id :snippet
    :up
-   [(str
-     "CREATE TABLE IF NOT EXISTS snippet "
-     " ( id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY "
-     " , content TEXT "
-     " , user_id uuid references \"user\"(id)"
-     " , created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL "
-     " , updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL "
-     " );")]
+   [[:table/create {:table :snippet :if-not-exists true}
+     [:column/add [:id {:default true :primary-key true} :uuid]]
+     [:column/add [:user-id {:references :user/id} :uuid]]
+     [:column/add [:content :text]]
+     [:column/add [:ragnar/timestamps]]]]
    :down []})
 
 (def account-table-migration
@@ -162,31 +140,30 @@
   Relations
   * snippet belongs_to user
   "
-  {:id "account"
+  {:id :account
    :up
-   [(str
-     "CREATE TABLE IF NOT EXISTS account "
-     " ( id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY "
-     " , balance INT "
-     " , created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL "
-     " , updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL "
-     " );")]
+   [[:table/create {:table :account :if-not-exists true}
+     [:column/add [:id {:default true :primary-key true} :uuid]]
+     [:column/add [:balance :integer]]
+     [:column/add [:ragnar/timestamps]]]]
    :down []})
+
+(def migrations
+  [uuid-extension-migration
+   trigger-updated-at-migration
+   user-table-migration
+   post-table-migration
+   comment-table-migration
+   token-table-migration
+   document-table-migration
+   product-table-migration
+   snippet-table-migration
+   account-table-migration])
 
 (defn init!
   "Run migrations to create all tables. The migrations are idempotent,
   so they can be run multiple times."
   ([] (init! *datasource*))
   ([datasource]
-   (gungnir.migration/migrate-all
-    [uuid-extension-migration
-     trigger-updated-at-migration
-     user-table-migration
-     post-table-migration
-     comment-table-migration
-     token-table-migration
-     document-table-migration
-     product-table-migration
-     snippet-table-migration
-     account-table-migration]
-    datasource)))
+   (with-out-str
+     (gungnir.migration/migrate-all migrations datasource))))
