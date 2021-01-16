@@ -20,8 +20,8 @@
       (update 0 #(string/replace % "?" "%s"))
       (->> (apply format))))
 
-(defn- has-primary-key? [fields]
-  (some (comp :primary-key second) fields))
+(defn- primary-key? [field]
+  (get-in field [1 1 :primary-key] false))
 
 (defn- pk-caller [opts]
   (when (:primary-key opts)
@@ -31,14 +31,24 @@
   (when-not (:optional opts)
     (sql/call :not nil)))
 
+(defn- unique-caller [opts]
+  (when (:unique opts)
+    (sql/call :unique)))
+
 (defn- default-caller [opts]
   (when-let [default (:default opts)]
     (sql/call :default default)))
 
-(defn- add-default-pk [fields]
-  (if (has-primary-key? fields)
-    fields
-    (cons [:column/add [:id {:primary-key true} :bigserial]] fields)))
+(defn- references-caller [opts]
+  (when-let [references (:references opts)]
+    (sql/call :references
+              (keyword (namespace references))
+              (keyword (name references)))))
+
+(defn- add-default-pk [field]
+  (if (some primary-key? field)
+    field
+    (cons [:column/add [:id {:primary-key true} :bigserial]] field)))
 
 (defn- add-column [acc expr]
   (apply psqlh/add-column acc (remove nil? expr)))
@@ -57,6 +67,7 @@
 (defn- column-serial [column opts]
   [column "SERIAL"
    (pk-caller opts)
+   (references-caller opts)
    (optional-caller opts)])
 
 (defmethod process-table-column [:table/create :column/add :serial]
@@ -70,6 +81,8 @@
 (defn- column-bigserial [column opts]
   [column "BIGSERIAL"
    (pk-caller opts)
+   (unique-caller opts)
+   (references-caller opts)
    (optional-caller opts)])
 
 (defmethod process-table-column [:table/create :column/add :bigserial]
@@ -87,6 +100,8 @@
        (sql/call :default "uuid_generate_v4()")
        (sql/call :default default)))
    (pk-caller opts)
+   (unique-caller opts)
+   (references-caller opts)
    (optional-caller opts)])
 
 (defmethod process-table-column [:table/create :column/add :uuid]
@@ -102,6 +117,8 @@
    (when-let [default (:default opts)]
      (sql/call :default (format "'%s'" (string/escape default {\' "\\'"}))))
    (pk-caller opts)
+   (unique-caller opts)
+   (references-caller opts)
    (optional-caller opts)])
 
 (defmethod process-table-column [:table/create :column/add :text]
@@ -113,9 +130,11 @@
   (add-column acc (column-text column opts)))
 
 (defn- column-integer [column opts]
-  [column :integer
+  [column "int"
    (default-caller opts)
    (pk-caller opts)
+   (unique-caller opts)
+   (references-caller opts)
    (optional-caller opts)])
 
 (defmethod process-table-column [:table/create :column/add :integer]
@@ -130,6 +149,8 @@
   [column :boolean
    (default-caller opts)
    (pk-caller opts)
+   (unique-caller opts)
+   (references-caller opts)
    (optional-caller opts)])
 
 (defmethod process-table-column [:table/create :column/add :boolean]
@@ -146,6 +167,8 @@
      (when-let [default (:default opts)]
        (sql/call :default (get defaults default default)))
      (pk-caller opts)
+     (unique-caller opts)
+     (references-caller opts)
      (optional-caller opts)]))
 
 (defmethod process-table-column [:table/create :column/add :timestamp]
@@ -171,17 +194,18 @@
 (defmethod process-table-column [:table/alter :column/drop] [_ acc [_ & columns]]
   (apply psqlh/drop-column acc (flatten columns)))
 
-(defmethod process-action :table/create [[_ {:keys [table]} & fields]]
+(defmethod process-action :table/create [[_ {:keys [table if-not-exists]} & field]]
+  (assert table ":table is required for `:table/create`")
   (let [columns (reduce (partial process-table-column :table/create) []
-                        (add-default-pk fields))]
-    (-> (psqlh/create-table table)
+                        (add-default-pk field))]
+    (-> (psqlh/create-table table :if-not-exists if-not-exists)
         (psqlh/with-columns columns)
         (special-format))))
 
-(defmethod process-action :table/alter [[_ {:keys [table]} & fields]]
+(defmethod process-action :table/alter [[_ {:keys [table]} & field]]
   (-> (reduce (partial process-table-column :table/alter)
               (psqlh/alter-table table)
-              fields)
+              field)
       (special-format)))
 
 (defmethod process-action :table/drop [[_ & tables]]
@@ -212,8 +236,9 @@
 
 (defn ->migration [migration]
   (-> migration
-      (update :up   (partial mapv process-action-pre))
+      (update :up (partial mapv process-action-pre))
       (update :down (partial mapv process-action-pre))
+      (update :id str)
       ragtime.jdbc/sql-migration))
 
 (defn migrate-all
