@@ -36,10 +36,10 @@
    :up
    [[:table/create {:table :user :if-not-exists true}
      [:column/add [:id {:primary-key true :default true} :uuid]]
-     [:column/add [:email {:unique true} :text]]
-     [:column/add [:username {:unique true :optional true} :text]]
-     [:column/add [:password :text]]
-     [:column/add [:ragnar/timestamps]]]]
+     [:column/add [:email {:unique true} :string]]
+     [:column/add [:username {:unique true :optional true} :string]]
+     [:column/add [:password :string]]
+     [:column/add [:gungnir/timestamps]]]]
    :down [[:table/drop :user]]})
 
 (def post-table-migration
@@ -53,10 +53,10 @@
    :up
    [[:table/create {:table :post :if-not-exists true}
      [:column/add [:id {:default true :primary-key true} :uuid]]
-     [:column/add [:title {:optional true} :text]]
-     [:column/add [:content {:optional true} :text]]
+     [:column/add [:title {:optional true} :string]]
+     [:column/add [:content {:optional true} :string]]
      [:column/add [:user-id {:references :user/id} :uuid]]
-     [:column/add [:ragnar/timestamps]]]]
+     [:column/add [:gungnir/timestamps]]]]
    :down [[:table/drop :post]]})
 
 (def comment-table-migration
@@ -70,11 +70,11 @@
    :up
    [[:table/create {:table :comment :if-not-exists true}
      [:column/add [:id {:default true :primary-key true} :uuid]]
-     [:column/add [:content :text]]
+     [:column/add [:content :string]]
      [:column/add [:user-id {:references :user/id} :uuid]]
      [:column/add [:post-id {:references :post/id} :uuid]]
-     [:column/add [:rating {:default 0} :integer]]
-     [:column/add [:ragnar/timestamps]]]]
+     [:column/add [:rating {:default 0} :int]]
+     [:column/add [:gungnir/timestamps]]]]
    :down [[:table/drop :comment]]})
 
 (def token-table-migration
@@ -88,8 +88,8 @@
    [[:table/create {:table :token :if-not-exists true}
      [:column/add [:id {:default true :primary-key true} :uuid]]
      [:column/add [:user-id {:references :user/id} :uuid]]
-     [:column/add [:type :text]]
-     [:column/add [:ragnar/timestamps]]]]
+     [:column/add [:type :string]]
+     [:column/add [:gungnir/timestamps]]]]
    :down [[:table/drop :token]]})
 
 (def document-table-migration
@@ -105,8 +105,8 @@
      [:column/add [:id {:default true :primary-key true} :uuid]]
      [:column/add [:author-id {:references :user/id} :uuid]]
      [:column/add [:reviewer-id {:references :user/id} :uuid]]
-     [:column/add [:content :text]]
-     [:column/add [:ragnar/timestamps]]]]
+     [:column/add [:content :string]]
+     [:column/add [:gungnir/timestamps]]]]
    :down [[:table/drop :document]]})
 
 (def products-table-migration
@@ -115,8 +115,8 @@
    :up
    [[:table/create {:table :products :if-not-exists true}
      [:column/add [:id {:default true :primary-key true} :uuid]]
-     [:column/add [:title :text]]
-     [:column/add [:ragnar/timestamps]]]]
+     [:column/add [:title :string]]
+     [:column/add [:gungnir/timestamps]]]]
    :down [[:table/drop :products]]})
 
 (def snippet-table-migration
@@ -130,8 +130,8 @@
    [[:table/create {:table :snippet :if-not-exists true}
      [:column/add [:id {:default true :primary-key true} :uuid]]
      [:column/add [:user-id {:references :user/id} :uuid]]
-     [:column/add [:content :text]]
-     [:column/add [:ragnar/timestamps]]]]
+     [:column/add [:content :string]]
+     [:column/add [:gungnir/timestamps]]]]
    :down [[:table/drop :snippet]]})
 
 (def account-table-migration
@@ -144,8 +144,8 @@
    :up
    [[:table/create {:table :account :if-not-exists true}
      [:column/add [:id {:default true :primary-key true} :uuid]]
-     [:column/add [:balance :integer]]
-     [:column/add [:ragnar/timestamps]]]]
+     [:column/add [:balance :int]]
+     [:column/add [:gungnir/timestamps]]]]
    :down [[:table/drop :account]]})
 
 (def migrations

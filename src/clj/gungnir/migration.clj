@@ -2,7 +2,8 @@
   (:require
    [clojure.spec.alpha :as s]
    [honeysql.format :as sqlf]
-   [gungnir.migration.honeysql-postgres :refer [create-extension drop-extension]]
+   [gungnir.migration.honeysql-postgres :refer [create-extension drop-extension
+                                                add-column* drop-column*]]
    [clojure.string :as string]
    [gungnir.database :refer [*datasource*]]
    [honeysql-postgres.format]
@@ -57,7 +58,7 @@
     (cons [:column/add [:id {:primary-key true} :bigserial]] field)))
 
 (defn- add-column [acc expr]
-  (apply psqlh/add-column acc (remove nil? expr)))
+  (apply add-column* acc (remove nil? expr)))
 
 (defn- add-create-column [acc expr]
   (conj acc (remove nil? expr)))
@@ -118,8 +119,10 @@
   [_ acc [_ [column opts _]]]
   (add-column acc (column-uuid column opts)))
 
-(defn- column-text [column opts]
-  [column :text
+(defn- column-string [column opts]
+  [column (if-let [size (:size opts)]
+            (sql/call :varchar size)
+            :text)
    (when-let [default (:default opts)]
      (sql/call :default (format "'%s'" (string/escape default {\' "\\'"}))))
    (pk-caller opts)
@@ -127,13 +130,13 @@
    (references-caller opts)
    (optional-caller opts)])
 
-(defmethod process-table-column [:table/create :column/add :text]
+(defmethod process-table-column [:table/create :column/add :string]
   [_ acc [_ [column opts _]]]
-  (add-create-column acc (column-text column opts)))
+  (add-create-column acc (column-string column opts)))
 
-(defmethod process-table-column [:table/alter :column/add :text]
+(defmethod process-table-column [:table/alter :column/add :string]
   [_ acc [_ [column opts _]]]
-  (add-column acc (column-text column opts)))
+  (add-column acc (column-string column opts)))
 
 (defn- column-integer [column opts]
   [column "integer"
@@ -143,11 +146,11 @@
    (references-caller opts)
    (optional-caller opts)])
 
-(defmethod process-table-column [:table/create :column/add :integer]
+(defmethod process-table-column [:table/create :column/add :int]
   [_ acc [_ [column opts _]]]
   (add-create-column acc (column-integer column opts)))
 
-(defmethod process-table-column [:table/alter :column/add :integer]
+(defmethod process-table-column [:table/alter :column/add :int]
   [_ acc [_ [column opts _]]]
   (add-column acc (column-integer column opts)))
 
@@ -185,33 +188,33 @@
   [_ acc [_ [column opts _]]]
   (add-column acc (column-timestamp column opts)))
 
-(defn- column-ragnar-timestamps []
+(defn- column-gungnir-timestamps []
   [[:created_at "TIMESTAMP" (sql/call :default "CURRENT_TIMESTAMP")]
    [:updated_at "TIMESTAMP" (sql/call :default "CURRENT_TIMESTAMP")]])
 
-(defmethod process-table-column [:table/create :column/add :ragnar/timestamps]
+(defmethod process-table-column [:table/create :column/add :gungnir/timestamps]
   [_ acc [_ [_]]]
-  (reduce add-create-column acc (column-ragnar-timestamps)))
+  (reduce add-create-column acc (column-gungnir-timestamps)))
 
-(defmethod process-table-column [:table/alter :column/add :ragnar/timestamps]
+(defmethod process-table-column [:table/alter :column/add :gungnir/timestamps]
   [_ acc [_ [_]]]
-  (apply psqlh/add-column acc (flatten (column-ragnar-timestamps))))
+  (reduce add-column acc (column-gungnir-timestamps)))
 
 (defmethod process-table-column [:table/alter :column/drop] [_ acc [_ & columns]]
-  (apply psqlh/drop-column acc (flatten columns)))
+  (apply drop-column* acc (flatten columns)))
 
-(defmethod process-action :table/create [[_ {:keys [table if-not-exists primary-key]} & field]]
+(defmethod process-action :table/create [[_ {:keys [table if-not-exists primary-key]} & fields]]
   (assert table ":table is required for `:table/create`")
   (let [columns (reduce (partial process-table-column :table/create) []
-                        (add-default-pk primary-key field))]
+                        (add-default-pk primary-key fields))]
     (-> (psqlh/create-table table :if-not-exists if-not-exists)
         (psqlh/with-columns columns)
         (special-format))))
 
-(defmethod process-action :table/alter [[_ {:keys [table]} & field]]
+(defmethod process-action :table/alter [[_ {:keys [table]} & fields]]
   (-> (reduce (partial process-table-column :table/alter)
               (psqlh/alter-table table)
-              field)
+              fields)
       (special-format)))
 
 (defmethod process-action :table/drop [[_ & tables]]
