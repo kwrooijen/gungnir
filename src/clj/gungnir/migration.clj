@@ -46,9 +46,14 @@
               (keyword (namespace references))
               (keyword (name references)))))
 
-(defn- add-default-pk [field]
-  (if (some primary-key? field)
+(defn- add-default-pk [primary-key field]
+  (cond
+    (or (false? primary-key)
+        (some primary-key? field))
     field
+    (= :uuid primary-key)
+    (cons [:column/add [:id {:primary-key true :default true} :uuid]] field)
+    :else
     (cons [:column/add [:id {:primary-key true} :bigserial]] field)))
 
 (defn- add-column [acc expr]
@@ -131,7 +136,7 @@
   (add-column acc (column-text column opts)))
 
 (defn- column-integer [column opts]
-  [column "int"
+  [column "integer"
    (default-caller opts)
    (pk-caller opts)
    (unique-caller opts)
@@ -164,7 +169,7 @@
 
 (defn- column-timestamp [column opts]
   (let [defaults {:current-timestamp "CURRENT_TIMESTAMP"}]
-    [column "TIMESTAMP"
+    [column "\"timestamp\""
      (when-let [default (:default opts)]
        (sql/call :default (get defaults default default)))
      (pk-caller opts)
@@ -195,10 +200,10 @@
 (defmethod process-table-column [:table/alter :column/drop] [_ acc [_ & columns]]
   (apply psqlh/drop-column acc (flatten columns)))
 
-(defmethod process-action :table/create [[_ {:keys [table if-not-exists]} & field]]
+(defmethod process-action :table/create [[_ {:keys [table if-not-exists primary-key]} & field]]
   (assert table ":table is required for `:table/create`")
   (let [columns (reduce (partial process-table-column :table/create) []
-                        (add-default-pk field))]
+                        (add-default-pk primary-key field))]
     (-> (psqlh/create-table table :if-not-exists if-not-exists)
         (psqlh/with-columns columns)
         (special-format))))
