@@ -53,8 +53,8 @@
    :up
    [[:table/create {:table :post :if-not-exists true}
      [:column/add [:id {:default true :primary-key true} :uuid]]
-     [:column/add [:title {:required false} :text]]
-     [:column/add [:content {:required false} :text]]
+     [:column/add [:title {:optional true} :text]]
+     [:column/add [:content {:optional true} :text]]
      [:column/add [:user-id {:references :user/id} :uuid]]
      [:column/add [:ragnar/timestamps]]]]
    :down [[:table/drop :post]]})
