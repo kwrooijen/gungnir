@@ -154,6 +154,22 @@
   [_ acc [_ [column opts _]]]
   (add-column acc (column-integer column opts)))
 
+(defn- column-float [column opts]
+  [column (sql/call :float (:size opts 8))
+   (default-caller opts)
+   (pk-caller opts)
+   (unique-caller opts)
+   (references-caller opts)
+   (optional-caller opts)])
+
+(defmethod process-table-column [:table/create :column/add :float]
+  [_ acc [_ [column opts _]]]
+  (add-create-column acc (column-float column opts)))
+
+(defmethod process-table-column [:table/alter :column/add :float]
+  [_ acc [_ [column opts _]]]
+  (add-column acc (column-float column opts)))
+
 (defn- column-boolean [column opts]
   [column :boolean
    (default-caller opts)
