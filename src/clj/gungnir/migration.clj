@@ -286,14 +286,14 @@
         (format-action action)
         (format-action (vec (concat [k {} ?opts] fields)))))))
 
-(defn- migration-file? [%]
-  (and (string/ends-with? (.getName %) ".edn")
-       (.isFile %)))
+(defn- migration-file? [file]
+  (and (string/ends-with? (.getName file) ".edn")
+       (.isFile file)))
 
-(defn- file->migration-map [%]
-  (-> (slurp %)
+(defn- file->migration-map [file]
+  (-> (slurp file)
       (edn/read-string)
-      (assoc :id (subs name  0 (- (count name) 4)))))
+      (assoc :id (subs (.getName file) 0 (- (count (.getName file)) 4)))))
 
 (s/fdef ->migration
   :args (s/cat :migration :gungnir/migration)
