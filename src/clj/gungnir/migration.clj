@@ -255,7 +255,7 @@
               fields)
       (special-format)))
 
-(defmethod format-action :table/drop [[_ & tables]]
+(defmethod format-action :table/drop [[_ _opts & tables]]
   (->> (flatten tables)
        (apply psqlh/drop-table)
        (special-format)))
@@ -266,7 +266,7 @@
         (create-extension :if-not-exists if-not-exists)
         (special-format))))
 
-(defmethod format-action :extension/drop [[_ extension]]
+(defmethod format-action :extension/drop [[_ _ extension]]
   (binding [sqlf/*allow-dashed-names?* true]
     (-> extension
         (drop-extension)
@@ -276,9 +276,15 @@
   (string? action))
 
 (defn- process-action-pre [action]
+  (assert (or (string? action)
+              (vector? action))
+          "Migration action must be either a string or vector.")
   (if (raw-action? action)
     action
-    (format-action action)))
+    (let [[k ?opts & fields] action]
+      (if (map? ?opts)
+        (format-action action)
+        (format-action (vec (concat [k {} ?opts] fields)))))))
 
 (defn- migration-file? [%]
   (and (string/ends-with? (.getName %) ".edn")
