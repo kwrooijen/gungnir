@@ -5,7 +5,7 @@
    [clojure.spec.alpha :as s]
    [clojure.string :as string]
    [gungnir.database :refer [*datasource*]]
-   [gungnir.migration.honeysql-postgres
+   [gungnir.extension.honeysql-postgres
     :refer
     [add-column* create-extension drop-column* drop-extension]]
    [honeysql-postgres.helpers :as psqlh]

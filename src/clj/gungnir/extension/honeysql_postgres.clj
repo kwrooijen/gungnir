@@ -1,4 +1,4 @@
-(ns gungnir.migration.honeysql-postgres
+(ns gungnir.extension.honeysql-postgres
   (:require
    [clojure.string :as string]
    [honeysql.format :as sqlf :refer [format-clause]]
