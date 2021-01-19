@@ -1,18 +1,20 @@
 (ns gungnir.migration
   (:require
+   [clojure.edn :as edn]
+   [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
-   [honeysql.format :as sqlf]
-   [gungnir.migration.honeysql-postgres :refer [create-extension drop-extension
-                                                add-column* drop-column*]]
    [clojure.string :as string]
    [gungnir.database :refer [*datasource*]]
-   [honeysql-postgres.format]
+   [gungnir.migration.honeysql-postgres
+    :refer
+    [add-column* create-extension drop-column* drop-extension]]
    [honeysql-postgres.helpers :as psqlh]
    [honeysql.core :as sql]
-   [ragtime.core]
-   [ragtime.jdbc]
-   [ragtime.reporter]
-   [ragtime.strategy]))
+   [honeysql.format :as sqlf]
+   ragtime.core
+   ragtime.jdbc
+   ragtime.reporter
+   ragtime.strategy))
 
 (defn special-format [expr]
   (-> expr
@@ -278,6 +280,15 @@
     action
     (process-action action)))
 
+(defn- migration-file? [%]
+  (and (string/ends-with? (.getName %) ".edn")
+       (.isFile %)))
+
+(defn- file->migration-map [%]
+  (-> (slurp %)
+      (edn/read-string)
+      (assoc :id (subs name  0 (- (count name) 4)))))
+
 (s/fdef ->migration
   :args (s/cat :migration :gungnir/migration)
   :ret (comp #{ragtime.jdbc.SqlMigration} type))
@@ -288,7 +299,7 @@
       (update :id str)
       ragtime.jdbc/sql-migration))
 
-(s/fdef migrate-all
+(s/fdef migrate!
   :args (s/alt
          :arity-1 (s/cat :migrations (s/coll-of :gungnir/migration))
          :arity-2 (s/cat :migrations (s/coll-of :gungnir/migration)
@@ -297,10 +308,22 @@
                          :opts map?
                          :datasource :sql/datasource))
   :ret nil?)
-(defn migrate-all
-  "TODO"
-  ([migrations] (migrate-all migrations {} *datasource*))
-  ([migrations opts] (migrate-all migrations opts *datasource*))
+(defn migrate!
+  "Run any `migrations` that haven't been executed yet. An optional
+  `datasource` can be provided, defaults to `gungnir.database/*datasource*`.
+
+  `opts` takes the following arguments:
+
+  :strategy - defines what to do if there are conflicts between the migrations
+              applied to the data store, and the migrations that need to be
+              applied. The default strategy is ragtime.strategy/raise-error.
+  :reporter - a function that takes three arguments: the store, the operation
+              (:up or :down) and the migration ID. The reporter is a
+              side-effectful callback that can be used to print or report on
+              the migrations as they are applied. The default reporter is
+              ragtime.reporter/silent."
+  ([migrations] (migrate! migrations {} *datasource*))
+  ([migrations opts] (migrate! migrations opts *datasource*))
   ([migrations opts datasource]
    (let [migrations (mapv ->migration migrations)]
      (ragtime.core/migrate-all
@@ -318,11 +341,23 @@
          :arity-2 (s/cat :migrations (s/coll-of :gungnir/migration)
                          :datasource :sql/datasource))
   :ret nil?)
-(defn rollback
-  "TODO"
-  ([migrations] (rollback migrations *datasource*))
+
+(defn rollback!
+  "Rollback the last run migration from `migrations`. An optional
+  `datasource` can be provided, defaults to `gungnir.database/*datasource*`."
+  ([migrations] (rollback! migrations *datasource*))
   ([migrations datasource]
    (let [migrations (mapv ->migration migrations)]
      (ragtime.core/rollback-last
       (ragtime.jdbc/sql-database {:datasource datasource})
       (ragtime.core/into-index {} migrations)))))
+
+(defn load-resources
+  "Load any migrations EDN files in the `path` resource directory. A
+  migration file ends with the `.edn` extension and contains a map
+  with an `:up` and `:down` key."
+  [path]
+  (->> (io/resource path)
+       (io/file)
+       (file-seq)
+       (keep #(when (migration-file? %) (file->migration-map %)))))

@@ -166,11 +166,11 @@
   ([] (migrate! *datasource*))
   ([datasource]
    (with-out-str
-     (gungnir.migration/migrate-all migrations {} datasource))))
+     (gungnir.migration/migrate! migrations {} datasource))))
 
 (defn rollback!
   "Clear the database from any rows in the database."
   ([] (rollback! *datasource*))
   ([datasource]
    (doseq [_ migrations]
-     (gungnir.migration/rollback migrations datasource))))
+     (gungnir.migration/rollback! migrations datasource))))
