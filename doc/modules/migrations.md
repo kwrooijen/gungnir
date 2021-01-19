@@ -70,8 +70,46 @@ rewrite our previous migration to the following:
 
 ## Extending 
 
-TODO
+Sometimes you might need more control for your migrations. For example you might
+want to add data to your database, generated with Clojure. Or Gungnir is missing
+a migration feature that should be implemented in a data-driven action (In that
+case, feel free to open a pull request!).
 
+To create your own migration action, you need to implement the
+`gungnir.migration/format-action` multimethod. It matches on a qualified-keyword
+representing the action, the first value of the vector. The second value of the
+vector is an optional map. The rest of the values is just a collection of
+input. The return value of this multimethod should be a string representing a
+raw SQL query.
+
+```clojure
+;; 001-some-migration.edn
+
+{:up [[:my/migration-action
+       {:some-option 123}
+       [:my/field 1]
+       [:my/field 2]
+       [:my/field 3]]]
+
+ :down [[:my/migration-reverse 1 2 3]]}
+
+;; my-app/core.clj
+(defmethod format-action :my/migration-action [[_key opts & fields]]
+  ;; _key   : :my/migration-action
+  ;; opts   : {:some-option 123}
+  ;; fields : '([:my/field 1] [:my/field 2] [:my/field 3])
+  ;;
+  ;; Implement your query
+  "INSERT INTO user ...")
+
+(defmethod format-action :my/migration-reverse [[_key opts & fields]]
+  ;; _key   : :my/migration-reverse
+  ;; opts   : {}
+  ;; fields : '(1 2 3)
+  ;;
+  ;; Implement your query
+  "DELETE from users ...")
+```
 
 ## Keys
 
