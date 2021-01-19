@@ -63,11 +63,15 @@
 (defn- add-create-column [acc expr]
   (conj acc (remove nil? expr)))
 
+(defmulti process-table-column-child
+  (fn [[tk ck] _acc field]
+    [tk ck (if (coll? field)
+             (last field)
+             field)]))
+
 (defmulti process-table-column
-  (fn [tk _acc [k field]]
-    (if (coll? field)
-      [tk k (last field)]
-      [tk k])))
+  (fn [tk _acc [k]]
+    [tk k]))
 
 (defmulti process-action first)
 
@@ -77,12 +81,12 @@
    (references-caller opts)
    (optional-caller opts)])
 
-(defmethod process-table-column [:table/create :column/add :serial]
-  [_ acc [_ [column opts _]]]
+(defmethod process-table-column-child [:table/create :column/add :serial]
+  [_ acc [column opts _]]
   (add-create-column acc (column-serial column opts)))
 
-(defmethod process-table-column [:table/alter :column/add :serial]
-  [_ acc [_ [column opts _]]]
+(defmethod process-table-column-child [:table/alter :column/add :serial]
+  [_ acc [column opts _]]
   (add-column acc (column-serial column opts)))
 
 (defn- column-bigserial [column opts]
@@ -92,12 +96,12 @@
    (references-caller opts)
    (optional-caller opts)])
 
-(defmethod process-table-column [:table/create :column/add :bigserial]
-  [_ acc [_ [column opts _]]]
+(defmethod process-table-column-child [:table/create :column/add :bigserial]
+  [_ acc [column opts _]]
   (add-create-column acc (column-bigserial column opts)))
 
-(defmethod process-table-column [:table/alter :column/add :bigserial]
-  [_ acc [_ [column opts _]]]
+(defmethod process-table-column-child [:table/alter :column/add :bigserial]
+  [_ acc [column opts _]]
   (add-column acc (column-bigserial column opts)))
 
 (defn- column-uuid [column opts]
@@ -111,12 +115,12 @@
    (references-caller opts)
    (optional-caller opts)])
 
-(defmethod process-table-column [:table/create :column/add :uuid]
-  [_ acc [_ [column opts _]]]
+(defmethod process-table-column-child [:table/create :column/add :uuid]
+  [_ acc [column opts _]]
   (add-create-column acc (column-uuid column opts)))
 
-(defmethod process-table-column [:table/alter :column/add :uuid]
-  [_ acc [_ [column opts _]]]
+(defmethod process-table-column-child [:table/alter :column/add :uuid]
+  [_ acc [column opts _]]
   (add-column acc (column-uuid column opts)))
 
 (defn- column-string [column opts]
@@ -130,12 +134,12 @@
    (references-caller opts)
    (optional-caller opts)])
 
-(defmethod process-table-column [:table/create :column/add :string]
-  [_ acc [_ [column opts _]]]
+(defmethod process-table-column-child [:table/create :column/add :string]
+  [_ acc [column opts _]]
   (add-create-column acc (column-string column opts)))
 
-(defmethod process-table-column [:table/alter :column/add :string]
-  [_ acc [_ [column opts _]]]
+(defmethod process-table-column-child [:table/alter :column/add :string]
+  [_ acc [column opts _]]
   (add-column acc (column-string column opts)))
 
 (defn- column-integer [column opts]
@@ -146,12 +150,12 @@
    (references-caller opts)
    (optional-caller opts)])
 
-(defmethod process-table-column [:table/create :column/add :int]
-  [_ acc [_ [column opts _]]]
+(defmethod process-table-column-child [:table/create :column/add :int]
+  [_ acc [column opts _]]
   (add-create-column acc (column-integer column opts)))
 
-(defmethod process-table-column [:table/alter :column/add :int]
-  [_ acc [_ [column opts _]]]
+(defmethod process-table-column-child [:table/alter :column/add :int]
+  [_ acc [column opts _]]
   (add-column acc (column-integer column opts)))
 
 (defn- column-float [column opts]
@@ -162,12 +166,12 @@
    (references-caller opts)
    (optional-caller opts)])
 
-(defmethod process-table-column [:table/create :column/add :float]
-  [_ acc [_ [column opts _]]]
+(defmethod process-table-column-child [:table/create :column/add :float]
+  [_ acc [column opts _]]
   (add-create-column acc (column-float column opts)))
 
-(defmethod process-table-column [:table/alter :column/add :float]
-  [_ acc [_ [column opts _]]]
+(defmethod process-table-column-child [:table/alter :column/add :float]
+  [_ acc [column opts _]]
   (add-column acc (column-float column opts)))
 
 (defn- column-boolean [column opts]
@@ -178,17 +182,17 @@
    (references-caller opts)
    (optional-caller opts)])
 
-(defmethod process-table-column [:table/create :column/add :boolean]
-  [_ acc [_ [column opts _]]]
+(defmethod process-table-column-child [:table/create :column/add :boolean]
+  [_ acc [column opts _]]
   (add-create-column acc (column-boolean column opts)))
 
-(defmethod process-table-column [:table/alter :column/add :boolean]
-  [_ acc [_ [column opts _]]]
+(defmethod process-table-column-child [:table/alter :column/add :boolean]
+  [_ acc [column opts _]]
   (add-column acc (column-boolean column opts)))
 
 (defn- column-timestamp [column opts]
   (let [defaults {:current-timestamp "CURRENT_TIMESTAMP"}]
-    [column "\"timestamp\""
+    [column "TIMESTAMP"
      (when-let [default (:default opts)]
        (sql/call :default (get defaults default default)))
      (pk-caller opts)
@@ -196,28 +200,44 @@
      (references-caller opts)
      (optional-caller opts)]))
 
-(defmethod process-table-column [:table/create :column/add :timestamp]
-  [_ acc [_ [column opts _]]]
+(defmethod process-table-column-child [:table/create :column/add :timestamp]
+  [_ acc [column opts _]]
   (add-create-column acc (column-timestamp column opts)))
 
-(defmethod process-table-column [:table/alter :column/add :timestamp]
-  [_ acc [_ [column opts _]]]
+(defmethod process-table-column-child [:table/alter :column/add :timestamp]
+  [_ acc [column opts _]]
   (add-column acc (column-timestamp column opts)))
 
 (defn- column-gungnir-timestamps []
-  [[:created_at "TIMESTAMP" (sql/call :default "CURRENT_TIMESTAMP")]
-   [:updated_at "TIMESTAMP" (sql/call :default "CURRENT_TIMESTAMP")]])
+  [[:created_at "TIMESTAMP" (sql/call :default "CURRENT_TIMESTAMP") (sql/call :not nil)]
+   [:updated_at "TIMESTAMP" (sql/call :default "CURRENT_TIMESTAMP") (sql/call :not nil)]])
 
-(defmethod process-table-column [:table/create :column/add :gungnir/timestamps]
-  [_ acc [_ [_]]]
+(defmethod process-table-column-child [:table/create :column/add :gungnir/timestamps]
+  [_ acc _]
   (reduce add-create-column acc (column-gungnir-timestamps)))
 
-(defmethod process-table-column [:table/alter :column/add :gungnir/timestamps]
-  [_ acc [_ [_]]]
+(defmethod process-table-column-child [:table/alter :column/add :gungnir/timestamps]
+  [_ acc _]
   (reduce add-column acc (column-gungnir-timestamps)))
 
+(defmethod process-table-column-child [:table/alter :column/drop :gungnir/timestamps]
+  [_ acc _]
+  (conj acc :created_at :updated_at))
+
+(defmethod process-table-column [:table/create :column/add] [_ acc [_ & columns]]
+  (reduce (partial process-table-column-child [:table/create :column/add]) acc columns))
+
+(defmethod process-table-column [:table/alter :column/add] [_ acc [_ & columns]]
+  (reduce (partial process-table-column-child [:table/alter :column/add]) acc columns))
+
 (defmethod process-table-column [:table/alter :column/drop] [_ acc [_ & columns]]
-  (apply drop-column* acc (flatten columns)))
+  (->> columns
+       (reduce (fn [cols x]
+                 (if (qualified-keyword? x)
+                   (process-table-column-child [:table/alter :column/drop] cols x)
+                   (conj cols (flatten [x]))))
+               [])
+       (reduce drop-column* acc)))
 
 (defmethod process-action :table/create [[_ {:keys [table if-not-exists primary-key]} & fields]]
   (assert table ":table is required for `:table/create`")

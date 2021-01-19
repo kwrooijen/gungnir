@@ -16,14 +16,10 @@
    :add-column* 30
    :drop-column* 30})
 
-(def ^:private postgres-clause-priorities
-  "Determines the order that clauses will be placed within generated SQL"
-  (merge {} custom-additions))
-
 (defn override-default-clause-priority
   "Override the default cluse priority set by honeysql"
   []
-  (doseq [[k v] postgres-clause-priorities]
+  (doseq [[k v] custom-additions]
     (sqlf/register-clause! k v)))
 
 ;; TODO defhelpers can be removed once honeysql-postgres pull-request#55 is
@@ -50,25 +46,17 @@
 (defhelper add-column* [m fields]
   (update m :add-column* (fnil conj []) (sqlh/collify fields)))
 
-
 (defmethod format-clause :add-column* [[_ fields] _]
-  (string/join ",\n"
-               (for [field fields]
-                 (str "ADD COLUMN "
-                      (->> field
-                           (map sqlf/to-sql)
-                           sqlf/space-join)))))
+  (->> fields
+       (map #(str "ADD COLUMN " (sqlf/space-join (map sqlf/to-sql %))))
+       (string/join ",\n")))
 
-(defhelper drop-column* [m fields]
-  (update m :drop-column* (fnil conj []) (sqlh/collify fields)))
-
+(defhelper drop-column* [m field]
+  (update m :drop-column* concat (flatten field)))
 
 (defmethod format-clause :drop-column* [[_ fields] _]
-  (string/join ",\n"
-               (for [field fields]
-                 (str "DROP COLUMN "
-                      (->> field
-                           (map sqlf/to-sql)
-                           sqlf/space-join)))))
+  (->> fields
+       (map #(str "DROP COLUMN " (sqlf/to-sql %)))
+       (string/join ",\n")))
 
 (override-default-clause-priority)
