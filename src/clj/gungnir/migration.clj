@@ -75,7 +75,7 @@
   (fn [tk _acc [k]]
     [tk k]))
 
-(defmulti process-action first)
+(defmulti format-action first)
 
 (defn- column-serial [column opts]
   [column "SERIAL"
@@ -241,7 +241,7 @@
                [])
        (reduce drop-column* acc)))
 
-(defmethod process-action :table/create [[_ {:keys [table if-not-exists primary-key]} & fields]]
+(defmethod format-action :table/create [[_ {:keys [table if-not-exists primary-key]} & fields]]
   (assert table ":table is required for `:table/create`")
   (let [columns (reduce (partial process-table-column :table/create) []
                         (add-default-pk primary-key fields))]
@@ -249,24 +249,24 @@
         (psqlh/with-columns columns)
         (special-format))))
 
-(defmethod process-action :table/alter [[_ {:keys [table]} & fields]]
+(defmethod format-action :table/alter [[_ {:keys [table]} & fields]]
   (-> (reduce (partial process-table-column :table/alter)
               (psqlh/alter-table table)
               fields)
       (special-format)))
 
-(defmethod process-action :table/drop [[_ & tables]]
+(defmethod format-action :table/drop [[_ & tables]]
   (->> (flatten tables)
        (apply psqlh/drop-table)
        (special-format)))
 
-(defmethod process-action :extension/create [[_ {:keys [if-not-exists]} extension]]
+(defmethod format-action :extension/create [[_ {:keys [if-not-exists]} extension]]
   (binding [sqlf/*allow-dashed-names?* true]
     (-> extension
         (create-extension :if-not-exists if-not-exists)
         (special-format))))
 
-(defmethod process-action :extension/drop [[_ extension]]
+(defmethod format-action :extension/drop [[_ extension]]
   (binding [sqlf/*allow-dashed-names?* true]
     (-> extension
         (drop-extension)
@@ -278,7 +278,7 @@
 (defn- process-action-pre [action]
   (if (raw-action? action)
     action
-    (process-action action)))
+    (format-action action)))
 
 (defn- migration-file? [%]
   (and (string/ends-with? (.getName %) ".edn")
