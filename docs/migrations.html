@@ -212,23 +212,23 @@
 
 (def migrations (gungnir.migration/load-resources "migrations"))
 </code></pre>
-<p>Enter the REPL (e.g. <code>lein repl</code>). Require the <code>ragtime.repl</code> namespace and run the migrations using the <code>ragtime.repl/migrate</code> function. All pending migrations will be executed.</p>
+<p>Enter the REPL (e.g. <code>lein repl</code>). Require the <code>gungnir.migration</code> namespace and run the migrations using the <code>gungnir.migration/migrate!</code> function. All pending migrations will be executed.</p>
 <pre><code class="clojure">user=&gt; (require '[gungnir.migration :as migration])
 nil
-user=&gt; (migration/migrate migrations)
+user=&gt; (migration/migrate! migrations)
 Applying 000-uuid
 Applying 001-auto-updated-at
 Applying 002-user
 </code></pre>
-<p>You can also rollback migrations one by one using the <code>gungnir.migration/rollback</code> function.</p>
+<p>You can also rollback migrations one by one using the <code>gungnir.migration/rollback!</code> function.</p>
 <pre><code class="clojure">nil
-user=&gt; (migration/rollback config)
+user=&gt; (migration/rollback! config)
 Rolling back 002-user
 nil
-user=&gt; (migration/rollback config)
+user=&gt; (migration/rollback! config)
 Rolling back 001-auto-updated-at
 nil
-user=&gt; (migration/rollback config)
+user=&gt; (migration/rollback! config)
 Rolling back 000-uuid
 nil
 </code></pre>

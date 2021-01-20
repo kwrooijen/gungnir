@@ -172,31 +172,31 @@ will allow you to access it whenever you enter the REPL in the user namespace.
 (def migrations (gungnir.migration/load-resources "migrations"))
 ```
 
-Enter the REPL (e.g. `lein repl`). Require the `ragtime.repl` namespace and run
-the migrations using the `ragtime.repl/migrate` function. All pending migrations
+Enter the REPL (e.g. `lein repl`). Require the `gungnir.migration` namespace and run
+the migrations using the `gungnir.migration/migrate!` function. All pending migrations
 will be executed.
 
 ``` clojure
 user=> (require '[gungnir.migration :as migration])
 nil
-user=> (migration/migrate migrations)
+user=> (migration/migrate! migrations)
 Applying 000-uuid
 Applying 001-auto-updated-at
 Applying 002-user
 ```
 
-You can also rollback migrations one by one using the `gungnir.migration/rollback`
+You can also rollback migrations one by one using the `gungnir.migration/rollback!`
 function.
 
 ```clojure
 nil
-user=> (migration/rollback config)
+user=> (migration/rollback! config)
 Rolling back 002-user
 nil
-user=> (migration/rollback config)
+user=> (migration/rollback! config)
 Rolling back 001-auto-updated-at
 nil
-user=> (migration/rollback config)
+user=> (migration/rollback! config)
 Rolling back 000-uuid
 nil
 ```
