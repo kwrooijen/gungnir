@@ -113,14 +113,14 @@ again.
 
 ### Plug & Play™
 
-Include Gungnir in your project, and off you go! Gungnir includes (almost)
-everything for your database needs.
+Include Gungnir in your project, and off you go! Gungnir includes everything for
+your database needs.
 
 * [next-jdbc](https://github.com/seancorfield/next-jdbc)
 * [hikari-cp](https://github.com/brettwooldridge/HikariCP)
 * [HoneySQL](https://github.com/seancorfield/honeysql)
 * [Malli](https://github.com/metosin/malli)
-* TODO - Create a data driven migration library
+* [Ragtime](https://github.com/weavejester/ragtime)
 
 ### Models
 
@@ -140,6 +140,12 @@ Gungnir isn't here to reinvent the wheel. Even though we have an interface for
 querying the database, we can still make use of HoneySQL syntax. This allows us
 to expand our queries, or write more complex ones for the edge cases. [Read
 more](https://kwrooijen.github.io/gungnir/query.html)
+
+### Migrations
+
+Define your migrations using Clojure data structures and extend them as
+needed. You can also fallback to raw SQL if necessary. [Read
+more](https://kwrooijen.github.io/gungnir/migrations.html)
 
 ### Relational mapping
 
