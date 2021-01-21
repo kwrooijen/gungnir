@@ -1,5 +1,5 @@
 (defproject kwrooijen/gungnir "0.0.1-SNAPSHOT"
-  :description "High level Clojure database library"
+  :description "A fully featured, data-driven database library for Clojure."
   :url "https://github.com/kwrooijen/gungnir"
   :license {:name "MIT"}
   :source-paths ["src/clj" "src/cljc"]

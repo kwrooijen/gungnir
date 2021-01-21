@@ -1,6 +1,6 @@
 # Gungnir
 
-A high level, data driven database library for Clojure data mapping.
+A fully featured, data-driven database library for Clojure.
 
 [![Build Status](https://travis-ci.org/kwrooijen/gungnir.svg?branch=master)](https://travis-ci.org/kwrooijen/gungnir)
 [![codecov](https://codecov.io/gh/kwrooijen/gungnir/branch/master/graph/badge.svg)](https://codecov.io/gh/kwrooijen/gungnir)
