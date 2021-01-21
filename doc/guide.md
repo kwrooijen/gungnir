@@ -7,10 +7,9 @@ this purpose.
 * [database](https://kwrooijen.github.io/gungnir/database.html) - Establishing a
   database connection, thread pooling, and handling database errors.
 
-* [migrations](https://kwrooijen.github.io/gungnir/migrations.html) - Migrations
-  are important to make sure you properly transform your database, and have the
-  ability to roll back in case something goes wrong. Gungnir currently doesn't
-  support a built-in solution.
+* [migration](https://kwrooijen.github.io/gungnir/migrations.html) - Migrations
+  are important to make sure you properly transform your database and have the
+  ability to roll back in case something goes wrong.
 
 * [model](https://kwrooijen.github.io/gungnir/model.html) - Models describe your
   Clojure datastructures. Validations, transformations, error formatting,
