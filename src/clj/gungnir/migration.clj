@@ -366,4 +366,5 @@
   (->> (io/resource path)
        (io/file)
        (file-seq)
+       (sort-by #(.getName %))
        (keep #(when (migration-file? %) (file->migration-map %)))))
