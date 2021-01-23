@@ -82,7 +82,6 @@
   ([form datasource]
    (gungnir.database/delete! form datasource)))
 
-
 (s/fdef insert!
   :args (s/alt
          :arity-1 (s/cat :changeset :gungnir/changeset)
