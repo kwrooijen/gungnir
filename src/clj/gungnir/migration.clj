@@ -338,7 +338,7 @@
       migrations
       (merge
        {:strategy ragtime.strategy/raise-error
-        :reporter ragtime.reporter/print}
+        :reporter ragtime.reporter/silent}
        opts)))))
 
 (s/fdef rollback
