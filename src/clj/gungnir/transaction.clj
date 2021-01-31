@@ -42,6 +42,22 @@
      {:transaction/error error}
      (f ?changeset))))
 
+(s/fdef error-data
+  :args (s/cat :transaction :gungnir/transaction)
+  :ret (s/nilable any?))
+(defn error-data
+  "Retrieve error data from a `transaction` or return nil."
+  [transaction]
+  (-> transaction :transaction/error :transaction.error/data))
+
+(s/fdef error-key
+  :args (s/cat :transaction :gungnir/transaction)
+  :ret (s/nilable any?))
+(defn error-key
+  "Retrieve the error key from a `transaction` or return nil."
+  [transaction]
+  (-> transaction :transaction/error :transaction.error/key))
+
 (defn- transaction-error [acc k data]
   (-> acc
       (assoc-in [:transaction/error :transaction.error/key] k)
