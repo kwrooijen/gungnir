@@ -22,15 +22,25 @@
   {:transaction/error e})
 
 (s/fdef changeset->error
-  :args (s/cat :?changeset (s/or :changeset :gungnir/changeset
-                                 :any any?))
+  :args
+  (s/alt :arity-1
+         (s/cat :?changeset (s/or :changeset :gungnir/changeset
+                                  :any any?))
+         :arity-2
+         (s/cat :?changeset (s/or :changeset :gungnir/changeset
+                                  :any any?)
+                :f fn?))
   :ret (s/nilable (s/map-of #{:transaction/error} any?)))
 (defn changeset->error
-  "Returns a transaction error if `changeset` has a `:changeset/error`
+  "Returns a transaction error if `changeset` has a `:changeset/errors`
   key."
-  [?changeset]
-  (when-let [error (:changeset/error ?changeset)]
-    {:transaction/error error}))
+  ([?changeset]
+   (when-let [error (:changeset/errors ?changeset)]
+     {:transaction/error error}))
+  ([?changeset f]
+   (if-let [error (:changeset/errors ?changeset)]
+     {:transaction/error error}
+     (f ?changeset))))
 
 (defn- transaction-error [acc k data]
   (-> acc
