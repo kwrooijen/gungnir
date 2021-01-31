@@ -51,9 +51,7 @@
          (if (error? result)
            (reduced (transaction-error acc k (:transaction/error result)))
            (transaction-step acc k result)))
-       (catch Exception e
-         (reduced (transaction-error acc k e)))
-       (catch AssertionError e
+       (catch Throwable e
          (reduced (transaction-error acc k e)))))
    {:transaction/state {}
     :transaction/pipeline []
@@ -73,11 +71,16 @@
   use the global `gungnir.database/*datasource*`."
   ([pipeline] (execute-pipeline! pipeline *datasource*))
   ([pipeline datasource]
-   (jdbc/transact
-    datasource
-    (fn [connection]
-      (binding [*tx-datasource* connection]
-        (apply-pipeline pipeline))))))
+   (try
+     (jdbc/transact
+      datasource
+      (fn [connection]
+        (binding [*tx-datasource* connection]
+          (let [result (apply-pipeline pipeline)]
+            (if (error? result)
+              (throw (ex-info "Transaction error" result))
+              result)))))
+     (catch Throwable e (ex-data e)))))
 
 (s/fdef execute!
   :args
