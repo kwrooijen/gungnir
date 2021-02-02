@@ -177,7 +177,7 @@
   (add-column acc (column-float column opts)))
 
 (defn- column-boolean [column opts]
-  [column :boolean
+  [column "boolean"
    (default-caller opts)
    (pk-caller opts)
    (unique-caller opts)

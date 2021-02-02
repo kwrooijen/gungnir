@@ -76,7 +76,7 @@
     (is (string/includes? m-types "\"code\" varchar(4) DEFAULT 'ABCD' NOT NULL,"))
     (is (string/includes? m-types "\"s\" SERIAL NOT NULL,"))
     (is (string/includes? m-types "\"b\" BIGSERIAL NOT NULL,"))
-    (is (string/includes? m-types "\"active\" \"boolean\" NOT NULL,"))
+    (is (string/includes? m-types "\"active\" boolean NOT NULL,"))
     (is (string/includes? m-types "\"some_float\" float(8) NOT NULL,"))
     (is (string/includes? m-types "\"some_float_4\" float(4) NOT NULL,"))
     (is (string/includes? m-types "\"created_at\" TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL"))))
@@ -88,7 +88,7 @@
     (is (string/includes? m-types "\"code\" varchar(4) DEFAULT 'ABCD' NOT NULL,"))
     (is (string/includes? m-types "\"s\" SERIAL NOT NULL,"))
     (is (string/includes? m-types "\"b\" BIGSERIAL NOT NULL,"))
-    (is (string/includes? m-types "\"active\" \"boolean\" NOT NULL,"))
+    (is (string/includes? m-types "\"active\" boolean NOT NULL,"))
     (is (string/includes? m-types "\"created_at\" TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL"))))
 
 (deftest testing-migration-drop+add
