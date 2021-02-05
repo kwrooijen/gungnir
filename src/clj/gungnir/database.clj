@@ -29,7 +29,6 @@
 (defonce ^{:dynamic true :doc "The global Gungnir datasource. This var is set
 using either using the `gungnir.database/set-datasource!` or
 `gungnir.database/make-datasource!` function."}
-
   *datasource* nil)
 
 (defonce ^{:dynamic true :doc "This variable is only set during transactions. It
@@ -155,36 +154,66 @@ using either using the `gungnir.database/set-datasource!` or
     :namespace-as-table? (:namespace-as-table? opts true)
     :quoting :ansi)))
 
-(defn- remove-quotes [s]
-  (string/replace s #"\"" ""))
-
 (defmulti exception->map
-  (fn [^SQLException e]
+  (fn [_changeset ^SQLException e]
     (.getSQLState e)))
 
-(defn- sql-key->keyword [sql-key]
-  (-> sql-key
-      (string/replace #"_key$" "")
-      (string/replace-first #"_" "/")
-      (string/replace #"_" "-")
-      (keyword)))
+(defn- sql-key->model-field-k
+  ([sql-key]
+   (-> sql-key
+       (string/replace #"(_key$|_fkey$)" "")
+       (string/replace-first #"_" "/")
+       (string/replace #"_" "-")
+       (keyword)))
+  ([{:changeset/keys [model]} sql-key]
+   (-> sql-key
+       (string/replace #"(_key$|_fkey$)" "")
+       (string/replace #"_" "-")
+       (->> (keyword (name model))))))
 
-(defmethod exception->map "23505" [^SQLException e]
-  (let [error (.getMessage e)
-        sql-key (remove-quotes (re-find #"\".*\"" error))
-        record-key (sql-key->keyword sql-key)]
-    {record-key [(gungnir.model/format-error record-key :duplicate-key)]}))
+(defn sql-key-from-quotes [e]
+  (->> (.getMessage e)
+       (re-find #"(\"(.*?)\")")
+       (last)))
 
-(defmethod exception->map "42P01" [^SQLException e]
-  (let [error (.getMessage e)
-        sql-key (remove-quotes (re-find #"\".*\"" error))
-        table-key (sql-key->keyword sql-key)]
-    {table-key [(gungnir.model/format-error table-key :undefined-table)]}))
+(defn format-error
+  ([column-k error-type]
+   (let [model-field-key (sql-key->model-field-k column-k)]
+     {model-field-key [(gungnir.model/format-error
+                        model-field-key
+                        error-type)]}))
+  ([changeset column-k error-type]
+   (let [model-field-key (sql-key->model-field-k changeset column-k)]
+     {model-field-key [(gungnir.model/format-error
+                        model-field-key
+                        error-type)]})))
 
-(defmethod exception->map :default [^SQLException e]
-  (log/warn e (str "Unhandled SQL execption "
-                (.getSQLState e) "\n "
-                (.getMessage e)))
+(defmethod exception->map "23505" [_changeset ^SQLException e]
+  (format-error (sql-key-from-quotes e) :duplicate-key))
+
+(defmethod exception->map "42P01" [{:changeset/keys [model]} ^SQLException _e]
+  {model [(gungnir.model/format-error model :undefined-table)]})
+
+(defmethod exception->map "23502" [changeset ^SQLException e]
+  (format-error changeset (sql-key-from-quotes e) :not-null-violation))
+
+(defmethod exception->map "42703" [changeset ^SQLException e]
+  (format-error changeset (sql-key-from-quotes e) :undefined-column))
+
+(defmethod exception->map "23503" [_changeset ^SQLException e]
+  (let [model-field-key (-> (re-seq #"(\"(.*?)\")" (.getMessage e))
+                            (second)
+                            (last)
+                            (sql-key->model-field-k))]
+    {model-field-key (gungnir.model/format-error model-field-key :missing-foreign-key)}))
+
+(defmethod exception->map :default [_changeset ^SQLException e]
+  (println (str "Unhandled SQL execption "
+                 (.getSQLState e) "\n "
+                 (.getMessage e)))
+  (log/warn (str "Unhandled SQL execption "
+                 (.getSQLState e) "\n "
+                 (.getMessage e)))
   {:unknown [(.getSQLState e)]})
 
 (defn- execute-one!
@@ -196,7 +225,7 @@ using either using the `gungnir.database/set-datasource!` or
                          :builder-fn gungnir.database.builder/column-builder})
      (catch SQLException e
        (log/log "gungnir.sql" :debug nil (honey->sql form))
-       (update changeset :changeset/errors merge (exception->map e))))))
+       (update changeset :changeset/errors merge (exception->map changeset e))))))
 
 (defn- apply-before-save [field-k field-v]
   (reduce (fn [acc before-save-k]
