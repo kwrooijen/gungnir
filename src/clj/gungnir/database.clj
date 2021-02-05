@@ -32,7 +32,7 @@ using either using the `gungnir.database/set-datasource!` or
   *datasource* nil)
 
 (defonce ^{:dynamic true :doc "This variable is only set during transactions. It
-  allows the Gungnir internals know that a transaction is taking place."}
+  allows the Gungnir internals to know that a transaction is taking place."}
   *tx-datasource* nil)
 
 (declare query!)
@@ -434,6 +434,7 @@ using either using the `gungnir.database/set-datasource!` or
          :arity-1
          (s/cat :datasource :sql/datasource))
   :ret nil?)
+
 (defn close!
   "Close the Hikari `datasource`. If no `datasource` is supplied it
   defaults to `gungnir.database/*datasource*`."
