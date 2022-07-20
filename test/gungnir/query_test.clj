@@ -9,32 +9,32 @@
 (use-fixtures :once util/once-fixture)
 (use-fixtures :each util/each-fixture)
 
-(def user-1-email "user@test.com")
+(def account-1-email "account@test.com")
 
-(def user-1-password "123456")
+(def account-1-password "123456")
 
-(def user-1
-  {:user/email user-1-email
-   :user/password user-1-password})
+(def account-1
+  {:account/email account-1-email
+   :account/password account-1-password})
 
-(def user-2-email "user-2@test.com")
+(def account-2-email "account-2@test.com")
 
-(def user-2-password "123456")
+(def account-2-password "123456")
 
-(def user-2
-  {:user/email user-2-email
-   :user/password user-2-password})
+(def account-2
+  {:account/email account-2-email
+   :account/password account-2-password})
 
-(def user-3-email "user-3@test.com")
+(def account-3-email "account-3@test.com")
 
-(def user-3-password "133456")
+(def account-3-password "133456")
 
-(def user-3-username "foobar")
+(def account-3-accountname "foobar")
 
-(def user-3
-  {:user/email user-3-email
-   :user/username user-3-username
-   :user/password user-3-password})
+(def account-3
+  {:account/email account-3-email
+   :account/accountname account-3-accountname
+   :account/password account-3-password})
 
 (def post-1-title "post-1 title")
 (def post-1-content "post-1 content")
@@ -93,35 +93,35 @@
   {:document/content document-1-content})
 
 (deftest test-find!
-  (let [{:user/keys [id]} (-> user-1 changeset/create q/save!)]
-    (testing "Find user by primary key"
-      (is (= user-1-email (-> (q/find! :user id) :user/email))))
+  (let [{:account/keys [id]} (-> account-1 changeset/create q/save!)]
+    (testing "Find account by primary key"
+      (is (= account-1-email (-> (q/find! :account id) :account/email))))
 
-    (testing "Find user by primary key, automatic uuid translation"
-      (is (= user-1-email (-> (q/find! :user (str id)) :user/email)))))
+    (testing "Find account by primary key, automatic uuid translation"
+      (is (= account-1-email (-> (q/find! :account (str id)) :account/email)))))
 
-  (testing "Find unknown user by primary key returns nil"
-    (is (nil? (-> (q/find! :user #uuid "1e626bf3-8fdf-4a66-b708-7aa35dafede9"))))
-    (is (nil? (-> (q/find! :user "1e626bf3-8fdf-4a66-b708-7aa35dafede9"))))))
+  (testing "Find unknown account by primary key returns nil"
+    (is (nil? (-> (q/find! :account #uuid "1e626bf3-8fdf-4a66-b708-7aa35dafede9"))))
+    (is (nil? (-> (q/find! :account "1e626bf3-8fdf-4a66-b708-7aa35dafede9"))))))
 
 (deftest test-find-by!
-  (let [{:user/keys [id] :as user} (-> user-1 changeset/create q/save!)
-        token (-> token-1 (assoc :token/user-id (:user/id user)) changeset/create q/save!)
-        _post (-> post-1 (assoc :post/user-id id) changeset/create q/save!)]
-    (testing "Find user by email"
-      (is (= user-1-email (-> (q/find-by! :user/email user-1-email) :user/email))))
+  (let [{:account/keys [id] :as account} (-> account-1 changeset/create q/save!)
+        token (-> token-1 (assoc :token/account-id (:account/id account)) changeset/create q/save!)
+        _post (-> post-1 (assoc :post/account-id id) changeset/create q/save!)]
+    (testing "Find account by email"
+      (is (= account-1-email (-> (q/find-by! :account/email account-1-email) :account/email))))
 
-    (testing "Find user by unknown email returns nil"
-      (is (nil? (q/find-by! :user/email "random@email.com"))))
+    (testing "Find account by unknown email returns nil"
+      (is (nil? (q/find-by! :account/email "random@email.com"))))
 
-    (testing "Find post by title and user-id"
+    (testing "Find post by title and account-id"
       (is (= post-1-title
              (-> (q/find-by! :post/title post-1-title
-                             :post/user-id id)
+                             :post/account-id id)
                  :post/title))))
-    (testing "Find post by user-id with auto uuid"
+    (testing "Find post by account-id with auto uuid"
       (is (= post-1-title
-             (-> (q/find-by! :post/user-id (str id))
+             (-> (q/find-by! :post/account-id (str id))
                  :post/title))))
     (testing "keyword arguments"
       (is (= (:token/id token)
@@ -129,23 +129,23 @@
                  :token/id))))))
 
 (deftest test-all!
-  (let [{:user/keys [id] :as _user} (-> user-1 changeset/create q/save!)
-        _post-1 (-> post-1 (assoc :post/user-id id) changeset/create q/save!)
-        _post-2 (-> post-2 (assoc :post/user-id id) changeset/create q/save!)]
-    (testing "Find posts by user id"
+  (let [{:account/keys [id] :as _account} (-> account-1 changeset/create q/save!)
+        _post-1 (-> post-1 (assoc :post/account-id id) changeset/create q/save!)
+        _post-2 (-> post-2 (assoc :post/account-id id) changeset/create q/save!)]
+    (testing "Find posts by account id"
       (is (= #{post-1-title post-2-title}
-             (-> (q/all! :post/user-id id) (->> (mapv :post/title)) set))))
+             (-> (q/all! :post/account-id id) (->> (mapv :post/title)) set))))
 
-    (testing "Find posts by user id with limit 1"
+    (testing "Find posts by account id with limit 1"
       (is (= 1
              (-> (q/limit 1)
-                 (q/all! :post/user-id id)
+                 (q/all! :post/account-id id)
                  (count)))))
 
-    (testing "Find posts by user id and title"
+    (testing "Find posts by account id and title"
       (is (= post-1-title
              (-> (q/limit 1)
-                 (q/all! :post/user-id id
+                 (q/all! :post/account-id id
                          :post/title post-1-title)
                  first
                  :post/title))))
@@ -162,126 +162,126 @@
                  (count)))))))
 
 (deftest test-insert-save!
-  (testing "inserting a new user"
-    (let [user (-> user-1 changeset/create q/save!)]
-      (is (nil? (:changeset/errors user)))
-      (is (uuid? (:user/id user)))
-      (is (some? (q/find! :user (:user/id user))))))
+  (testing "inserting a new account"
+    (let [account (-> account-1 changeset/create q/save!)]
+      (is (nil? (:changeset/errors account)))
+      (is (uuid? (:account/id account)))
+      (is (some? (q/find! :account (:account/id account))))))
 
-  (testing "inserting an invalid user"
-    (let [user (-> user-1 (assoc :user/password "123") changeset/create q/save!)]
-      (is (some? (:changeset/errors user)))
-      (is (nil? (:user/id user)))
-      (is (nil? (q/find! :user (:user/id user)))))))
+  (testing "inserting an invalid account"
+    (let [account (-> account-1 (assoc :account/password "123") changeset/create q/save!)]
+      (is (some? (:changeset/errors account)))
+      (is (nil? (:account/id account)))
+      (is (nil? (q/find! :account (:account/id account)))))))
 
 (deftest test-update-save!
-  (let [user (-> user-1 changeset/create q/save!)
-        user-2 (-> user-2 changeset/create q/save! (update :user/id str))]
-    (testing "updating an existing user"
-      (let [new-email "user-updated@test.com"
-            new-user (q/save! (changeset/create user {:user/email new-email}))]
-        (is (nil? (:changeset/errors new-user)))
-        (is (uuid? (:user/id new-user)))
-        (is (some? (q/find! :user (:user/id user))))))
+  (let [account (-> account-1 changeset/create q/save!)
+        account-2 (-> account-2 changeset/create q/save! (update :account/id str))]
+    (testing "updating an existing account"
+      (let [new-email "account-updated@test.com"
+            new-account (q/save! (changeset/create account {:account/email new-email}))]
+        (is (nil? (:changeset/errors new-account)))
+        (is (uuid? (:account/id new-account)))
+        (is (some? (q/find! :account (:account/id account))))))
 
-    (testing "updating an existing user with str uuid"
-      (let [new-email "user-updated-2@test.com"
-            new-user (q/save! (changeset/create user-2 {:user/email new-email}))]
-        (is (nil? (:changeset/errors new-user)))
-        (is (uuid? (:user/id new-user)))
-        (is (some? (q/find! :user (:user/id user))))))
+    (testing "updating an existing account with str uuid"
+      (let [new-email "account-updated-2@test.com"
+            new-account (q/save! (changeset/create account-2 {:account/email new-email}))]
+        (is (nil? (:changeset/errors new-account)))
+        (is (uuid? (:account/id new-account)))
+        (is (some? (q/find! :account (:account/id account))))))
 
-    (testing "updating an invalid user"
-      (let [new-user (q/save! (changeset/create user {:user/password "123"}))]
-        (is (some? (:changeset/errors new-user)))
-        (is (nil? (:user/id new-user)))
-        (is (= user-1-password (:user/password (q/find! :user (:user/id user)))))))
+    (testing "updating an invalid account"
+      (let [new-account (q/save! (changeset/create account {:account/password "123"}))]
+        (is (some? (:changeset/errors new-account)))
+        (is (nil? (:account/id new-account)))
+        (is (= account-1-password (:account/password (q/find! :account (:account/id account)))))))
 
     (testing "don't update if no diff"
-      (let [new-user (q/save! (changeset/create user {:user/email user-1-email}))]
-        (is (= user new-user))))))
+      (let [new-account (q/save! (changeset/create account {:account/email account-1-email}))]
+        (is (= account new-account))))))
 
 (deftest test-delete!
-  (testing "deleting existing user"
-    (let [user (-> user-1 changeset/create q/save!)]
-      (is (= true (q/delete! user)))
-      (is (nil? (q/find! :user (:user/id user))))))
+  (testing "deleting existing account"
+    (let [account (-> account-1 changeset/create q/save!)]
+      (is (= true (q/delete! account)))
+      (is (nil? (q/find! :account (:account/id account))))))
 
-  (testing "deleting existing user with str uuid"
-    (let [user (-> user-1 changeset/create q/save! (update :user/id str))]
-      (is (= true (q/delete! user)))
-      (is (nil? (q/find! :user (:user/id user))))))
+  (testing "deleting existing account with str uuid"
+    (let [account (-> account-1 changeset/create q/save! (update :account/id str))]
+      (is (= true (q/delete! account)))
+      (is (nil? (q/find! :account (:account/id account))))))
 
-  (testing "deleting non existing user"
+  (testing "deleting non existing account"
     (let [uuid "1e626bf3-8fdf-4a66-b708-7aa35dafede9"]
-      (is (= false (q/delete! {:user/id uuid})))
-      (is (nil? (q/find! :user uuid)))))
+      (is (= false (q/delete! {:account/id uuid})))
+      (is (nil? (q/find! :account uuid)))))
 
   (testing "deleting reference atom"
-    (let [user (-> user-1 changeset/create q/save!)
-          token (-> token-1 (assoc :token/user-id (:user/id user)) changeset/create q/save!)]
-      (is (-> (q/find! :user (:user/id user)) :user/token (q/delete!)))
+    (let [account (-> account-1 changeset/create q/save!)
+          token (-> token-1 (assoc :token/account-id (:account/id account)) changeset/create q/save!)]
+      (is (-> (q/find! :account (:account/id account)) :account/token (q/delete!)))
       (is (nil? (q/find! :token (:token/id token)))))))
 
 (deftest test-relation-has-one
-  (let [user (-> user-1 changeset/create q/save!)
-        token (-> token-1 (assoc :token/user-id (:user/id user)) changeset/create q/save!)]
-    (testing "user has one token"
+  (let [account (-> account-1 changeset/create q/save!)
+        token (-> token-1 (assoc :token/account-id (:account/id account)) changeset/create q/save!)]
+    (testing "account has one token"
       (is (= (:token/id token)
-             (-> user
-                 :user/token
+             (-> account
+                 :account/token
                  (deref)
                  :token/id))))
 
-    (testing "find! user has one token"
+    (testing "find! account has one token"
       (is (= (:token/id token)
-             (-> (q/find! :user (:user/id user))
-                 :user/token
+             (-> (q/find! :account (:account/id account))
+                 :account/token
                  (deref)
                  :token/id))))
 
-    (testing "user has one token, back to user"
-      (is (= (:user/id user)
-             (-> user
-                 :user/token
+    (testing "account has one token, back to account"
+      (is (= (:account/id account)
+             (-> account
+                 :account/token
                  (deref)
-                 :token/user
+                 :token/account
                  (deref)
-                 :user/id))))
+                 :account/id))))
 
-    (testing "find! user has one token, back to user"
-      (is (= (:user/id user)
-             (-> (q/find! :user (:user/id user))
-                 :user/token
+    (testing "find! account has one token, back to account"
+      (is (= (:account/id account)
+             (-> (q/find! :account (:account/id account))
+                 :account/token
                  (deref)
-                 :token/user
+                 :token/account
                  (deref)
-                 :user/id))))))
+                 :account/id))))))
 
 (deftest test-relation-has-many
-  (let [user (-> user-1 changeset/create q/save!)
-        post-1 (-> post-1 (assoc :post/user-id (:user/id user)) changeset/create q/save!)
-        post-2 (-> post-2 (assoc :post/user-id (:user/id user)) changeset/create q/save!)
-        comment-1 (-> comment-1 (assoc :comment/user-id (:user/id user)
+  (let [account (-> account-1 changeset/create q/save!)
+        post-1 (-> post-1 (assoc :post/account-id (:account/id account)) changeset/create q/save!)
+        post-2 (-> post-2 (assoc :post/account-id (:account/id account)) changeset/create q/save!)
+        comment-1 (-> comment-1 (assoc :comment/account-id (:account/id account)
                                        :comment/post-id (:post/id post-1))
                       changeset/create
                       q/save!)
-        comment-2 (-> comment-2 (assoc :comment/user-id (:user/id user)
+        comment-2 (-> comment-2 (assoc :comment/account-id (:account/id account)
                                        :comment/post-id (:post/id post-2))
                       changeset/create
                       q/save!)]
-    (testing "user has many posts"
+    (testing "account has many posts"
       (is (= #{(:post/id post-1) (:post/id post-2)}
-             (-> user
-                 :user/posts
+             (-> account
+                 :account/posts
                  (deref)
                  (->> (map :post/id))
                  (set)))))
 
-    (testing "find! user has many posts"
+    (testing "find! account has many posts"
       (is (= #{(:post/id post-1) (:post/id post-2)}
-             (-> (q/find! :user (:user/id user))
-                 :user/posts
+             (-> (q/find! :account (:account/id account))
+                 :account/posts
                  (deref)
                  (->> (map :post/id))
                  (set)))))
@@ -296,10 +296,10 @@
 
 
 (deftest test-relation-belongs-to
-  (let [user (-> user-1 changeset/create q/save!)
-        post (-> post-1 (assoc :post/user-id (:user/id user)) changeset/create q/save!)
+  (let [account (-> account-1 changeset/create q/save!)
+        post (-> post-1 (assoc :post/account-id (:account/id account)) changeset/create q/save!)
         comment (-> comment-1
-                    (assoc :comment/user-id (:user/id user)
+                    (assoc :comment/account-id (:account/id account)
                            :comment/post-id (:post/id post))
                     changeset/create
                     q/save!)]
@@ -311,23 +311,23 @@
                  (deref)
                  :post/id))))
 
-    (testing "comment belongs to post, belongs to user"
-      (is (= (:user/id user)
+    (testing "comment belongs to post, belongs to account"
+      (is (= (:account/id account)
              (-> comment
                  :comment/post
                  (deref)
-                 :post/user
+                 :post/account
                  (deref)
-                 :user/id))))
+                 :account/id))))
 
-    (testing "comment belongs to post, belongs to user, back to comment"
+    (testing "comment belongs to post, belongs to account, back to comment"
       (is (= (:comment/id comment)
              (-> comment
                  :comment/post
                  (deref)
-                 :post/user
+                 :post/account
                  (deref)
-                 :user/posts
+                 :account/posts
                  (deref)
                  (first)
                  :post/comments
@@ -336,14 +336,14 @@
                  :comment/id))))))
 
 (deftest test-relation-belongs-to-multiple
-  (let [user-1 (-> user-1 changeset/create q/save!)
-        user-2 (-> user-2 changeset/create q/save!)
+  (let [account-1 (-> account-1 changeset/create q/save!)
+        account-2 (-> account-2 changeset/create q/save!)
         document (-> document-1
-                     (assoc :document/author-id (:user/id user-1)
-                            :document/reviewer-id (:user/id user-2))
+                     (assoc :document/author-id (:account/id account-1)
+                            :document/reviewer-id (:account/id account-2))
                      changeset/create
                      q/save!)]
-    (testing "different users"
+    (testing "different accounts"
       (is (not= (-> document
                     :document/author
                     (deref))
@@ -358,51 +358,53 @@
                      (deref)))))))
 
 (deftest test-before-save
-  (let [_user (-> user-1 (update :user/email string/upper-case) changeset/create q/save!)]
+  (let [_account (-> account-1 (update :account/email string/upper-case) changeset/create q/save!)]
     (testing "saving email as lowercase"
-      (let [result (q/find-by! :user/email user-1-email)]
-        (is (= (string/lower-case (:user/email user-1)) (:user/email result)))))))
+      (let [result (q/find-by! :account/email account-1-email)]
+        (is (= (string/lower-case (:account/email account-1)) (:account/email result)))))))
 
 (deftest test-before-read
-  (let [_user (-> user-1 changeset/create q/save!)]
-    (testing "finding user by case-insensitive email"
-      (let [result-1 (q/find-by! :user/email user-1-email)
-            result-2 (q/find-by! :user/email (string/upper-case user-1-email))
-            result-3 (q/find-by! :user/email (string/lower-case user-1-email))]
+  (let [_account (-> account-1 changeset/create q/save!)]
+    (testing "finding account by case-insensitive email"
+      (let [result-1 (q/find-by! :account/email account-1-email)
+            result-2 (q/find-by! :account/email (string/upper-case account-1-email))
+            result-3 (q/find-by! :account/email (string/lower-case account-1-email))]
         (is (some? result-1))
         (is (some? result-2))
         (is (some? result-3))))))
 
 (deftest test-after-read
-  (let [user (-> user-1 changeset/create q/save!)
-        token (-> token-1 (assoc :token/user-id (:user/id user)) changeset/create q/save!)]
+  (let [account (-> account-1 changeset/create q/save!)
+        token (-> token-1 (assoc :token/account-id (:account/id account)) changeset/create q/save!)]
     (testing "reading keywords"
       (let [{:token/keys [type]} (q/find-by! :token/id (:token/id token))]
         (is (= (:token/type token) (:token/type token-1) type))))))
 
 (deftest test-duplicate-key
-  (let [_ (-> user-1 changeset/create q/save!)
-        user-1 (-> user-1 changeset/create q/save!)
-        _ (-> user-3 changeset/create q/save!)
-        user-2 (-> user-3 (assoc :user/email "some@random.email") changeset/create q/save!)]
+  (let [_ (-> account-1 changeset/create q/save!)
+        account-1 (-> account-1 changeset/create q/save!)
+        _ (-> account-3 changeset/create q/save!)
+        account-2 (-> account-3 (assoc :account/email "some@random.email") changeset/create q/save!)]
     (testing "uniqueness of email"
-      (is (= [:duplicate-key] (-> user-1 :changeset/errors :user/email))))
+      (is (= [:duplicate-key] (-> account-1 :changeset/errors :account/email))))
 
     (testing "custom error message for duplicate-key"
-      (is (= ["username taken"] (-> user-2 :changeset/errors :user/username))))))
+      (is (= ["accountname taken"] (-> account-2 :changeset/errors :account/accountname))))))
 
 (deftest test-custom-where-clause
-  (let [user-1 (-> user-1 changeset/create q/save!)
-        post-1 (-> post-1 (assoc :post/user-id (:user/id user-1)) changeset/create q/save!)
-        post-2 (-> post-2 (assoc :post/user-id (:user/id user-1)) changeset/create q/save!)
-        comment-3 (-> comment-3 (assoc :comment/user-id (:user/id user-1)
+  (let [account-1 (-> account-1 changeset/create q/save!)
+        post-1 (-> post-1 (assoc :post/account-id (:account/id account-1)) changeset/create q/save!)
+        post-2 (-> post-2 (assoc :post/account-id (:account/id account-1)) changeset/create q/save!)
+        comment-3 (-> comment-3 (assoc :comment/account-id (:account/id account-1)
                                        :comment/post-id (:post/id post-1))
                       changeset/create
                       q/save!)
-        comment-4 (-> comment-4 (assoc :comment/user-id (:user/id user-1)
-                                       :comment/post-id (:post/id post-2))
+        comment-4 (-> comment-4
+                      (assoc :comment/account-id (:account/id account-1)
+                             :comment/post-id (:post/id post-2))
                       changeset/create
                       q/save!)]
+
 
     (testing "all! with custom where clause"
       (is (= [(:comment/id comment-3)]
@@ -412,13 +414,17 @@
 
     (testing "all! with custom where clause and nested conditionals"
       (is (= [(:comment/id comment-3)]
-             (-> (q/where [:<> :comment/content (:comment/content comment-4) "random"])
+             (-> (q/where [:and
+                           [:<> :comment/content (:comment/content comment-4)]
+                           [:<> :comment/content "random"]])
                  (q/all! :comment)
                  (->> (mapv :comment/id))))))
 
     (testing "all! with custom where clause and nested conditionals equality"
       (is (= []
-             (-> (q/where [:= :comment/content (:comment/content comment-4) "random"])
+             (-> (q/where [:and
+                           [:= :comment/content (:comment/content comment-4)]
+                           [:= :comment/content  "random"]])
                  (q/all! :comment)
                  (->> (mapv :comment/id))))))
 
@@ -451,9 +457,9 @@
                  (set)))))))
 
 (deftest test-only-honeysql-map
-  (let [user-1 (-> user-1 changeset/create q/save!)
-        post-1 (-> post-1 (assoc :post/user-id (:user/id user-1)) changeset/create q/save!)
-        post-2 (-> post-2 (assoc :post/user-id (:user/id user-1)) changeset/create q/save!)]
+  (let [account-1 (-> account-1 changeset/create q/save!)
+        post-1 (-> post-1 (assoc :post/account-id (:account/id account-1)) changeset/create q/save!)
+        post-2 (-> post-2 (assoc :post/account-id (:account/id account-1)) changeset/create q/save!)]
 
     (testing "using find! with only a HoneySQL map"
       (is (= (:post/id post-1)
@@ -472,29 +478,29 @@
                  (set)))))))
 
 (deftest test-load!
-  (let [user-1 (-> user-1 changeset/create q/save!)
-        post-1 (-> post-1 (assoc :post/user-id (:user/id user-1)) changeset/create q/save!)
-        post-2 (-> post-2 (assoc :post/user-id (:user/id user-1)) changeset/create q/save!)
-        comment-1 (-> comment-1 (assoc :comment/user-id (:user/id user-1)
+  (let [account-1 (-> account-1 changeset/create q/save!)
+        post-1 (-> post-1 (assoc :post/account-id (:account/id account-1)) changeset/create q/save!)
+        post-2 (-> post-2 (assoc :post/account-id (:account/id account-1)) changeset/create q/save!)
+        comment-1 (-> comment-1 (assoc :comment/account-id (:account/id account-1)
                                        :comment/post-id (:post/id post-1))
                       changeset/create
                       q/save!)]
-    (testing "load! should deref a user's posts"
+    (testing "load! should deref a account's posts"
       (is (= #{(:post/id post-1)
                (:post/id post-2)}
-             (-> (q/find! :user (:user/id user-1))
-                 (q/load! :user/posts)
-                 :user/posts
+             (-> (q/find! :account (:account/id account-1))
+                 (q/load! :account/posts)
+                 :account/posts
                  (->> (mapv :post/id))
                  (set)))))
 
-    (testing "load! should deref a user's posts and comments"
+    (testing "load! should deref a account's posts and comments"
       (is (= #{(:post/id post-1)
                (:post/id post-2)
                (:comment/id comment-1)}
-             (-> (q/find! :user (:user/id user-1))
-                 (q/load! :user/posts :user/comments)
-                 ((juxt :user/posts :user/comments))
+             (-> (q/find! :account (:account/id account-1))
+                 (q/load! :account/posts :account/comments)
+                 ((juxt :account/posts :account/comments))
                  (flatten)
                  (->> (mapv #(or (:post/id %)
                                  (:comment/id %))))
@@ -515,10 +521,10 @@
       (is (seq (q/all! :product))))))
 
 (deftest test-with-registry
-  (let [{user-id :user/id} (-> user-1 changeset/create q/save!)
+  (let [{account-id :account/id} (-> account-1 changeset/create q/save!)
         {:snippet/keys [id] :as s}
         (-> {:snippet/content "code"
-             :snippet/user-id user-id}
+             :snippet/account-id account-id}
             changeset/create
             q/save!)]
     (testing "querying snippet with registry"
@@ -532,3 +538,20 @@
       (is (some? (q/find-by! :snippet/id id)))
       (is (seq (q/all! :snippet/id id)))
       (is (seq (q/all! :snippet))))))
+
+
+(comment
+
+  (def account-1 (-> account-1 changeset/create q/save!))
+  (def post-1 (-> post-1 (assoc :post/account-id (:account/id account-1)) changeset/create q/save!))
+  (def post-2 (-> post-2 (assoc :post/account-id (:account/id account-1)) changeset/create q/save!))
+  (def comment-3 (-> comment-3 (assoc :comment/account-id (:account/id account-1)
+                                      :comment/post-id (:post/id post-1))
+                     changeset/create
+                     q/save!))
+  (def comment-4 (-> comment-4
+                     (assoc :comment/account-id (:account/id account-1)
+                            :comment/post-id (:post/id post-2))
+                     changeset/create
+                     q/save!))
+  )

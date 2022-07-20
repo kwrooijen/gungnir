@@ -13,9 +13,8 @@
    [gungnir.model]
    [gungnir.record]
    [hikari-cp.core :as hikari-cp]
-   [honeysql.core :as sql]
-   [honeysql.helpers :as q]
-   [honeysql.types]
+   [honey.sql :as sql]
+   [honey.sql.helpers :as q]
    [malli.core :as m]
    [next.jdbc :as jdbc]
    [next.jdbc.date-time]
@@ -150,9 +149,7 @@ using either using the `gungnir.database/set-datasource!` or
   ([m] (honey->sql m {}))
   ([m opts]
    (sql/format
-    (walk/postwalk transform-model-alias m)
-    :namespace-as-table? (:namespace-as-table? opts true)
-    :quoting :ansi)))
+    (walk/postwalk transform-model-alias m))))
 
 (defmulti exception->map
   (fn [_changeset ^SQLException e]
@@ -239,7 +236,7 @@ using either using the `gungnir.database/set-datasource!` or
     (str value)
 
     (vector? value)
-    (honeysql.types/array (mapv (partial parse-insert-value k) value))
+    (mapv (partial parse-insert-value k) value)
 
     :else
     value))
@@ -314,7 +311,7 @@ using either using the `gungnir.database/set-datasource!` or
      :else
      (let [primary-key (gungnir.model/primary-key model)]
        (-> (q/update (gungnir.model/table model))
-           (q/sset (record->insert-values diff))
+           (q/set (record->insert-values diff))
            (q/where [:= primary-key (get transformed-origin primary-key)])
            (execute-one! changeset datasource {:namespace-as-table? false}))))))
 

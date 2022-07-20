@@ -4,25 +4,21 @@
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [clojure.string :as string]
+   [gungnir.query :as q]
    [gungnir.database :refer [*datasource*]]
-   [gungnir.extension.honeysql-postgres
-    :refer
-    [add-column* create-extension drop-column* drop-extension]]
-   [honeysql-postgres.helpers :as psqlh]
-   [honeysql.core :as sql]
-   [honeysql.format :as sqlf]
+   [honey.sql :as sql]
    ragtime.core
    ragtime.jdbc
    ragtime.reporter
    ragtime.strategy))
 
-(defn special-format [expr]
-  (-> expr
-      (sql/format :namespace-as-table? true
-                  :quoting :ansi
-                  :allow-dashed-names? sqlf/*allow-dashed-names?*)
-      (update 0 #(string/replace % "?" "%s"))
-      (->> (apply format))))
+(defn special-format
+  ([expr] (special-format expr {}))
+  ([expr opts]
+   (-> expr
+       (sql/format (merge {:quoted-snake true} opts))
+       (update 0 #(string/replace % "?" "%s"))
+       (->> (apply format)))))
 
 (defn- primary-key? [field]
   (get-in field [1 1 :primary-key] false))
@@ -60,7 +56,7 @@
     (cons [:column/add [:id {:primary-key true} :bigserial]] field)))
 
 (defn- add-column [acc expr]
-  (apply add-column* acc (remove nil? expr)))
+  (apply q/add-column acc (remove nil? expr)))
 
 (defn- add-create-column [acc expr]
   (conj acc (remove nil? expr)))
@@ -110,7 +106,7 @@
   [column :uuid
    (when-let [default (:default opts)]
      (if (true? default)
-       (sql/call :default "uuid_generate_v4()")
+       (sql/call :default [:raw "uuid_generate_v4()"])
        (sql/call :default default)))
    (pk-caller opts)
    (unique-caller opts)
@@ -130,7 +126,7 @@
             (sql/call :varchar size)
             :text)
    (when-let [default (:default opts)]
-     (sql/call :default (format "'%s'" (string/escape default {\' "\\'"}))))
+     (sql/call :default (format "%s" (string/escape default {\' "\\'"}))))
    (pk-caller opts)
    (unique-caller opts)
    (references-caller opts)
@@ -145,7 +141,7 @@
   (add-column acc (column-string column opts)))
 
 (defn- column-integer [column opts]
-  [column "integer"
+  [column :integer
    (default-caller opts)
    (pk-caller opts)
    (unique-caller opts)
@@ -193,8 +189,8 @@
   (add-column acc (column-boolean column opts)))
 
 (defn- column-timestamp [column opts]
-  (let [defaults {:current-timestamp "CURRENT_TIMESTAMP"}]
-    [column "TIMESTAMP"
+  (let [defaults {:current-timestamp :CURRENT_TIMESTAMP}]
+    [column :TIMESTAMP
      (when-let [default (:default opts)]
        (sql/call :default (get defaults default default)))
      (pk-caller opts)
@@ -211,8 +207,8 @@
   (add-column acc (column-timestamp column opts)))
 
 (defn- column-gungnir-timestamps []
-  [[:created_at "TIMESTAMP" (sql/call :default "CURRENT_TIMESTAMP") (sql/call :not nil)]
-   [:updated_at "TIMESTAMP" (sql/call :default "CURRENT_TIMESTAMP") (sql/call :not nil)]])
+  [[:created_at :TIMESTAMP (sql/call :default :CURRENT_TIMESTAMP) (sql/call :not nil)]
+   [:updated_at :TIMESTAMP (sql/call :default :CURRENT_TIMESTAMP) (sql/call :not nil)]])
 
 (defmethod process-table-column-child [:table/create :column/add :gungnir/timestamps]
   [_ acc _]
@@ -239,38 +235,35 @@
                    (process-table-column-child [:table/alter :column/drop] cols x)
                    (conj cols (flatten [x]))))
                [])
-       (reduce drop-column* acc)))
+       (reduce q/drop-column acc)))
 
 (defmethod format-action :table/create [[_ {:keys [table if-not-exists primary-key]} & fields]]
   (assert table ":table is required for `:table/create`")
   (let [columns (reduce (partial process-table-column :table/create) []
                         (add-default-pk primary-key fields))]
-    (-> (psqlh/create-table table :if-not-exists if-not-exists)
-        (psqlh/with-columns columns)
+    (-> (if if-not-exists
+          (q/create-table (name table) :if-not-exists)
+          (q/create-table table))
+        (q/with-columns columns)
         (special-format))))
 
 (defmethod format-action :table/alter [[_ {:keys [table]} & fields]]
   (-> (reduce (partial process-table-column :table/alter)
-              (psqlh/alter-table table)
+              (q/alter-table (name table))
               fields)
       (special-format)))
 
-(defmethod format-action :table/drop [[_ _opts & tables]]
-  (->> (flatten tables)
-       (apply psqlh/drop-table)
-       (special-format)))
+(defmethod format-action :table/drop [[_ _opts table]]
+  (format "DROP TABLE %s" (name table)))
 
 (defmethod format-action :extension/create [[_ {:keys [if-not-exists]} extension]]
-  (binding [sqlf/*allow-dashed-names?* true]
-    (-> extension
-        (create-extension :if-not-exists if-not-exists)
-        (special-format))))
+  (-> (if if-not-exists
+        (q/create-extension (name extension) :if-not-exists)
+        (q/create-extension (name extension)))
+      (special-format {:quoted-snake false})))
 
 (defmethod format-action :extension/drop [[_ _ extension]]
-  (binding [sqlf/*allow-dashed-names?* true]
-    (-> extension
-        (drop-extension)
-        (special-format))))
+  (format "DROP EXTENSION \"%s\"" (name extension)))
 
 (defn- raw-action? [action]
   (string? action))

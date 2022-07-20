@@ -3,7 +3,7 @@ version: "2"
 services:
   db:
     container_name: gungnir-test
-    image: postgres:9.4.8
+    image: postgres:14.4-alpine
     environment:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_USER=postgres
@@ -14,7 +14,7 @@ services:
 
   db2:
     container_name: gungnir-test-2
-    image: postgres:9.4.8
+    image: postgres:14.4-alpine
     environment:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_USER=postgres

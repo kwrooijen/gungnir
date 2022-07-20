@@ -3,15 +3,14 @@
   :url "https://github.com/kwrooijen/gungnir"
   :license {:name "MIT"}
   :source-paths ["src/clj" "src/cljc"]
-  :dependencies [[seancorfield/next.jdbc "1.1.613"]
+  :dependencies [[com.github.seancorfield/next.jdbc "1.2.780"]
                  [org.postgresql/postgresql "42.2.18"]
-                 [honeysql "1.0.444"]
+                 [com.github.seancorfield/honeysql "2.2.891"]
                  [metosin/malli "0.2.1"]
                  [differ "0.3.3"]
                  [hikari-cp "2.13.0"]
                  [kwrooijen/clj-database-url "0.0.1"]
                  [org.clojure/tools.logging "1.1.0"]
-                 [nilenso/honeysql-postgres "0.2.6"]
                  [ragtime "0.8.0"]]
   :plugins [[lein-cloverage "1.2.1"]
             [lein-codox "0.10.7"]
