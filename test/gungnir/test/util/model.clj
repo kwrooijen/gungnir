@@ -11,7 +11,7 @@
    [:account/id {:primary-key true} uuid?]
    [:account/accountname {:optional true} [:maybe string?]]
    [:account/email {:before-save [:string/lower-case]
-                 :before-read [:string/lower-case]}
+                    :before-read [:string/lower-case]}
     [:re {:error/message "Invalid email"} #".+@.+\..+"]]
    [:account/password [:string {:min 6}]]
    [:account/password-confirmation {:virtual true} [:string {:min 6}]]
