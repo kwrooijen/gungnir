@@ -1,5 +1,5 @@
 (ns gungnir.query
-  (:refer-clojure :exclude [update find])
+  (:refer-clojure :exclude [update find set into group-by partition-by for filter])
   (:require
    [clojure.spec.alpha :as s]
    [clojure.string :as string]
@@ -52,11 +52,11 @@
     [{} (args->map (conj args form))]))
 
 (defn- args->where [model args]
-  (into [:and] (mapv (fn [[k v]]
-                       (if (keyword? v)
-                         [:= k (str v)]
-                         [:= k v]))
-                     (gungnir.decode/advanced-decode model args))))
+  (clojure.core/into [:and] (mapv (fn [[k v]]
+                                    (if (keyword? v)
+                                      [:= k (str v)]
+                                      [:= k v]))
+                                  (gungnir.decode/advanced-decode model args))))
 
 (defn load!
   "Load the relations `field-keys` of `record`, but retain the structure."
@@ -333,12 +333,19 @@
   (gungnir.database/query-1!
    (apply find args)))
 
-;; HoneySQL Overrides
-;; TODO override q/where with custom before-read method
+;; Inherit HoneySQL helper functions
 
-(defmacro alias-honey-sql-functions []
+(defmacro alias-honey-sql-functions! []
   `(do
-     ~@(for [[n# f#] (ns-publics (the-ns 'honey.sql.helpers))]
-         `(def ~n# ~f#))))
+     ~@(clojure.core/for [[n# f#] (ns-publics (the-ns 'honey.sql.helpers))]
+         `(def ~n# ~f#))
+     nil))
 
-(alias-honey-sql-functions)
+(defmacro inherit-honey-sql-meta! []
+  `(do
+     ~@(clojure.core/for [[n# f#] (ns-publics (the-ns 'honey.sql.helpers))]
+         `(alter-meta! ~(resolve n#) (fn [x#] (merge x# (meta ~f#)))))
+     nil))
+
+(alias-honey-sql-functions!)
+(inherit-honey-sql-meta!)
