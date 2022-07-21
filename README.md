@@ -26,43 +26,43 @@ A fully featured, data-driven database library for Clojure.
    :server-name   "localhost"
    :port-number   5432})
 
-(def user-model
+(def account-model
   [:map
-   [:user/id {:primary-key true} uuid?]
-   [:user/email {:before-save [:string/lower-case]
+   [:account/id {:primary-key true} uuid?]
+   [:account/email {:before-save [:string/lower-case]
                  :before-read [:string/lower-case]}
     [:re {:error/message "Invalid email"} #".+@.+\..+"]]
-   [:user/password {:before-save [:bcrypt]} [:string {:min 6}]]
-   [:user/password-confirmation {:virtual true} [:string {:min 6}]]
-   [:user/created-at {:auto true} inst?]
-   [:user/updated-at {:auto true} inst?]])
+   [:account/password {:before-save [:bcrypt]} [:string {:min 6}]]
+   [:account/password-confirmation {:virtual true} [:string {:min 6}]]
+   [:account/created-at {:auto true} inst?]
+   [:account/updated-at {:auto true} inst?]])
 
 (gungnir.model/register!
- {:user user-model})
+ {:account account-model})
 
 (defn password-match? [m]
-  (= (:user/password m)
-     (:user/password-confirmation m)))
+  (= (:account/password m)
+     (:account/password-confirmation m)))
 
-(defmethod gungnir.model/validator :user/password-match? [_]
-  {:validator/key :user/password-confirmation
+(defmethod gungnir.model/validator :account/password-match? [_]
+  {:validator/key :account/password-confirmation
    :validator/fn password-match?
    :validator/message "Passwords don't match"})
 
 (defmethod gungnir.model/before-save :bcrypt [_k v]
   (buddy.hashers/derive v))
 
-(defn attempt-register-user [request]
+(defn attempt-register-account [request]
   (-> (:form-params request)
-      (gungnir.changeset/cast :user)
-      (gungnir.changeset/create [:user/password-match?])
+      (gungnir.changeset/cast :account)
+      (gungnir.changeset/create [:account/password-match?])
       (gungnir.query/save!)))
 
 (comment
-  (gungnir.query/find-by! :user/email "some@email.com") ;; => {:user/email "some@email.com",,,}
+  (gungnir.query/find-by! :account/email "some@email.com") ;; => {:account/email "some@email.com",,,}
   (-> (gungnir.query/limit 5)
-      (gungnir.query/select :user/id :user/email)
-      (gungnir.query/all! :user)) ;; => [{:user/email "..." :user/id "..."},,,]
+      (gungnir.query/select :account/id :account/email)
+      (gungnir.query/all! :account)) ;; => [{:account/email "..." :account/id "..."},,,]
   )
 ```
 
