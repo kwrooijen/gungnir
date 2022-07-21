@@ -7,10 +7,45 @@
    [gungnir.query :as q]
    [gungnir.database :refer [*datasource*]]
    [honey.sql :as sql]
+   [honey.sql.helpers]
    ragtime.core
    ragtime.jdbc
    ragtime.reporter
    ragtime.strategy))
+
+(sql/register-clause!
+ :add-column*
+ (fn [_ columns]
+   (def columns columns)
+   (let [formatted-columns
+         (->> columns
+              (map sql/format-expr-list)
+              (map #(update % 0 (partial into ["ADD COLUMN"]))))]
+     (into [(->> formatted-columns
+                 (map (comp #(string/join " " %) first))
+                 (string/join ", "))]
+           (->> formatted-columns
+                (map second)
+                flatten vec))))
+
+ nil)
+
+(sql/register-clause!
+ :drop-column*
+ (fn [_ columns]
+   [(->> columns
+         (flatten)
+         (map #(str "DROP COLUMN " (sql/format-entity %)))
+         (string/join ", "))])
+ nil)
+
+(defn add-column*
+  [& col-elems]
+  (#'honey.sql.helpers/generic :add-column* col-elems))
+
+(defn drop-column*
+  [& col-elems]
+  (#'honey.sql.helpers/generic :drop-column* col-elems))
 
 (defn special-format
   ([expr] (special-format expr {}))
@@ -56,7 +91,7 @@
     (cons [:column/add [:id {:primary-key true} :bigserial]] field)))
 
 (defn- add-column [acc expr]
-  (apply q/add-column acc (remove nil? expr)))
+  (add-column* acc (remove nil? expr)))
 
 (defn- add-create-column [acc expr]
   (conj acc (remove nil? expr)))
@@ -74,7 +109,7 @@
 (defmulti format-action first)
 
 (defn- column-serial [column opts]
-  [column "SERIAL"
+  [column :SERIAL
    (pk-caller opts)
    (references-caller opts)
    (optional-caller opts)])
@@ -88,7 +123,7 @@
   (add-column acc (column-serial column opts)))
 
 (defn- column-bigserial [column opts]
-  [column "BIGSERIAL"
+  [column :BIGSERIAL
    (pk-caller opts)
    (unique-caller opts)
    (references-caller opts)
@@ -173,7 +208,7 @@
   (add-column acc (column-float column opts)))
 
 (defn- column-boolean [column opts]
-  [column "boolean"
+  [column :boolean
    (default-caller opts)
    (pk-caller opts)
    (unique-caller opts)
@@ -235,7 +270,7 @@
                    (process-table-column-child [:table/alter :column/drop] cols x)
                    (conj cols (flatten [x]))))
                [])
-       (reduce q/drop-column acc)))
+       (drop-column* acc)))
 
 (defmethod format-action :table/create [[_ {:keys [table if-not-exists primary-key]} & fields]]
   (assert table ":table is required for `:table/create`")
@@ -254,7 +289,7 @@
       (special-format)))
 
 (defmethod format-action :table/drop [[_ _opts table]]
-  (format "DROP TABLE %s" (name table)))
+  (special-format (q/drop-table table)))
 
 (defmethod format-action :extension/create [[_ {:keys [if-not-exists]} extension]]
   (-> (if if-not-exists
