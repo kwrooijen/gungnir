@@ -17,7 +17,7 @@ database.
 Changesets are namespaced maps with the `:changeset` namespace. They hold the
 following information.
 
-* `:changeset/model` - The model that is being changed, e.g. `:user`
+* `:changeset/model` - The model that is being changed, e.g. `:account`
 
 * `:changeset/validators` - A vector of extra
   [validators](https://kwrooijen.github.io/gungnir/model.html#model-validators)
@@ -76,31 +76,31 @@ gungnir.changeset/create
 ## Creating a changeset
 
 Creating a changeset is easy. Simply run the `gungnir.changeset/create`
-function, assuming we have a user
+function, assuming we have a account
 [model](https://kwrooijen.github.io/gungnir/model.html).
 
 ```clojure
-;; New user
+;; New account
 
-(gungnir.changeset/create {:user/email "user@test.com", :user/password "123456"})
-;; => {:changeset/model :user
-;; =>  :changeset/params {:user/email "user@test.com", :user/password "123456"}
+(gungnir.changeset/create {:account/email "account@test.com", :account/password "123456"})
+;; => {:changeset/model :account
+;; =>  :changeset/params {:account/email "account@test.com", :account/password "123456"}
 ;; =>  :changeset/errors nil
 ;; =>  ,,,}
 
-;; Updating email of existing user
+;; Updating email of existing account
 
-(gungnir.changeset/create existing-user {:user/email "user@test.com"})
-;; => {:changeset/diff {:user/email "user@test.com"}
+(gungnir.changeset/create existing-account {:account/email "account@test.com"})
+;; => {:changeset/diff {:account/email "account@test.com"}
 ;; =>  ,,,}
 
-;; Updating password of an existing user with extra validators
+;; Updating password of an existing account with extra validators
 
-(gungnir.changeset/create existing-user 
-                          {:user/password "123456",
-                           :user/password-confirmation "12345"}
-                          [:user/password-match?])
-;; => {:changeset/errors {:user/password-confirmation ["Passwords don't match"]}
+(gungnir.changeset/create existing-account 
+                          {:account/password "123456",
+                           :account/password-confirmation "12345"}
+                          [:account/password-match?])
+;; => {:changeset/errors {:account/password-confirmation ["Passwords don't match"]}
 ;; =>  ,,,}
 ```
 
@@ -111,14 +111,14 @@ likely not be represented as namespaced maps. In order to convert data to the
 proper model maps you can use the `gungnir.changeset/cast` function.
 
 ```clojure
-(-> {"email" "user@test.com"
+(-> {"email" "account@test.com"
      "password" "123456"
      "password_confirmation" "12345"
      "random_field" "this isn't a field defined in the model"}
-    (gungnir.changeset/cast :user))
-;; => {:user/email "user@test.com"
-;; =>  :user/password "123456"
-;; =>  :user/password-confirmation "12345"}
+    (gungnir.changeset/cast :account))
+;; => {:account/email "account@test.com"
+;; =>  :account/password "123456"
+;; =>  :account/password-confirmation "12345"}
 ```
 
 Using this function you'll be able to filter out any unnecessary fields based on
@@ -143,14 +143,14 @@ errors supplied to the `:changeset/errors` key.
 Here's a real-world example on how this might look like using a Ring handler.
 
 ```clojure
-(defn attempt-register-user [request]
+(defn attempt-register-account [request]
   (-> (:form-params request)
-      (gungnir.changeset/cast :user)
-      (gungnir.changeset/create [:user/password-match?])
+      (gungnir.changeset/cast :account)
+      (gungnir.changeset/create [:account/password-match?])
       (gungnir.query/save!)))
 
-(defn handler-user-registration [request]
-  (if-let [errors (:errors (attempt-register-user request))]
+(defn handler-account-registration [request]
+  (if-let [errors (:errors (attempt-register-account request))]
     (-> (ring/redirect "/register")
         (assoc-in [:flash :errors] errors))
     (-> (ring/redirect "/")

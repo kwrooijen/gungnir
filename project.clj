@@ -13,7 +13,7 @@
                  [org.clojure/tools.logging "1.1.0"]
                  [ragtime "0.8.0"]]
   :plugins [[lein-cloverage "1.2.1"]
-            [lein-codox "0.10.7"]
+            [lein-codox "0.10.8"]
             [lein-ancient "0.6.15"]]
 
   :repositories [["public-github" {:url "git://github.com"}]

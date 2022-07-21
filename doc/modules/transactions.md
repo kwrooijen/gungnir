@@ -15,8 +15,8 @@ exception it won't be caught, so you'll have to catch it yourself.
 ```clojure
 (gungnir.transaction/execute!
  (fn []
-   (q/save! (changeset/create {:user/name "foo"}))
-   (q/save! (changeset/create {:user/name "bar"}))))
+   (q/save! (changeset/create {:account/name "foo"}))
+   (q/save! (changeset/create {:account/name "bar"}))))
 
 (gungnir.transaction/execute!
  (fn [] ,,,)

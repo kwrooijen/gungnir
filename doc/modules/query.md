@@ -20,17 +20,17 @@ Run a query and return a single record or nil, based on matching keys and
 values.
 
 ```clojure
-(find-by! :user/email "user@test.com"
-          :user/validated true)
+(find-by! :account/email "account@test.com"
+          :account/validated true)
 ```
 
 Optionally extend the queries using HoneySQL. `gungnir.query` aliases the
 HoneySQL helper functions, so you don't have to require that separately.
 
 ```clojure
-(-> (select :user/username)
-    (find-by! :user/email "user@test.com"
-              :user/validated true))
+(-> (select :account/accountname)
+    (find-by! :account/email "account@test.com"
+              :account/validated true))
 ```
 
 ## gungnir.query/find!
@@ -49,8 +49,8 @@ nil. Will not find a record by it's primary-key.
 
 ```clojure
 (-> (select :*)
-    (from :user)
-    (where [:= :user/id user-id])
+    (from :account)
+    (where [:= :account/id account-id])
     (find!))
 ```
 
@@ -64,7 +64,7 @@ Find a record by it's primary-key from the table represented by the
 `primary-key-value` - The value of the primary key to match with.
 
 ```clojure
-(find! :user user-id)
+(find! :account account-id)
 ```
 
 ### Arity 3
@@ -82,9 +82,9 @@ Find a single record by its `primary-key-value` from `table`.
 Optionally extend the query using a HoneySQL `form`."
 
 ```clojure
-(-> (select :user/email)
-    (where [:= :user/active false])
-    (find! :user user-id))
+(-> (select :account/email)
+    (where [:= :account/active false])
+    (find! :account account-id))
 ```
 
 ---
@@ -103,10 +103,10 @@ will return all rows of that table. Or it a `HoneySQL` form query
 the database using that.
 
 ```clojure
-(all! :user)
+(all! :account)
 
 (-> (select :*)
-    (from :user)
+    (from :account)
     (all!))
 ```
 
@@ -121,12 +121,12 @@ matched with the values. If no key value pairs are provided then you
 must supply a model name as a `simple-keyword`.
 
 ```clojure
-(all! :user/validated false
-      :user/type :user/pro)
+(all! :account/validated false
+      :account/type :account/pro)
 
-(-> (where [:> :user/date expiration-date])
+(-> (where [:> :account/date expiration-date])
     (limit 30)
-    (all! :user))
+    (all! :account))
 ```
 
 ---
@@ -146,34 +146,34 @@ modify the query this atom will execute beforehand by using `swap!` and any
 
 ### Relation atom - deref
 
-A very simple example would be to find a user by their email. If in the `:user` model
+A very simple example would be to find a account by their email. If in the `:account` model
 has a `has-many` posts definition:
 
 ```clojure
-{:has-many {:user/posts {model :post :foreign-key :post/user-id}}}
+{:has-many {:account/posts {model :post :foreign-key :post/account-id}}}
 
 ;; NOTE: If no `:foreign-key` is provided, Gungnir will fill it in. As long as
 ;; the column has the form `{model}-id` it will work. When the column name is
-;; not the same as the model name (e.g. `author-id` for the user model) you'll
+;; not the same as the model name (e.g. `author-id` for the account model) you'll
 ;; have to specify it yourself.
 
-{:has-many {:user/posts {model :post}}}
+{:has-many {:account/posts {model :post}}}
 ```
 
-You'll be able to query a user's posts:
+You'll be able to query a account's posts:
 
 ```clojure
-(-> (q/find-by! :user/email "user@test.com")
-    :user/posts
-    (deref)) ;; Query all posts belong to the user "user@test.com"
+(-> (q/find-by! :account/email "account@test.com")
+    :account/posts
+    (deref)) ;; Query all posts belong to the account "account@test.com"
 ```
 
 If posts also have many comments, you can deref those relations as well simply
 by following the path.
 
 ```clojure
-(-> (q/find-by! :user/email "user@test.com")
-    :user/posts
+(-> (q/find-by! :account/email "account@test.com")
+    :account/posts
     (deref)
     (first)
     :post/comments
@@ -184,22 +184,22 @@ Relations are a two way street, technically speaking you could go back to the
 origin record using `deref`.
 
 ```clojure
-(-> (q/find-by! :user/email "user@test.com")
-    :user/posts
+(-> (q/find-by! :account/email "account@test.com")
+    :account/posts
     (deref)
     (first)
-    :post/user
-    (deref)) ;; Back to the origin user record
+    :post/account
+    (deref)) ;; Back to the origin account record
 ```
 
 ### Relation atom - swap!
 
-If we don't want all the user's posts, but only their top five, you can modify
+If we don't want all the account's posts, but only their top five, you can modify
 the atom with `swap!` before executing `deref`.
 
 ```clojure
-(-> (q/find-by! :user/email "user@test.com")
-    :user/posts
+(-> (q/find-by! :account/email "account@test.com")
+    :account/posts
     (swap! q/limit 5)
     (swap! q/order-by [:post/score :desc])
     (deref))
@@ -212,29 +212,29 @@ function. This allows you to deref relations in a record without having to
 remove them from the record itself.
 
 ```clojure
-(-> (q/find-by! :user/email "user@test.com")
-    (q/load! :user/posts :user/comments))
+(-> (q/find-by! :account/email "account@test.com")
+    (q/load! :account/posts :account/comments))
 
-;; => #:user{:id #uuid ",,,"
-;; =>        :posts [#:post{,,,}
-;; =>                ,,,]
-;; =>        :comments [#:comment{,,,}
-;; =>                   ,,,]}
+;; => #:account{:id #uuid ",,,"
+;; =>           :posts [#:post{,,,}
+;; =>                   ,,,]
+;; =>           :comments [#:comment{,,,}
+;; =>                      ,,,]}
 ```
 
 Combined with this you can use the `update` core function to modify the atoms
 before loading.
 
 ```clojure
-(-> (q/find-by! :user/email "user@test.com")
-    (update :user/posts q/limit 1)
-    (update :user/comment q/limit 1)
-    (q/load! :user/posts :user/comments))
+(-> (q/find-by! :account/email "account@test.com")
+    (update :account/posts q/limit 1)
+    (update :account/comment q/limit 1)
+    (q/load! :account/posts :account/comments))
 
 ;; Notice only 1 element in the vectors
-;; => #:user{:id #uuid ",,,"
-;; =>        :posts [#:post{,,,}]
-;; =>        :comments [#:comment{,,,}]
+;; => #:account{:id #uuid ",,,"
+;; =>           :posts [#:post{,,,}]
+;; =>           :comments [#:comment{,,,}]
 ```
 
 ---
