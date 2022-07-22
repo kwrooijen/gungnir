@@ -16,10 +16,6 @@ jobs:
 
       - name: Use oxr463/setup-leiningen
         uses: oxr463/setup-leiningen@0.0.1
-        with:
-          exec: |
-            lein uberjar && \
-            cp "$(find . -name '*.jar')" .
 
       - name: Setup Test Database
         run: docker-compose up -d
