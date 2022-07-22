@@ -1,4 +1,4 @@
-(defproject kwrooijen/gungnir "0.0.1-SNAPSHOT"
+(defproject kwrooijen/gungnir "0.0.2-SNAPSHOT"
   :description "A fully featured, data-driven database library for Clojure."
   :url "https://github.com/kwrooijen/gungnir"
   :license {:name "MIT"}
