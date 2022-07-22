@@ -231,9 +231,6 @@ using either using the `gungnir.database/set-datasource!` or
     {model-field-key (gungnir.model/format-error model-field-key :missing-foreign-key)}))
 
 (defmethod exception->map :default [_changeset ^SQLException e]
-  (println (str "Unhandled SQL execption "
-                 (.getSQLState e) "\n "
-                 (.getMessage e)))
   (log/warn (str "Unhandled SQL execption "
                  (.getSQLState e) "\n "
                  (.getMessage e)))
