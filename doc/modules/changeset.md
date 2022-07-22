@@ -133,7 +133,9 @@ insert or update the record depending if a `primary-key` is available. Gungnir
 knows which field is the primary-key because it is defined in the model. If you
 attempt to save the changeset when the `:changeset/errors` key is not `nil`, the
 `gungnir.query/save!` function will have **no** side effects and return the
-changeset as is.
+changeset as is. You can also use `gungnir.query/insert!` or
+`gungnir.query/update!` directly instead of relying on the logic of
+`gungnir.query/save!`.
 
 If there are no errors, Gungnir will attempt to insert / update the record in
 question. Applying this change however can also result in errors (e.g. `UNIQUE
