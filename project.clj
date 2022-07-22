@@ -33,7 +33,7 @@
           :html {:namespace-list :nested}
           :metadata {:doc/format :markdown}
           :themes [:rdash]}
-  :profiles {:dev {:dependencies [[org.clojure/clojure "1.10.1"]
+  :profiles {:dev {:dependencies [[org.clojure/clojure "1.11.1"]
                                   [orchestra "2021.01.01-1"]
                                   [codox-theme-rdash "0.1.2"]]}
              :test {:dependencies [[orchestra "2021.01.01-1"]]}}
