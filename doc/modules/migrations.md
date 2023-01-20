@@ -100,7 +100,7 @@ raw SQL query.
   ;; fields : '([:my/field 1] [:my/field 2] [:my/field 3])
   ;;
   ;; Implement your query
-  "INSERT INTO user ...")
+  "INSERT INTO account ...")
 
 (defmethod format-action :my/migration-reverse [[_key opts & fields]]
   ;; _key   : :my/migration-reverse
@@ -108,7 +108,7 @@ raw SQL query.
   ;; fields : '(1 2 3)
   ;;
   ;; Implement your query
-  "DELETE from users ...")
+  "DELETE from account ...")
 ```
 
 ## Keys
@@ -150,14 +150,14 @@ raw SQL query.
 
 ### Column type options
 
-| key            | description                                                                       |
-|----------------|-----------------------------------------------------------------------------------|
-| `:primary-key` | Makes column primary key                                                          |
-| `:size`        | Sets the size of the value (:string / :float)                                     |
-| `:default`     | Set the default value on creation                                                 |
-| `:optional`    | Make a column optional. By default every column is required                       |
-| `:unique`      | Column should be unique                                                           |
-| `:references`  | Column is a foreign referencing a :table/column (qualified keyword e.g. :user/id) |
+| key            | description                                                                          |
+|----------------|--------------------------------------------------------------------------------------|
+| `:primary-key` | Makes column primary key                                                             |
+| `:size`        | Sets the size of the value (:string / :float)                                        |
+| `:default`     | Set the default value on creation                                                    |
+| `:optional`    | Make a column optional. By default every column is required                          |
+| `:unique`      | Column should be unique                                                              |
+| `:references`  | Column is a foreign referencing a :table/column (qualified keyword e.g. :account/id) |
 
 ## Running migrations
 
@@ -182,7 +182,7 @@ nil
 user=> (migration/migrate! migrations)
 Applying 000-uuid
 Applying 001-auto-updated-at
-Applying 002-user
+Applying 002-account
 ```
 
 You can also rollback migrations one by one using the `gungnir.migration/rollback!`
@@ -191,7 +191,7 @@ function.
 ```clojure
 nil
 user=> (migration/rollback! config)
-Rolling back 002-user
+Rolling back 002-account
 nil
 user=> (migration/rollback! config)
 Rolling back 001-auto-updated-at

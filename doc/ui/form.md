@@ -4,27 +4,27 @@ Gungnir Models and Changesets can be used for form validation. A real world
 example would be to have a user registration form. We can share our models with
 Clojure and Clojurescript.
 
-## User Model + password match validation
+## Account Model + password match validation
 
 A basic model we can use for both frontend validation and before save
 validation.
 
 ```clojure
 (gungnir.model/register!
- {:user
+ {:account
   [:map
-   [:user/id {:primary-key true} uuid?]
-   [:user/email
+   [:account/id {:primary-key true} uuid?]
+   [:account/email
     [:re {:error/message "Invalid email"} #".+@.+\..+"]]
-   [:user/password {:before-save [:bcrypt]} [:string {:min 6}]]
-   [:user/password-confirmation {:virtual true} [:string {:min 6}]]]})
+   [:account/password {:before-save [:bcrypt]} [:string {:min 6}]]
+   [:account/password-confirmation {:virtual true} [:string {:min 6}]]]})
 
 (defn password-match? [m]
-  (= (:user/password m)
-     (:user/password-confirmation m)))
+  (= (:account/password m)
+     (:account/password-confirmation m)))
 
 (defmethod gungnir.model/validator :register/password-match? [_]
-  {:validator/key :user/password-confirmation
+  {:validator/key :account/password-confirmation
    :validator/fn password-match?
    :validator/message "Passwords don't match"})
 ```
@@ -44,16 +44,16 @@ example with no styling. The following points are important in this example:
  {:data-gungnir-form :register}
 
  [:div
-  [:label.gungnir-error {:for :user/email}]
-  [:input {:name :user/email}]]
+  [:label.gungnir-error {:for :account/email}]
+  [:input {:name :account/email}]]
 
  [:div
-  [:label.gungnir-error {:for :user/password}]
-  [:input {:name :user/password}]]
+  [:label.gungnir-error {:for :account/password}]
+  [:input {:name :account/password}]]
 
  [:div
-  [:label.gungnir-error {:for :user/password-confirmation}]
-  [:input {:name :user/password-confirmation}]]]
+  [:label.gungnir-error {:for :account/password-confirmation}]
+  [:input {:name :account/password-confirmation}]]]
 ```
 
 ## Clojurescript validation handler
@@ -67,7 +67,7 @@ messages in the proper labels.
 ```clojure
 (defmethod gungnir.ui.form/handle-validation :register [_ params]
   (-> params
-      (gungnir.changeset/cast :user)
+      (gungnir.changeset/cast :account)
       (gungnir.changeset/create [:register/password-match?])))
 ```
 

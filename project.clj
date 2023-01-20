@@ -1,20 +1,19 @@
-(defproject kwrooijen/gungnir "0.0.1-SNAPSHOT"
+(defproject kwrooijen/gungnir "0.0.2-SNAPSHOT"
   :description "A fully featured, data-driven database library for Clojure."
   :url "https://github.com/kwrooijen/gungnir"
   :license {:name "MIT"}
   :source-paths ["src/clj" "src/cljc"]
-  :dependencies [[seancorfield/next.jdbc "1.1.613"]
-                 [org.postgresql/postgresql "42.2.18"]
-                 [honeysql "1.0.444"]
-                 [metosin/malli "0.2.1"]
+  :dependencies [[com.github.seancorfield/next.jdbc "1.2.780"]
+                 [org.postgresql/postgresql "42.4.0"]
+                 [com.github.seancorfield/honeysql "2.2.891"]
+                 [metosin/malli "0.8.9"]
                  [differ "0.3.3"]
-                 [hikari-cp "2.13.0"]
+                 [hikari-cp "2.14.0"]
                  [kwrooijen/clj-database-url "0.0.1"]
-                 [org.clojure/tools.logging "1.1.0"]
-                 [nilenso/honeysql-postgres "0.2.6"]
-                 [ragtime "0.8.0"]]
+                 [org.clojure/tools.logging "1.2.4"]
+                 [dev.weavejester/ragtime "0.9.2"]]
   :plugins [[lein-cloverage "1.2.1"]
-            [lein-codox "0.10.7"]
+            [lein-codox "0.10.8"]
             [lein-ancient "0.6.15"]]
 
   :repositories [["public-github" {:url "git://github.com"}]
@@ -34,7 +33,7 @@
           :html {:namespace-list :nested}
           :metadata {:doc/format :markdown}
           :themes [:rdash]}
-  :profiles {:dev {:dependencies [[org.clojure/clojure "1.10.1"]
+  :profiles {:dev {:dependencies [[org.clojure/clojure "1.11.1"]
                                   [orchestra "2021.01.01-1"]
                                   [codox-theme-rdash "0.1.2"]]}
              :test {:dependencies [[orchestra "2021.01.01-1"]]}}

@@ -14,19 +14,19 @@
       :down [[:table/drop :account]]}))))
 
 (def migration-create-table-if-not-exists
-  [[:table/create {:table :user :if-not-exists true}
+  [[:table/create {:table :account :if-not-exists true}
     [:column/add [:name :string]]]])
 
 (def migration-auto-uuid
-  [[:table/create {:table :user :primary-key :uuid}
+  [[:table/create {:table :account :primary-key :uuid}
     [:column/add [:name :string]]]])
 
 (def migration-no-primary-key
-  [[:table/create {:table :user :primary-key false}
+  [[:table/create {:table :account :primary-key false}
     [:column/add [:name :string]]]])
 
 (def migration-types
-  [[:table/create {:table :user :primary-key false}
+  [[:table/create {:table :account :primary-key false}
     [:column/add
      [:name :string]
      [:last-name {:optional true} :string]
@@ -40,7 +40,7 @@
      [:created-at {:default :current-timestamp} :timestamp]]]])
 
 (def migration-alter
-  [[:table/alter {:table :user}
+  [[:table/alter {:table :account}
     [:column/add
      [:name :string]
      [:last-name {:optional true} :string]
@@ -52,54 +52,55 @@
      [:created-at {:default :current-timestamp} :timestamp]]]])
 
 (def migration-drop+add
-  [[:table/alter {:table :user}
+  [[:table/alter {:table :account}
     [:column/drop :name :last-name :code]
     [:column/add [:gungnir/timestamps]]]])
 
+
 (def migration-drop-gungnir-timestamps
-  [[:table/alter {:table :user}
+  [[:table/alter {:table :account}
     [:column/drop :gungnir/timestamps]]])
 
 (deftest testing-migrations
   (let [m-exists (up migration-create-table-if-not-exists)
         m-uuid (up migration-auto-uuid)
         m-no-pk (up migration-no-primary-key)]
-    (is (string/includes? m-exists "CREATE TABLE IF NOT EXISTS \"user\""))
-    (is (string/includes? m-exists "\"id\" BIGSERIAL PRIMARY KEY NOT NULL"))
-    (is (string/includes? m-uuid "\"id\" \"uuid\" DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL"))
-    (is (not (string/includes? m-no-pk "\"id\"")))))
+    (is (string/includes? m-exists "CREATE TABLE IF NOT EXISTS \"account\""))
+    (is (string/includes? m-exists "id BIGSERIAL PRIMARY KEY NOT NULL"))
+    (is (string/includes? m-uuid "id UUID DEFAULT UUID_GENERATE_V4() PRIMARY KEY NOT NULL"))
+    (is (not (string/includes? m-no-pk "id ")))))
 
 (deftest testing-migration-types
   (let [m-types (up migration-types)]
-    (is (string/includes? m-types "\"name\" \"text\" NOT NULL,"))
-    (is (string/includes? m-types "\"last_name\" \"text\","))
-    (is (string/includes? m-types "\"code\" varchar(4) DEFAULT 'ABCD' NOT NULL,"))
-    (is (string/includes? m-types "\"s\" SERIAL NOT NULL,"))
-    (is (string/includes? m-types "\"b\" BIGSERIAL NOT NULL,"))
-    (is (string/includes? m-types "\"active\" boolean NOT NULL,"))
-    (is (string/includes? m-types "\"some_float\" float(8) NOT NULL,"))
-    (is (string/includes? m-types "\"some_float_4\" float(4) NOT NULL,"))
-    (is (string/includes? m-types "\"created_at\" TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL"))))
+    (is (string/includes? m-types "name TEXT NOT NULL,"))
+    (is (string/includes? m-types "last_name TEXT"))
+    (is (string/includes? m-types "code VARCHAR(4) DEFAULT 'ABCD' NOT NULL"))
+    (is (string/includes? m-types "s SERIAL NOT NULL"))
+    (is (string/includes? m-types "b BIGSERIAL NOT NULL"))
+    (is (string/includes? m-types "active BOOLEAN NOT NULL"))
+    (is (string/includes? m-types "some_float FLOAT(8) NOT NULL"))
+    (is (string/includes? m-types "some_float_4 FLOAT(4) NOT NULL"))
+    (is (string/includes? m-types "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL"))))
 
 (deftest testing-migration-alter
-  (let [m-types (up migration-alter)  ]
-    (is (string/includes? m-types "\"name\" \"text\" NOT NULL,"))
-    (is (string/includes? m-types "\"last_name\" \"text\","))
-    (is (string/includes? m-types "\"code\" varchar(4) DEFAULT 'ABCD' NOT NULL,"))
-    (is (string/includes? m-types "\"s\" SERIAL NOT NULL,"))
-    (is (string/includes? m-types "\"b\" BIGSERIAL NOT NULL,"))
-    (is (string/includes? m-types "\"active\" boolean NOT NULL,"))
-    (is (string/includes? m-types "\"created_at\" TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL"))))
+  (let [m-types (up migration-alter)]
+    (is (string/includes? m-types "name text NOT NULL"))
+    (is (string/includes? m-types "last_name text"))
+    (is (string/includes? m-types "code VARCHAR(4) DEFAULT 'ABCD' NOT NULL"))
+    (is (string/includes? m-types "s SERIAL NOT NULL"))
+    (is (string/includes? m-types "b BIGSERIAL NOT NULL"))
+    (is (string/includes? m-types "active boolean NOT NULL"))
+    (is (string/includes? m-types "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL"))))
 
 (deftest testing-migration-drop+add
-  (let [m-types (up migration-drop+add) ]
-    (is (string/includes? m-types "DROP COLUMN \"name\""))
-    (is (string/includes? m-types "DROP COLUMN \"last_name\""))
-    (is (string/includes? m-types "DROP COLUMN \"code\""))
-    (is (string/includes? m-types "\"created_at\" TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL"))
-    (is (string/includes? m-types "\"updated_at\" TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL"))))
+  (let [m-types (up migration-drop+add)]
+    (is (string/includes? m-types "DROP COLUMN name"))
+    (is (string/includes? m-types "DROP COLUMN last_name"))
+    (is (string/includes? m-types "DROP COLUMN code"))
+    (is (string/includes? m-types " created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL"))
+    (is (string/includes? m-types " updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL"))))
 
 (deftest testing-migration-drop-gungnir-timestamps
-  (let [m-types (up migration-drop-gungnir-timestamps) ]
-    (is (string/includes? m-types "DROP COLUMN \"created_at\","))
-    (is (string/includes? m-types "DROP COLUMN \"updated_at\""))))
+  (let [m-types (up migration-drop-gungnir-timestamps)]
+    (is (string/includes? m-types "DROP COLUMN created_at"))
+    (is (string/includes? m-types "DROP COLUMN updated_at"))))

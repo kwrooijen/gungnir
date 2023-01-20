@@ -11,20 +11,20 @@ your database.
 * Create descriptive error messages for your end users.
 
 ```clojure
-;; Define a user model
+;; Define a account model
 
-(def user-model
+(def account-model
  [:map
-  {:has-many {:user/posts {:model :post :foreign-key :post/user-id}
-              :user/comments {:model :comment :foreign-key :comment/user-id}}}
-  [:user/id {:primary-key true} uuid?]
-  [:user/email {:before-save [:string/lower-case]
+  {:has-many {:account/posts {:model :post :foreign-key :post/account-id}
+              :account/comments {:model :comment :foreign-key :comment/account-id}}}
+  [:account/id {:primary-key true} uuid?]
+  [:account/email {:before-save [:string/lower-case]
                 :before-read [:string/lower-case]}
    [:re {:error/message "Invalid email"} #".+@.+\..+"]]
-  [:user/password {:before-save [:bcrypt]} [:string {:min 6}]]
-  [:user/password-confirmation {:virtual true} [:string {:min 6}]]
-  [:user/created-at {:auto true} inst?]
-  [:user/updated-at {:auto true} inst?]])
+  [:account/password {:before-save [:bcrypt]} [:string {:min 6}]]
+  [:account/password-confirmation {:virtual true} [:string {:min 6}]]
+  [:account/created-at {:auto true} inst?]
+  [:account/updated-at {:auto true} inst?]])
 ```
 
 ## Registering Models
@@ -35,7 +35,7 @@ Mount.
 
 ```clojure
 (gungnir.model/register!
- {:user user-model
+ {:account account-model
   :post post-model
   :comment comment-model})
 ```
@@ -45,14 +45,14 @@ Mount.
 ### `:table`
 
 Specify the table you'd like to use for this model. By default the model name
-will be used as the table. For example you might have a `:user` model, but you
-want to target the "users" table.
+will be used as the table. For example you might have a `:account` model, but you
+want to target the "accounts" table.
 
 ```clojure
-{:user
+{:account
  [:map
-  {:table :users}
-  [:user/email string?]}
+  {:table :accounts}
+  [:account/email string?]}
 ```
 
 ### `:has-many`
@@ -62,7 +62,7 @@ model. This relational query will return a vector of maps.
 
 ```clojure
 [:map
- {:has-many {:user/posts {:model :post :foreign-key :post/user-id}}}
+ {:has-many {:account/posts {:model :post :foreign-key :post/account-id}}}
  ,,,]
 ```
 
@@ -73,7 +73,7 @@ model. This relational query will return a single map or `nil`.
 
 ```clojure
 [:map
- {:has-one {:user/reset-token {:model :reset-token :foreign-key :reset-token/user-id}}}
+ {:has-one {:account/reset-token {:model :reset-token :foreign-key :reset-token/account-id}}}
  ,,,]
 ```
 
@@ -84,7 +84,7 @@ model. This relational query will return a single map or `nil`.
 
 ```clojure
 [:map
- {:belongs-to {:post/user {:model :user :foreign-key :post/user-id}}}
+ {:belongs-to {:post/account {:model :account :foreign-key :post/account-id}}}
  ,,,]
 ```
 
@@ -100,7 +100,7 @@ Gungnir to be able to make use of the querying API, as well as the relational
 mapping.
 
 ```clojure
-[:user/id {:primary-key true} uuid?]
+[:account/id {:primary-key true} uuid?]
 ```
 
 ### `:auto`
@@ -114,7 +114,7 @@ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 ```
 
 ```clojure
-[:user/created-at {:auto true} inst?]
+[:account/created-at {:auto true} inst?]
 ```
 
 ### `:virtual`
@@ -124,7 +124,7 @@ exist as a column in the database. Gungnir will make no attempt to query, or
 save this key. Useful for things such as password-confirmation fields.
 
 ```clojure
-[:user/password-confirmation {:virtual true} string?]
+[:account/password-confirmation {:virtual true} string?]
 ```
 
 ### `:before-save`
@@ -136,10 +136,10 @@ during creating, updated on the profile page, changed through a password
 reset. In all of these cases you must encrypt the user's inputted password
 before inserting it to the database.
 
-Add a `:bcrypt` key to the `:before-save` vector for `:user/password`.
+Add a `:bcrypt` key to the `:before-save` vector for `:account/password`.
 
 ```clojure
-[:user/password {:before-save [:bcrypt]} string?]
+[:account/password {:before-save [:bcrypt]} string?]
 ```
 
 And define the `:bcrypt` `:before-save` handler. Handlers take the key and
@@ -162,7 +162,7 @@ query the database. That way you'll be able to deal with case sensitive data.
 Add the `:before-save` and `:before-read` hooks.
 
 ```clojure
-[:user/email 
+[:account/email 
  {:before-save [:string/lower-case]
   :before-read [:string/lower-case]}
  [:re #".+@.+\..+"]]
@@ -188,11 +188,11 @@ encrypt data before saving it, and decrypt it after reading it for extra
 security. Another use case is saving keywords to the database as strings, and
 parsing it as EDN after reading it.
 
-In this case, user has an `:user/option` key, which is a qualified-keyword. You
+In this case, account has an `:account/option` key, which is a qualified-keyword. You
 can't store keywords in SQL, so they're converted to strings.
 
 ```clojure
-[:user/option 
+[:account/option 
  {:after-read [:edn/read-string]}
  [:enum :option/one :option/two :option/three]]
 ```
@@ -218,35 +218,35 @@ page.
 
 In the example below we define the following relations:
 
-* user **has_many** comments, through `:user/comments`
-* user **has_many** posts, through `:user/posts`
-* post **belongs_to** user, through `:post/user`
+* account **has_many** comments, through `:account/comments`
+* account **has_many** posts, through `:account/posts`
+* post **belongs_to** account, through `:post/account`
 * post **has_many** comments, through `:post/comments`
-* comment **belongs_to** post, through `:comment/user`
-* comment **belongs_to** user, through `:comment/post`
+* comment **belongs_to** post, through `:comment/account`
+* comment **belongs_to** account, through `:comment/post`
 
 ```clojure
-(def model-user
+(def model-account
  [:map
-  {:has-many {:user/posts {:model :post :foreign-key :post/user-id}
-              :user/comments {:model :comment :foreign-key :comment/user-id}}}
-  [:user/id {:primary-key true} uuid?]
+  {:has-many {:account/posts {:model :post :foreign-key :post/account-id}
+              :account/comments {:model :comment :foreign-key :comment/account-id}}}
+  [:account/id {:primary-key true} uuid?]
   ,,,])
 
 (def model-post
  [:map
-  {:belongs-to {:post/user {:model :user :foreign-key :post/user-id}}
+  {:belongs-to {:post/account {:model :account :foreign-key :post/account-id}}
    :has-many {:post/comments {:model :comment :foreign-key :comment/post-id}}}
   [:post/id {:primary-key true} uuid?]
-  [:post/user-id uuid?]
+  [:post/account-id uuid?]
   ,,,])
 
 (def model-comment
  [:map
-  {:belongs-to {:comment/user {:model :user :foreign-key :comment/user-id}
+  {:belongs-to {:comment/account {:model :account :foreign-key :comment/account-id}
                 :comment/post {:model :post :foreign-key :comment/post-id}}}
   [:comment/id {:primary-key true} uuid?]
-  [:comment/user-id uuid?]
+  [:comment/account-id uuid?]
   [:comment/post-id uuid?]
   ,,,])
 ```
@@ -271,17 +271,17 @@ The `gungnir.model/validator` multimethod should return the following map.
 
 ### Example
 
-Check if the `:user/password` and `:user/password-validation` match during
+Check if the `:account/password` and `:account/password-validation` match during
 registration. Since `:map` keys are isolated from each other this would be a
 good solution.
 
 ```clojure
 (defn password-match? [m]
-  (= (:user/password m)
-     (:user/password-confirmation m)))
+  (= (:account/password m)
+     (:account/password-confirmation m)))
 
-(defmethod gungnir.model/validator :user/password-match? [_]
-  {:validator/key :user/password-confirmation
+(defmethod gungnir.model/validator :account/password-match? [_]
+  {:validator/key :account/password-confirmation
    :validator/fn password-match?
    :validator/message "Passwords don't match"})
 ```
@@ -301,10 +301,10 @@ can be modified per field using the `gungnir.model/format-error` multimethod.
 During registration, you won't know if an email exists until you hit the
 database. If an email exists (assuming you have a `UNIQUE CONSTRAINT` on the
 email column) Gungnir will return a `:duplicate-key` error. This error can
-transformed to make it more understandable for your end users.
+transformed to make it more understandable for your end user.
 
 ```clojure
-(defmethod gungnir.model/format-error [:user/email :duplicate-key] [_ _]
+(defmethod gungnir.model/format-error [:account/email :duplicate-key] [_ _]
   "Email already exists")
 ```
 

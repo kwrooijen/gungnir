@@ -2,41 +2,41 @@
   (:require
    [gungnir.model]))
 
-(def model-user
+(def model-account
   [:map
    {:has-many
-    {:user/posts {:model :post}
-     :user/comments {:model :comment}}
-    :has-one {:user/token {:model :token}}}
-   [:user/id {:primary-key true} uuid?]
-   [:user/username {:optional true} [:maybe string?]]
-   [:user/email {:before-save [:string/lower-case]
-                 :before-read [:string/lower-case]}
+    {:account/posts {:model :post}
+     :account/comments {:model :comment}}
+    :has-one {:account/token {:model :token}}}
+   [:account/id {:primary-key true} uuid?]
+   [:account/accountname {:optional true} [:maybe string?]]
+   [:account/email {:before-save [:string/lower-case]
+                    :before-read [:string/lower-case]}
     [:re {:error/message "Invalid email"} #".+@.+\..+"]]
-   [:user/password [:string {:min 6}]]
-   [:user/password-confirmation {:virtual true} [:string {:min 6}]]
-   [:user/created-at {:auto true} inst?]
-   [:user/updated-at {:auto true} inst?]])
+   [:account/password [:string {:min 6}]]
+   [:account/password-confirmation {:virtual true} [:string {:min 6}]]
+   [:account/created-at {:auto true} inst?]
+   [:account/updated-at {:auto true} inst?]])
 
 (def model-post
   [:map
-   {:belongs-to {:post/user {:model :user}}
+   {:belongs-to {:post/account {:model :account}}
     :has-many {:post/comments {:model :comment}}}
    [:post/id {:primary-key true} uuid?]
    [:post/title string?]
    [:post/content string?]
-   [:post/user-id uuid?]
+   [:post/account-id uuid?]
    [:post/created-at {:auto true} inst?]
    [:post/updated-at {:auto true} inst?]])
 
 (def model-comment
   [:map
    {:belongs-to
-    {:comment/user {:model :user}
+    {:comment/account {:model :account}
      :comment/post {:model :post}}}
    [:comment/id {:primary-key true} uuid?]
    [:comment/content string?]
-   [:comment/user-id uuid?]
+   [:comment/account-id uuid?]
    [:comment/post-id uuid?]
    [:comment/rating {:optional true} int?]
    [:comment/created-at {:auto true} inst?]
@@ -44,17 +44,17 @@
 
 (def model-token
   [:map
-   {:belongs-to {:token/user {:model :user}}}
+   {:belongs-to {:token/account {:model :account}}}
    [:token/id {:primary-key true} uuid?]
    [:token/type {:after-read [:edn/read-string]} [:enum :token/reset :token/verify]]
-   [:token/user-id uuid?]
+   [:token/account-id uuid?]
    [:token/created-at {:auto true} inst?]
    [:token/updated-at {:auto true} inst?]])
 
 (def model-document
   [:map
-   {:belongs-to {:document/author {:model :user :foreign-key :document/author-id}
-                 :document/reviewer {:model :user :foreign-key :document/reviewer-id}}}
+   {:belongs-to {:document/author {:model :account :foreign-key :document/author-id}
+                 :document/reviewer {:model :account :foreign-key :document/reviewer-id}}}
    [:document/id {:primary-key true} uuid?]
    [:document/author-id uuid?]
    [:document/reviewer-id uuid?]
@@ -72,7 +72,7 @@
 
 (def snippet-registry
   {:snippet/id uuid?
-   :snippet/user-id uuid?
+   :snippet/account-id uuid?
    :snippet/content string?
    :snippet/created-at inst?
    :snippet/updated-at inst?})
@@ -80,31 +80,31 @@
 (def model-snippet
   [:map
    {:registry snippet-registry
-    :belongs-to {:snippet/user {:model :user}}}
+    :belongs-to {:snippet/account {:model :account}}}
    [:snippet/id {:primary-key true}]
-   :snippet/user-id
+   :snippet/account-id
    :snippet/content
    [:snippet/created-at {:auto true}]
    [:snippet/updated-at {:auto true}]])
 
-(def model-account
+(def model-bank
   [:map
-   [:account/id {:primary-key true} uuid?]
-   [:account/balance {:default 0} int?]
-   [:account/created-at {:auto true} inst?]
-   [:account/updated-at {:auto true} inst?]])
+   [:bank/id {:primary-key true} uuid?]
+   [:bank/balance {:default 0} int?]
+   [:bank/created-at {:auto true} inst?]
+   [:bank/updated-at {:auto true} inst?]])
 
 (defn- password-match? [m]
-  (= (:user/password m)
-     (:user/password-confirmation m)))
+  (= (:account/password m)
+     (:account/password-confirmation m)))
 
-(defmethod gungnir.model/validator :user/password-match? [_]
-  {:validator/key :user/password-confirmation
+(defmethod gungnir.model/validator :account/password-match? [_]
+  {:validator/key :account/password-confirmation
    :validator/fn password-match?
    :validator/message "Passwords don't match"})
 
-(defmethod gungnir.model/format-error [:user/username :duplicate-key] [_ _]
-  "username taken")
+(defmethod gungnir.model/format-error [:account/accountname :duplicate-key] [_ _]
+  "accountname taken")
 
 (def model-with-dash
   [:map
@@ -120,7 +120,7 @@
   "Initializes the models and saves them to Gungnir."
   []
   (gungnir.model/register!
-   {:user model-user
+   {:account model-account
     :post model-post
     :comment model-comment
     :token model-token
@@ -129,4 +129,4 @@
     :snippet model-snippet
     :with-dash model-with-dash
     :with_underscore model-with-underscore
-    :account model-account}))
+    :bank model-bank}))

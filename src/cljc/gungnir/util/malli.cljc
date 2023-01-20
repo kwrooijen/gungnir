@@ -25,7 +25,7 @@
   no properties then no modifications will be made."
   [f [k m? & xs :as child]]
   (if (map? m?)
-    (conj xs (f m?) k)
+    (vec (conj xs (f m?) k))
     child))
 
 (s/fdef child-properties

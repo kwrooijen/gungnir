@@ -9,39 +9,39 @@
 (use-fixtures :once util/once-fixture)
 (use-fixtures :each util/each-fixture)
 
-(defn retrieve-accounts [sender-id recipient-id]
+(defn retrieve-banks [sender-id recipient-id]
   (fn [_state]
-    (let [sender (q/find-by! :account/id sender-id)
-          recipient (q/find-by! :account/id recipient-id)
-          ids #{(:account/id sender) (:account/id recipient)}]
+    (let [sender (q/find-by! :bank/id sender-id)
+          recipient (q/find-by! :bank/id recipient-id)
+          ids #{(:bank/id sender) (:bank/id recipient)}]
       (if (and sender recipient)
         {:sender sender
          :recipient recipient}
         (transaction/error
-         {:account-not-found (remove ids [sender-id recipient-id])})))))
+         {:bank-not-found (remove ids [sender-id recipient-id])})))))
 
 (defn verify-balance [amount]
   (fn [{:keys [sender] :as state}]
-    (if (>= (:account/balance sender) amount)
+    (if (>= (:bank/balance sender) amount)
       state
       (transaction/error {:balance-too-low sender}))))
 
 (defn subtract-from-sender [amount]
   (fn [{:keys [sender] :as state}]
-    (-> (changeset/update sender :account/balance #(- % amount))
+    (-> (changeset/update sender :bank/balance #(- % amount))
         (q/save!)
         (transaction/changeset->error)
         (or state))))
 
 (defn add-to-recipient [amount]
   (fn [{:keys [recipient] :as state}]
-    (-> (changeset/update recipient :account/balance #(+ % amount))
+    (-> (changeset/update recipient :bank/balance #(+ % amount))
         (q/save!)
         (transaction/changeset->error)
         (or state))))
 
 (defn pipeline--transfer-money [sender-id recipient-id amount]
-  [[:retrieve-accounts (retrieve-accounts sender-id recipient-id)]
+  [[:retrieve-banks (retrieve-banks sender-id recipient-id)]
    [:verify-balance (verify-balance amount)]
    [:subtract-from-sender (subtract-from-sender amount)]
    [:add-to-recipient (add-to-recipient amount)]])
@@ -52,23 +52,23 @@
 
 (defn transfer-balance-fn
   [sender-id recipient-id amount]
-  (let [account1 (q/find! :account sender-id)
-        account2 (q/find! :account recipient-id)]
+  (let [bank1 (q/find! :bank sender-id)
+        bank2 (q/find! :bank recipient-id)]
 
-    (assert account1 :account-not-found)
-    (assert (> (:account/balance account1) amount) :balance-too-low)
-    (-> (changeset/create account1 {:account/balance (- (:account/balance account1) amount)}) q/save!)
+    (assert bank1 :bank-not-found)
+    (assert (> (:bank/balance bank1) amount) :balance-too-low)
+    (-> (changeset/create bank1 {:bank/balance (- (:bank/balance bank1) amount)}) q/save!)
 
-    (assert account2 :account-not-found)
-    (-> (changeset/create account2 {:account/balance (+ (:account/balance account1) amount)}) q/save!)))
+    (assert bank2 :bank-not-found)
+    (-> (changeset/create bank2 {:bank/balance (+ (:bank/balance bank1) amount)}) q/save!)))
 
 (deftest test-transaction-pipeline!
-  (let [id1 (-> {:account/balance 100} changeset/create q/save! :account/id)
-        id2 (-> {:account/balance 100} changeset/create q/save! :account/id)]
+  (let [id1 (-> {:bank/balance 100} changeset/create q/save! :bank/id)
+        id2 (-> {:bank/balance 100} changeset/create q/save! :bank/id)]
     (testing "pipeline - Balance transaction"
       (run-pipeline id1 id2 20)
-      (is (->> id1 (q/find! :account) :account/balance (= 80)))
-      (is (->> id2 (q/find! :account) :account/balance (= 120))))
+      (is (->> id1 (q/find! :bank) :bank/balance (= 80)))
+      (is (->> id2 (q/find! :bank) :bank/balance (= 120))))
 
     (testing "pipeline - Not enough balance"
       (let [balance-too-low-error (-> (run-pipeline id1 id2 200)
@@ -76,17 +76,17 @@
                                       :transaction.error/data
                                       :balance-too-low)]
         (is (some? balance-too-low-error))
-        (is (->> id1 (q/find! :account) :account/balance (= 80)))
-        (is (->> id2 (q/find! :account) :account/balance (= 120)))))
+        (is (->> id1 (q/find! :bank) :bank/balance (= 80)))
+        (is (->> id2 (q/find! :bank) :bank/balance (= 120)))))
 
-    (testing "pipeline - Account not found"
+    (testing "pipeline - Bank not found"
       (let [balance-too-low-error (-> (run-pipeline (java.util.UUID/randomUUID) id2 200)
                                       :transaction/error
                                       :transaction.error/data
-                                      :account-not-found)]
+                                      :bank-not-found)]
         (is (some? balance-too-low-error))
-        (is (->> id1 (q/find! :account) :account/balance (= 80)))
-        (is (->> id2 (q/find! :account) :account/balance (= 120)))))
+        (is (->> id1 (q/find! :bank) :bank/balance (= 80)))
+        (is (->> id2 (q/find! :bank) :bank/balance (= 120)))))
 
     (testing "pipeline - Exception testing"
       (is (-> [[:do-something (fn [_] (assert false "WRONG"))]]
@@ -96,21 +96,21 @@
               (= :do-something))))))
 
 (deftest test-transaction!
-  (let [id1 (-> {:account/balance 100} changeset/create q/save! :account/id)
-        id2 (-> {:account/balance 100} changeset/create q/save! :account/id)]
+  (let [id1 (-> {:bank/balance 100} changeset/create q/save! :bank/id)
+        id2 (-> {:bank/balance 100} changeset/create q/save! :bank/id)]
     (testing "transaction - Balance transaction"
       (transaction/execute! (fn [] (transfer-balance-fn id1 id2 20)))
-      (is (->> (q/find! :account id1) :account/balance (= 80)))
-      (is (->> (q/find! :account id2) :account/balance (= 120))))
+      (is (->> (q/find! :bank id1) :bank/balance (= 80)))
+      (is (->> (q/find! :bank id2) :bank/balance (= 120))))
 
     (testing "transaction - Not enough balance"
       (is (thrown? java.lang.AssertionError
                    (transaction/execute! (fn [] (transfer-balance-fn id1 id2 200)))))
-      (is (->> (q/find! :account id1) :account/balance (= 80)))
-      (is (->> (q/find! :account id2) :account/balance (= 120))))
+      (is (->> (q/find! :bank id1) :bank/balance (= 80)))
+      (is (->> (q/find! :bank id2) :bank/balance (= 120))))
 
-    (testing "transaction - Account not found"
+    (testing "transaction - Bank not found"
       (is (thrown? java.lang.AssertionError
                    (transaction/execute! (fn [] (transfer-balance-fn (java.util.UUID/randomUUID) id2 20)))))
-      (is (->> (q/find! :account id1) :account/balance (= 80)))
-      (is (->> (q/find! :account id2) :account/balance (= 120))))))
+      (is (->> (q/find! :bank id1) :bank/balance (= 80)))
+      (is (->> (q/find! :bank id2) :bank/balance (= 120))))))

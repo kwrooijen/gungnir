@@ -25,29 +25,29 @@
           "$$ LANGUAGE plpgsql;")]
    :down ["DROP FUNCTION IF EXISTS trigger_set_updated_at()"]})
 
-(def user-table-migration
-  " Create a `user` table.
+(def account-table-migration
+  " Create a `account` table.
 
   Relations
-  * user has_many post
-  * user has_many comment
+  * account has_many post
+  * account has_many comment
   "
-  {:id :user
+  {:id :account
    :up
-   [[:table/create {:table :user :if-not-exists true}
+   [[:table/create {:table :account :if-not-exists true}
      [:column/add [:id {:primary-key true :default true} :uuid]]
      [:column/add [:email {:unique true} :string]]
-     [:column/add [:username {:unique true :optional true} :string]]
+     [:column/add [:accountname {:unique true :optional true} :string]]
      [:column/add [:password :string]]
      [:column/add [:gungnir/timestamps]]]]
-   :down [[:table/drop :user]]})
+   :down [[:table/drop :account]]})
 
 (def post-table-migration
   "Create a `post` table.
 
   Relations
   * post has_many comment
-  * post belongs_to user
+  * post belongs_to account
   "
   {:id :post
    :up
@@ -55,7 +55,7 @@
      [:column/add [:id {:default true :primary-key true} :uuid]]
      [:column/add [:title {:optional true} :string]]
      [:column/add [:content {:optional true} :string]]
-     [:column/add [:user-id {:references :user/id} :uuid]]
+     [:column/add [:account-id {:references :account/id} :uuid]]
      [:column/add [:gungnir/timestamps]]]]
    :down [[:table/drop :post]]})
 
@@ -64,14 +64,14 @@
 
   Relations
   * comment belongs_to post
-  * comment belongs_to user
+  * comment belongs_to account
   "
   {:id :comment
    :up
    [[:table/create {:table :comment :if-not-exists true}
      [:column/add [:id {:default true :primary-key true} :uuid]]
      [:column/add [:content :string]]
-     [:column/add [:user-id {:references :user/id} :uuid]]
+     [:column/add [:account-id {:references :account/id} :uuid]]
      [:column/add [:post-id {:references :post/id} :uuid]]
      [:column/add [:rating {:default 0} :int]]
      [:column/add [:gungnir/timestamps]]]]
@@ -81,13 +81,13 @@
   "Create a `token` table.
 
   Relations
-  * comment belongs_to user
+  * comment belongs_to account
   "
   {:id :token
    :up
    [[:table/create {:table :token :if-not-exists true}
      [:column/add [:id {:default true :primary-key true} :uuid]]
-     [:column/add [:user-id {:references :user/id} :uuid]]
+     [:column/add [:account-id {:references :account/id} :uuid]]
      [:column/add [:type :string]]
      [:column/add [:gungnir/timestamps]]]]
    :down [[:table/drop :token]]})
@@ -96,15 +96,15 @@
   "Create a `document` table.
 
   Relations
-  * author-id belongs_to user
-  * reviewer-id belongs_to user
+  * author-id belongs_to account
+  * reviewer-id belongs_to account
   "
   {:id :document
    :up
    [[:table/create {:table :document :if-not-exists true}
      [:column/add [:id {:default true :primary-key true} :uuid]]
-     [:column/add [:author-id {:references :user/id} :uuid]]
-     [:column/add [:reviewer-id {:references :user/id} :uuid]]
+     [:column/add [:author-id {:references :account/id} :uuid]]
+     [:column/add [:reviewer-id {:references :account/id} :uuid]]
      [:column/add [:content :string]]
      [:column/add [:gungnir/timestamps]]]]
    :down [[:table/drop :document]]})
@@ -123,42 +123,39 @@
   "Create a `snippet` table.
 
   Relations
-  * snippet belongs_to user
+  * snippet belongs_to account
   "
   {:id :snippet
    :up
    [[:table/create {:table :snippet :if-not-exists true}
      [:column/add [:id {:default true :primary-key true} :uuid]]
-     [:column/add [:user-id {:references :user/id} :uuid]]
+     [:column/add [:account-id {:references :account/id} :uuid]]
      [:column/add [:content :string]]
      [:column/add [:gungnir/timestamps]]]]
    :down [[:table/drop :snippet]]})
 
-(def account-table-migration
-  "Create a `account` table.
-
-  Relations
-  * snippet belongs_to user
+(def bank-table-migration
+  "Create a `bank` table.
   "
-  {:id :account
+  {:id :bank
    :up
-   [[:table/create {:table :account :if-not-exists true}
+   [[:table/create {:table :bank :if-not-exists true}
      [:column/add [:id {:default true :primary-key true} :uuid]]
      [:column/add [:balance :int]]
      [:column/add [:gungnir/timestamps]]]]
-   :down [[:table/drop :account]]})
+   :down [[:table/drop :bank]]})
 
 (def migrations
   [uuid-extension-migration
    trigger-updated-at-migration
-   user-table-migration
+   account-table-migration
    post-table-migration
    comment-table-migration
    token-table-migration
    document-table-migration
    products-table-migration
    snippet-table-migration
-   account-table-migration])
+   bank-table-migration])
 
 (defn migrate!
   "Run migrations to create all tables. The migrations are idempotent,

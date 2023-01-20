@@ -13,9 +13,8 @@
    [gungnir.model]
    [gungnir.record]
    [hikari-cp.core :as hikari-cp]
-   [honeysql.core :as sql]
-   [honeysql.helpers :as q]
-   [honeysql.types]
+   [honey.sql :as sql]
+   [honey.sql.helpers :as q]
    [malli.core :as m]
    [next.jdbc :as jdbc]
    [next.jdbc.date-time]
@@ -137,6 +136,29 @@ using either using the `gungnir.database/set-datasource!` or
 (defn- map-kv [f m]
   (into {} (map f m)))
 
+(defn- apply-before-read [field v]
+  (reduce #(gungnir.model/before-read %2 %1)
+          v
+          (gungnir.field/before-read field)))
+
+(defn- transform-before-read [rule]
+  (if (and (vector? rule)
+           (= (count rule) 3)
+           (#{:= :mod :and :or :xor :<> :<= :>= :|| :<->
+              :like :not-like :regexp :&&
+              :ilike :not-ilike :similar-to :not-similar-to
+              :is :is-not :not= :!= :regex} (first rule)))
+    (let [[op ?field ?value] rule]
+      (cond
+        (qualified-keyword? ?field)
+        [op ?field (apply-before-read ?field ?value)]
+
+        (qualified-keyword? ?value)
+        [op (apply-before-read ?value ?field) ?value]
+
+        :else rule))
+    rule))
+
 (defn- transform-model-alias [?field]
   (cond
     (qualified-keyword? ?field)
@@ -146,13 +168,14 @@ using either using the `gungnir.database/set-datasource!` or
     :else
     ?field))
 
+(defn- transform-honeysql-map [m]
+  (-> m transform-before-read transform-model-alias))
+
 (defn- honey->sql
   ([m] (honey->sql m {}))
   ([m opts]
    (sql/format
-    (walk/postwalk transform-model-alias m)
-    :namespace-as-table? (:namespace-as-table? opts true)
-    :quoting :ansi)))
+    (walk/postwalk transform-honeysql-map m))))
 
 (defmulti exception->map
   (fn [_changeset ^SQLException e]
@@ -208,9 +231,6 @@ using either using the `gungnir.database/set-datasource!` or
     {model-field-key (gungnir.model/format-error model-field-key :missing-foreign-key)}))
 
 (defmethod exception->map :default [_changeset ^SQLException e]
-  (println (str "Unhandled SQL execption "
-                 (.getSQLState e) "\n "
-                 (.getMessage e)))
   (log/warn (str "Unhandled SQL execption "
                  (.getSQLState e) "\n "
                  (.getMessage e)))
@@ -239,7 +259,7 @@ using either using the `gungnir.database/set-datasource!` or
     (str value)
 
     (vector? value)
-    (honeysql.types/array (mapv (partial parse-insert-value k) value))
+    (mapv (partial parse-insert-value k) value)
 
     :else
     value))
@@ -314,7 +334,7 @@ using either using the `gungnir.database/set-datasource!` or
      :else
      (let [primary-key (gungnir.model/primary-key model)]
        (-> (q/update (gungnir.model/table model))
-           (q/sset (record->insert-values diff))
+           (q/set (record->insert-values diff))
            (q/where [:= primary-key (get transformed-origin primary-key)])
            (execute-one! changeset datasource {:namespace-as-table? false}))))))
 
