@@ -21,18 +21,18 @@ A fully featured, data-driven database library for Clojure.
 
 ```clojure
 (gungnir.database/make-datasource!
-  {:adapter       "postgresql"
-   :username      "postgres"
-   :password      "postgres"
-   :database-name "postgres"
-   :server-name   "localhost"
-   :port-number   5432})
+ {:adapter       "postgresql"
+  :username      "postgres"
+  :password      "postgres"
+  :database-name "postgres"
+  :server-name   "localhost"
+  :port-number   5432})
 
 (def account-model
   [:map
    [:account/id {:primary-key true} uuid?]
    [:account/email {:before-save [:string/lower-case]
-                 :before-read [:string/lower-case]}
+                    :before-read [:string/lower-case]}
     [:re {:error/message "Invalid email"} #".+@.+\..+"]]
    [:account/password {:before-save [:bcrypt]} [:string {:min 6}]]
    [:account/password-confirmation {:virtual true} [:string {:min 6}]]
@@ -60,12 +60,11 @@ A fully featured, data-driven database library for Clojure.
       (gungnir.changeset/create [:account/password-match?])
       (gungnir.query/save!)))
 
-(comment
-  (gungnir.query/find-by! :account/email "some@email.com") ;; => {:account/email "some@email.com",,,}
-  (-> (gungnir.query/limit 5)
-      (gungnir.query/select :account/id :account/email)
-      (gungnir.query/all! :account)) ;; => [{:account/email "..." :account/id "..."},,,]
-  )
+(gungnir.query/find-by! :account/email "some@email.com") ;; => {:account/email "some@email.com",,,}
+
+(-> (gungnir.query/limit 5)
+    (gungnir.query/select :account/id :account/email)
+    (gungnir.query/all! :account)) ;; => [{:account/email "..." :account/id "..."},,,]
 ```
 
 ## Installation
