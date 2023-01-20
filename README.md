@@ -15,6 +15,8 @@ A fully featured, data-driven database library for Clojure.
 
 [Read the guide](https://kwrooijen.github.io/gungnir/guide.html)
 
+[Gungnir code playground](https://github.com/kwrooijen/gungnir-playground)
+
 [Dutch Clojure Meetup - Gungnir](https://www.youtube.com/watch?v=9Sr_-Vk9wBw)
 
 ```clojure

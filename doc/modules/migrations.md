@@ -116,10 +116,11 @@ raw SQL query.
 
 ### Table
 
-| key            | description             |
-|----------------|-------------------------|
-| `:table/alter` | Alter an existing table |
-| `:table/drop`  | Drop an existing table  |
+| key             | description             |
+|-----------------|-------------------------|
+| `:table/create` | Create a new table      |
+| `:table/alter`  | Alter an existing table |
+| `:table/drop`   | Drop an existing table  |
 
 ### Table options
 
