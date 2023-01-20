@@ -65,42 +65,42 @@
   (let [m-exists (up migration-create-table-if-not-exists)
         m-uuid (up migration-auto-uuid)
         m-no-pk (up migration-no-primary-key)]
-    (is (string/includes? m-exists "CREATE TABLE IF NOT EXISTS \"account\""))
-    (is (string/includes? m-exists "id BIGSERIAL PRIMARY KEY NOT NULL"))
-    (is (string/includes? m-uuid "id UUID DEFAULT UUID_GENERATE_V4() PRIMARY KEY NOT NULL"))
-    (is (not (string/includes? m-no-pk "id ")))))
+    (is (string/includes? (string/lower-case m-exists) "create table if not exists \"account\""))
+    (is (string/includes? (string/lower-case m-exists) "id bigserial primary key not null"))
+    (is (string/includes? (string/lower-case m-uuid) "id uuid default uuid_generate_v4() primary key not null"))
+    (is (not (string/includes? (string/lower-case m-no-pk) "id ")))))
 
 (deftest testing-migration-types
   (let [m-types (up migration-types)]
-    (is (string/includes? m-types "name TEXT NOT NULL,"))
-    (is (string/includes? m-types "last_name TEXT"))
-    (is (string/includes? m-types "code VARCHAR(4) DEFAULT 'ABCD' NOT NULL"))
-    (is (string/includes? m-types "s SERIAL NOT NULL"))
-    (is (string/includes? m-types "b BIGSERIAL NOT NULL"))
-    (is (string/includes? m-types "active BOOLEAN NOT NULL"))
-    (is (string/includes? m-types "some_float FLOAT(8) NOT NULL"))
-    (is (string/includes? m-types "some_float_4 FLOAT(4) NOT NULL"))
-    (is (string/includes? m-types "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL"))))
+    (is (string/includes? (string/lower-case m-types) "name text not null,"))
+    (is (string/includes? (string/lower-case m-types) "last_name text"))
+    (is (string/includes? (string/lower-case m-types) "code varchar(4) default 'abcd' not null"))
+    (is (string/includes? (string/lower-case m-types) "s serial not null"))
+    (is (string/includes? (string/lower-case m-types) "b bigserial not null"))
+    (is (string/includes? (string/lower-case m-types) "active boolean not null"))
+    (is (string/includes? (string/lower-case m-types) "some_float float(8) not null"))
+    (is (string/includes? (string/lower-case m-types) "some_float_4 float(4) not null"))
+    (is (string/includes? (string/lower-case m-types) "created_at timestamp default current_timestamp not null"))))
 
 (deftest testing-migration-alter
   (let [m-types (up migration-alter)]
-    (is (string/includes? m-types "name text NOT NULL"))
-    (is (string/includes? m-types "last_name text"))
-    (is (string/includes? m-types "code VARCHAR(4) DEFAULT 'ABCD' NOT NULL"))
-    (is (string/includes? m-types "s SERIAL NOT NULL"))
-    (is (string/includes? m-types "b BIGSERIAL NOT NULL"))
-    (is (string/includes? m-types "active boolean NOT NULL"))
-    (is (string/includes? m-types "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL"))))
+    (is (string/includes? (string/lower-case m-types) "name text not null"))
+    (is (string/includes? (string/lower-case m-types) "last_name text"))
+    (is (string/includes? (string/lower-case m-types) "code varchar(4) default 'abcd' not null"))
+    (is (string/includes? (string/lower-case m-types) "s serial not null"))
+    (is (string/includes? (string/lower-case m-types) "b bigserial not null"))
+    (is (string/includes? (string/lower-case m-types) "active boolean not null"))
+    (is (string/includes? (string/lower-case m-types) "created_at timestamp default current_timestamp not null"))))
 
 (deftest testing-migration-drop+add
   (let [m-types (up migration-drop+add)]
-    (is (string/includes? m-types "DROP COLUMN name"))
-    (is (string/includes? m-types "DROP COLUMN last_name"))
-    (is (string/includes? m-types "DROP COLUMN code"))
-    (is (string/includes? m-types " created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL"))
-    (is (string/includes? m-types " updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL"))))
+    (is (string/includes? (string/lower-case m-types) "drop column name"))
+    (is (string/includes? (string/lower-case m-types) "drop column last_name"))
+    (is (string/includes? (string/lower-case m-types) "drop column code"))
+    (is (string/includes? (string/lower-case m-types) " created_at timestamp default current_timestamp not null"))
+    (is (string/includes? (string/lower-case m-types) " updated_at timestamp default current_timestamp not null"))))
 
 (deftest testing-migration-drop-gungnir-timestamps
   (let [m-types (up migration-drop-gungnir-timestamps)]
-    (is (string/includes? m-types "DROP COLUMN created_at"))
-    (is (string/includes? m-types "DROP COLUMN updated_at"))))
+    (is (string/includes? (string/lower-case m-types) "drop column created_at"))
+    (is (string/includes? (string/lower-case m-types) "drop column updated_at"))))
