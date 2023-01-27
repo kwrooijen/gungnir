@@ -2,7 +2,7 @@
 
 A fully featured, data-driven database library for Clojure.
 
-[![Build Status](https://travis-ci.org/kwrooijen/gungnir.svg?branch=master)](https://travis-ci.org/kwrooijen/gungnir)
+[![Build Status](https://github.com/kwrooijen/gungnir/actions/workflows/test.yml/badge.svg)](https://github.com/kwrooijen/gungnir/actions/workflows/test.yml)
 [![codecov](https://codecov.io/gh/kwrooijen/gungnir/branch/master/graph/badge.svg)](https://codecov.io/gh/kwrooijen/gungnir)
 [![Dependencies Status](https://versions.deps.co/kwrooijen/gungnir/status.svg)](https://versions.deps.co/kwrooijen/gungnir)
 [![Clojars Project](https://img.shields.io/clojars/v/kwrooijen/gungnir.svg)](https://clojars.org/kwrooijen/gungnir)
