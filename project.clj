@@ -6,7 +6,7 @@
   :dependencies [[com.github.seancorfield/next.jdbc "1.3.847"]
                  [org.postgresql/postgresql "42.5.1"]
                  [com.github.seancorfield/honeysql "2.4.969"]
-                 [metosin/malli "0.10.0"]
+                 [metosin/malli "0.10.1"]
                  [differ "0.3.3"]
                  [hikari-cp "3.0.1"]
                  [kwrooijen/clj-database-url "0.0.1"]
