@@ -5,7 +5,7 @@ A fully featured, data-driven database library for Clojure.
 [![Build Status](https://travis-ci.org/kwrooijen/gungnir.svg?branch=master)](https://travis-ci.org/kwrooijen/gungnir)
 [![codecov](https://codecov.io/gh/kwrooijen/gungnir/branch/master/graph/badge.svg)](https://codecov.io/gh/kwrooijen/gungnir)
 [![Dependencies Status](https://versions.deps.co/kwrooijen/gungnir/status.svg)](https://versions.deps.co/kwrooijen/gungnir)
-[![Clojars Project](https://img.shields.io/clojars/v/gungnir.svg)](https://clojars.org/kwrooijen/gungnir)
+[![Clojars Project](https://img.shields.io/clojars/v/kwrooijen/gungnir.svg)](https://clojars.org/kwrooijen/gungnir)
 [![Slack](https://img.shields.io/badge/clojurians-gungnir-blue.svg?logo=slack)](https://clojurians.slack.com/messages/gungnir/)
 
 > It is said that Gungnir could strike any target, regardless of the wielder's
