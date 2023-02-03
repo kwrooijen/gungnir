@@ -106,7 +106,7 @@ using either using the `gungnir.database/set-datasource!` or
     (get properties type {})))
 
 (defn- record->relation-data [form table]
-  (let [model (get @gungnir.model/models (get @gungnir.model/table->model table))
+  (let [model (get gungnir.model/*models* (get gungnir.model/*table->model* table))
         primary-key (gungnir.model/primary-key model)
         properties (m/properties model)
         select (set (:select form))]
@@ -162,9 +162,9 @@ using either using the `gungnir.database/set-datasource!` or
 (defn- transform-model-alias [?field]
   (cond
     (qualified-keyword? ?field)
-    (get @gungnir.model/field->column ?field ?field)
+    (get gungnir.model/*field->column* ?field ?field)
     (simple-keyword? ?field)
-    (get @gungnir.model/model->table ?field ?field)
+    (get gungnir.model/*model->table* ?field ?field)
     :else
     ?field))
 

@@ -21,7 +21,7 @@
         (result-set/read-column-by-index value (:rsmeta builder) i)))))
 
 (defn- qualifier-builder [v]
-  (-> @gungnir.model/table->model
+  (-> gungnir.model/*table->model*
       (get (keyword v))
       (name)))
 
