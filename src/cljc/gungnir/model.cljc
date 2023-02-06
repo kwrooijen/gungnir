@@ -9,12 +9,11 @@
    [gungnir.spec]
    [clojure.spec.alpha :as s]))
 
-;; TODO Might want to turn these into dynamic vars for performance benefits
-(defonce models (atom {}))
-(defonce table->model (atom {}))
-(defonce model->table (atom {}))
-(defonce field->column (atom {}))
-(defonce column->field (atom {}))
+(defonce ^:dynamic *models* {})
+(defonce ^:dynamic *table->model* {})
+(defonce ^:dynamic *model->table* {})
+(defonce ^:dynamic *field->column* {})
+(defonce ^:dynamic *column->field* {})
 
 (def ^:private optional-keys #{:virtual :primary-key :auto})
 
@@ -28,7 +27,7 @@
 (defn- ?model->model [?model]
   (if (model? ?model)
     ?model
-    (get @models ?model)))
+    (get *models* ?model)))
 
 (defn- add-optional [properties]
   (if (seq (select-keys properties optional-keys))
@@ -87,22 +86,22 @@
        has-many (mu/update-properties (partial add-default-has-many k)))]))
 
 (defn- register-table-names! []
-  (doseq [[model opts] @models]
-    (swap! table->model assoc (-> opts m/properties :table) model)
-    (swap! model->table assoc model (-> opts m/properties :table))))
+  (doseq [[model opts] *models*]
+    (alter-var-root #'*table->model* assoc (-> opts m/properties :table) model)
+    (alter-var-root #'*model->table* assoc model (-> opts m/properties :table))))
 
 (defn- register-field-column-mappers! []
   (doseq [[table model fields] (map (juxt (comp :table m/properties second)
                                           first
                                           (comp m/children second))
-                                    @models)
+                                    *models*)
           [field] fields]
     (let [column (keyword (name table) (name field))]
-      (swap! field->column assoc
-             (keyword (name model) "*")
-             (keyword (name table) "*"))
-      (swap! field->column assoc field column)
-      (swap! column->field assoc column field))))
+      (alter-var-root #'*field->column* assoc
+                      (keyword (name model) "*")
+                      (keyword (name table) "*"))
+      (alter-var-root #'*field->column* assoc field column)
+      (alter-var-root #'*column->field* assoc column field))))
 
 (defmulti validator (fn [validator] validator))
 (defmethod validator :default [k]
@@ -122,7 +121,7 @@
     (mapv edn/read-string v)
     (edn/read-string v)))
 
-(defmulti before-read (fn [k _v] (get @column->field k k)))
+(defmulti before-read (fn [k _v] (get *column->field* k k)))
 
 (defmethod before-read :string/lower-case [_ v]
   (string/lower-case v))
@@ -144,7 +143,7 @@
 (defn find
   "Find a model by `key`. Returns `nil` if not found."
   [key]
-  (get @models key))
+  (get *models* key))
 
 (s/fdef properties
   :args (s/cat :?model :gungnir/model-or-key)
@@ -220,6 +219,6 @@
        (mapv add-primary-key)
        (mapv add-foreign-keys)
        (into {})
-       (swap! models merge))
+       (alter-var-root #'*models* merge))
   (register-table-names!)
   (register-field-column-mappers!))
