@@ -16,9 +16,6 @@
             [lein-codox "0.10.8"]
             [lein-ancient "0.6.15"]]
 
-  :repositories [["public-github" {:url "git://github.com"}]
-                 ["private-github" {:url "git://github.com" :protocol :ssh}]]
-
   :codox {:doc-files ["README.md"
                       "doc/guide.md"
                       "doc/modules/database.md"
