@@ -5,7 +5,7 @@ is to be able to write validations in one place. Being able to use them in both
 Clojure and Clojurescript, without the need for websockets.
 
 Gungnir provides a separate project,
-[gungnir.ui](https://www.github.com:kwrooijen/gungnir.ui). This can be added
+[gungnir.ui](https://github.com/kwrooijen/gungnir.ui). This can be added
 separately for validating the frontend.
 
 * [form](https://kwrooijen.github.io/gungnir/form.html) - Establishing a
